@@ -1,65 +1,39 @@
 import { Server } from "http";
 import { WebSocket, Server as WebSocketServer } from "ws";
 import { verifyClient } from "./utils/verifyClient";
-import { ExtendedIncomingMessage } from "./interfaces/extendedIncomingMessage";
 import { ExtendedWebSocket } from "./interfaces/extendedWebsocket";
 import { DecodedToken } from "./interfaces/decodedToken";
+import { WebsocketServerEventHandler } from "./utils/websocket/websocketServerEventHandler";
+import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
 
 export class ExtendedWebSocketServer {
-  private wss: WebSocketServer;
+  private readonly _wss: WebSocketServer;
 
   constructor(server: Server) {
-    this.wss = new WebSocketServer({
+    this._wss = new WebSocketServer({
       server,
       verifyClient: (info, callback) => verifyClient(info.req, callback),
     });
 
     this.setupWebSocket();
-
-    const interval = setInterval(() => {
-      this.wss.clients.forEach(
-        (ws: WebSocket & { isAlive?: boolean; payload?: DecodedToken }) => {
-          console.log(ws.payload?.name + ": isAlive: " + ws.isAlive);
-          if (!ws.isAlive) return ws.terminate();
-          ws.send("keepalive");
-
-          ws.isAlive = false;
-          ws.ping();
-        },
-      );
-    }, 30000);
-
-    this.wss.on("close", function close() {
-      clearInterval(interval);
-    });
   }
 
   private setupWebSocket() {
-    this.wss.on(
-      "connection",
-      (ws: ExtendedWebSocket, request: ExtendedIncomingMessage) => {
-        ws.payload = request.payload;
-        ws.isAlive = true;
+    const serverEventHandler = new WebsocketServerEventHandler(this.wss);
+    serverEventHandler.enableConnectionEvent((ws) => {
+      let socketEventHandler = new WebsocketEventHandler(ws);
 
-        console.log("WebSocket client connected");
+      console.log("WebSocket client connected");
 
-        ws.on("error", console.error);
+      socketEventHandler.enableErrorEvent();
+      socketEventHandler.enablePongEvent();
+      socketEventHandler.enableMessageEvent();
+    });
 
-        ws.on("pong", () => {
-          ws.isAlive = true;
-        });
-
-        ws.on("message", (data) => {
-          const message = data.toString();
-          console.log("Received message:", message);
-
-          const json: { username: string; message: string } =
-            JSON.parse(message);
-
-          this.sendMessageToUser(json.username, json.message);
-        });
-      },
-    );
+    const interval = serverEventHandler.enableHeartbeat(30000);
+    serverEventHandler.enableCloseEvent(() => {
+      clearInterval(interval);
+    });
   }
 
   public broadcast(message: string) {
@@ -81,5 +55,13 @@ export class ExtendedWebSocketServer {
         }
       },
     );
+  }
+
+  public getConnectedClients(): Set<ExtendedWebSocket> {
+    return this.wss.clients as Set<ExtendedWebSocket>;
+  }
+
+  private get wss(): WebSocketServer {
+    return this._wss;
   }
 }

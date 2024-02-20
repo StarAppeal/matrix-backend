@@ -1,5 +1,6 @@
 import express, { Application, Request, Response } from "express";
 import { ExtendedWebSocketServer } from "./websocket";
+import { DecodedToken } from "./interfaces/decodedToken";
 
 export class RestAPI {
   constructor(
@@ -21,11 +22,23 @@ export class RestAPI {
 
     this.app.post("/send-message", (req, res) => {
       const message = req.body.message;
-      const user = req.body.user;
+      const users: Array<string> = req.body.users;
 
-      this.webSocketServer.sendMessageToUser(user, message);
+      users.forEach((user) =>
+        this.webSocketServer.sendMessageToUser(user, message),
+      );
 
       res.status(200).send("OK");
+    });
+
+    this.app.get("/all-clients", (req, res) => {
+      const connectedClients = this.webSocketServer.getConnectedClients();
+
+      const result: Array<DecodedToken> = [];
+
+      connectedClients.forEach((client) => result.push(client.payload));
+
+      res.status(200).send(result);
     });
   }
 }

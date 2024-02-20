@@ -16,6 +16,7 @@ export function verifyClient(
   } else {
     jwt.verify(token, process.env.SECRET_KEY as string, (err, decoded) => {
       if (err) {
+        console.log(err);
         reject(request, callback);
       } else {
         (request as ExtendedIncomingMessage).payload = decoded as DecodedToken;
