@@ -1,5 +1,6 @@
 import { UserService } from "../db/services/database.service";
 import express from "express";
+import User from "../db/models/user";
 
 export class RestUser {
   constructor(private callback: () => Promise<UserService>) {}
@@ -25,18 +26,15 @@ export class RestUser {
             .send(`Unable to find matching document with id: ${req.params.id}`);
     });
 
-    router.post("/", async (req, res) => {
+    router.put("/:id", async (req, res) => {
       const userService = await this.callback();
-      const { name, uuid } = req.body;
-      const result = await userService.createUser(name, uuid);
+      const id = req.params.id;
+      const user = req.body as User;
+      const result = await userService.updateUser(id, user);
 
       result
-        ? res
-            .status(201)
-            .send(
-              `Successfully created a new user with id ${result.insertedId}`,
-            )
-        : res.status(500).send("Failed to create a new game.");
+        ? res.status(200).send(result)
+        : res.status(304).send(`User with id: ${id} was not updated.`);
     });
 
     return router;
