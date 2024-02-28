@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import * as mongoDB from "mongodb";
 import User from "../models/user";
-import { InsertOneResult, ObjectId } from "mongodb";
+import { ObjectId, ReturnDocument } from "mongodb";
 
 let mongoDb: mongoDB.Db;
 
@@ -33,11 +33,13 @@ export class UserService {
     return this._instance;
   }
 
-  public async createUser(
-    name: string,
-    uuid: string,
-  ): Promise<InsertOneResult> {
-    return await this.collection.insertOne({ name, uuid });
+  public async updateUser(id: string, user: User): Promise<User> {
+    const result = await this.collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: user },
+      { returnDocument: ReturnDocument.AFTER },
+    );
+    return result as unknown as User;
   }
 
   public async getAllUsers(): Promise<User[]> {
