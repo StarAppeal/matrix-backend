@@ -34,7 +34,7 @@ export class RestUser {
 
       result
         ? res.status(200).send(result)
-        : res.status(304).send(`User with id: ${id} was not updated.`);
+        : res.status(304).send("Not Modified");
     });
 
     return router;
