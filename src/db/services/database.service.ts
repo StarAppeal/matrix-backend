@@ -1,8 +1,8 @@
 import "dotenv/config";
 
 import * as mongoDB from "mongodb";
-import User from "../models/user";
 import { ObjectId, ReturnDocument } from "mongodb";
+import User from "../models/user";
 
 let mongoDb: mongoDB.Db;
 
@@ -33,26 +33,34 @@ export class UserService {
     return this._instance;
   }
 
-  public async updateUser(id: string, user: User): Promise<User> {
-    const result = await this.collection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      { $set: user },
-      { returnDocument: ReturnDocument.AFTER },
-    );
-    return result as unknown as User;
+  public async updateUser(id: string, user: User) {
+    return (await this.executeWithExceptionHandling(() => {
+      return this.collection.findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        { $set: user },
+        { returnDocument: ReturnDocument.AFTER },
+      );
+    })) as unknown as User;
   }
 
-  public async getAllUsers(): Promise<User[]> {
-    return (await this.collection.find().toArray()) as unknown as User[];
+  public async getAllUsers() {
+    return (await this.executeWithExceptionHandling(() => {
+      return this.collection.find().toArray();
+    })) as unknown as User[];
   }
 
   async getUserById(id: string) {
-    try {
-      return (await this.collection.findOne({
+    return (await this.executeWithExceptionHandling(() => {
+      return this.collection.findOne({
         _id: new ObjectId(id),
-      })) as unknown as User;
+      });
+    })) as unknown as User;
+  }
+
+  private async executeWithExceptionHandling<T>(operation: () => Promise<T>) {
+    try {
+      return await operation();
     } catch (e) {
-      // TODO: implement proper logging
       console.error(e);
       return null;
     }
