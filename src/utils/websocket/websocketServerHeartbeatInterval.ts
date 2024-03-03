@@ -13,10 +13,10 @@ export function heartbeat(wss: WebSocketServer) {
             ws.isAlive,
         );
         if (!ws.isAlive) return ws.terminate();
-        ws.send("keepalive");
+        // ws.send("keepalive");
 
         ws.isAlive = false;
-        ws.ping("keepalive");
+        ws.ping();
       },
     );
   };
