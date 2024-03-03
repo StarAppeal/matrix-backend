@@ -18,7 +18,7 @@ export class WebsocketEventHandler {
   public enableDisconnectEvent() {
     this.webSocket.on("close", (code, mes) => {
       console.log("Code:", code, "Message:", mes.toString());
-      console.log("WebSocket client disconnected");
+      console.log(`${this.webSocket.payload.name} disconnected`);
     });
   }
 
