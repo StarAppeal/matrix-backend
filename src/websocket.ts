@@ -26,6 +26,7 @@ export class ExtendedWebSocketServer {
       console.log("WebSocket client connected");
 
       socketEventHandler.enableErrorEvent();
+      socketEventHandler.enableDisconnectEvent();
       socketEventHandler.enablePongEvent();
       socketEventHandler.enableMessageEvent();
     });

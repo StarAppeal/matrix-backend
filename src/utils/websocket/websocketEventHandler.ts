@@ -15,6 +15,13 @@ export class WebsocketEventHandler {
     });
   }
 
+  public enableDisconnectEvent() {
+    this.webSocket.on("close", (code, mes) => {
+      console.log("Code:", code, "Message:", mes.toString());
+      console.log("WebSocket client disconnected");
+    });
+  }
+
   public enableMessageEvent() {
     this.webSocket.on("message", (data) => {
       const message = data.toString();
