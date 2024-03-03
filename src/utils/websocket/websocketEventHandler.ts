@@ -16,10 +16,10 @@ export class WebsocketEventHandler {
   }
 
   public enableDisconnectEvent() {
-    this.webSocket.on("close", (code, mes) => {
-      console.log("Code:", code, "Message:", mes.toString());
+    this.webSocket.onclose = (event) => {
+      console.log("WebSocket closed:", event.code, event.reason);
       console.log(`User: ${this.webSocket.payload.name} disconnected`);
-    });
+    };
   }
 
   public enableMessageEvent() {
