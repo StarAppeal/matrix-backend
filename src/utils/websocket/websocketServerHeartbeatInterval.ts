@@ -16,7 +16,7 @@ export function heartbeat(wss: WebSocketServer) {
         ws.send("keepalive");
 
         ws.isAlive = false;
-        ws.ping();
+        ws.ping("keepalive");
       },
     );
   };
