@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "start-local": "tsc && node dist/index.js",
-    "build": "tsc",
+    "build": "tsc --build --clean",
     "test": "echo \"Error: no test specified, please add them later\""
   },
   "keywords": [],
