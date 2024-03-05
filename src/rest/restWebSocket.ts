@@ -9,19 +9,21 @@ export class RestWebSocket {
     const router = express.Router();
 
     router.post("/broadcast", (req: Request, res: Response) => {
-      const message: string = req.body.message;
+      const payload: string = JSON.stringify(req.body.payload);
 
-      this.webSocketServer.broadcast(message);
+      console.log(payload);
+
+      this.webSocketServer.broadcast(payload);
 
       res.status(200).send("Broadcast erfolgreich.");
     });
 
     router.post("/send-message", (req, res) => {
-      const message = req.body.message;
+      const payload = JSON.stringify(req.body.payload);
       const users: Array<string> = req.body.users;
 
       users.forEach((user) =>
-        this.webSocketServer.sendMessageToUser(user, message),
+        this.webSocketServer.sendMessageToUser(user, payload),
       );
 
       res.status(200).send("OK");

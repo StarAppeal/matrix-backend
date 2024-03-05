@@ -40,7 +40,7 @@ export class ExtendedWebSocketServer {
   public broadcast(message: string) {
     this.wss.clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
+        client.send(message, { binary: false });
       }
     });
   }
