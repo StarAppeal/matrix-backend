@@ -11,7 +11,7 @@ export class RestUser {
     router.get("/", async (req, res) => {
       const userService = await this.callback();
       const users = await userService.getAllUsers();
-      res.status(200).send(users);
+      res.status(200).send({ users });
     });
 
     router.get("/:id", async (req, res) => {
