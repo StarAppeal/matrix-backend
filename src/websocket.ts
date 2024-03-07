@@ -45,11 +45,11 @@ export class ExtendedWebSocketServer {
     });
   }
 
-  public sendMessageToUser(userName: string, message: string) {
+  public sendMessageToUser(_id: string, message: string) {
     this.wss.clients.forEach(
       (client: WebSocket & { payload?: DecodedToken }) => {
         if (
-          client.payload?.name === userName &&
+          client.payload?._id === _id &&
           client.readyState === WebSocket.OPEN
         ) {
           client.send(message, { binary: false });
