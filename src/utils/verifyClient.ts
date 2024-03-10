@@ -1,28 +1,23 @@
 import "dotenv/config";
 
 import { IncomingMessage } from "node:http";
-import jwt from "jsonwebtoken";
-import { DecodedToken } from "../interfaces/decodedToken";
 import { ExtendedIncomingMessage } from "../interfaces/extendedIncomingMessage";
+import { JwtAuthenticator } from "./jwtAuthenticator";
 
 export function verifyClient(
   request: IncomingMessage,
   callback: (res: boolean, code?: number, message?: string) => void,
 ) {
-  const token = request.headers["authorization"];
+  const jwtAuthenticator = new JwtAuthenticator(
+    process.env.SECRET_KEY as string,
+  );
 
+  const token = jwtAuthenticator.verifyToken(request.headers["authorization"]);
   if (!token) {
     reject(request, callback);
   } else {
-    jwt.verify(token, process.env.SECRET_KEY as string, (err, decoded) => {
-      if (err) {
-        console.log(err);
-        reject(request, callback);
-      } else {
-        (request as ExtendedIncomingMessage).payload = decoded as DecodedToken;
-        callback(true);
-      }
-    });
+    (request as ExtendedIncomingMessage).payload = token;
+    callback(true);
   }
 }
 
