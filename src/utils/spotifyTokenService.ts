@@ -1,4 +1,3 @@
-import {SpotifyConfig} from "../db/models/user";
 import axios from "axios";
 import {OAuthTokenResponse} from "../interfaces/OAuthTokenResponse";
 
