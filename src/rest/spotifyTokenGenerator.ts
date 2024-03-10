@@ -8,24 +8,22 @@ export class SpotifyTokenGenerator {
   public createRouter() {
     const router = express.Router();
 
-    router.get("/token", async (req, res) => {
+    router.get("/refresh-token", async (req, res) => {
       const userService = await this.callback();
 
       const user = await userService.getUserById(req.payload._id);
       const spotifyConfig = user.spotifyConfig;
-      const token = await new SpotifyTokenService().getToken(spotifyConfig);
+      const token = await new SpotifyTokenService().refreshToke(
+        spotifyConfig.refreshToken,
+      );
+      spotifyConfig.accessToken = token.accessToken;
+      spotifyConfig.expirationDate = new Date(
+        Date.now() + token.expiresIn * 1000,
+      );
+      user.spotifyConfig = spotifyConfig;
+      await userService.updateUser(req.payload._id, user);
 
-      if (token.expiresIn !== -1) {
-        console.log("Updating token");
-        spotifyConfig.accessToken = token.accessToken;
-        spotifyConfig.expirationDate = new Date(
-          Date.now() + token.expiresIn * 1000,
-        );
-        user.spotifyConfig = spotifyConfig;
-        await userService.updateUser(req.payload._id, user);
-      }
-
-      res.status(200).send({ accessToken: token.accessToken });
+      res.status(200).send({ result: spotifyConfig });
     });
 
     router.get(
