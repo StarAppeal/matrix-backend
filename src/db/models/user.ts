@@ -5,7 +5,8 @@ export default class User {
     public name: string,
     public uuid: string,
     public id: ObjectId,
-    public config : UserConfig
+    public config : UserConfig,
+    public spotifyConfig: SpotifyConfig
   ) {}
 }
 
@@ -14,5 +15,13 @@ export class UserConfig {
     public isVisible: boolean ,
     public canBeModified: boolean,
     public isAdmin: boolean
+  ) {}
+}
+
+export class SpotifyConfig {
+  constructor(
+    public accessToken: string,
+    public refreshToken: string,
+    public expirationDate: Date
   ) {}
 }
