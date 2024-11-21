@@ -21,7 +21,7 @@ export class ExtendedWebSocketServer {
   private setupWebSocket() {
     const serverEventHandler = new WebsocketServerEventHandler(this.wss);
     serverEventHandler.enableConnectionEvent((ws) => {
-      let socketEventHandler = new WebsocketEventHandler(ws);
+      const socketEventHandler = new WebsocketEventHandler(ws);
 
       console.log("WebSocket client connected");
 

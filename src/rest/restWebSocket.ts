@@ -1,4 +1,4 @@
-import express, { Application, Request, Response, Router } from "express";
+import express, { Request, Response, Router } from "express";
 import { ExtendedWebSocketServer } from "../websocket";
 import { DecodedToken } from "../interfaces/decodedToken";
 
@@ -15,7 +15,7 @@ export class RestWebSocket {
 
       this.webSocketServer.broadcast(payload);
 
-      res.status(200).send("Broadcast erfolgreich.");
+      res.status(200).send("OK");
     });
 
     router.post("/send-message", (req, res) => {

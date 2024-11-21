@@ -3,19 +3,19 @@ import express from "express";
 import User from "../db/models/user";
 
 export class RestUser {
-  constructor(private callback: () => Promise<UserService>) {}
+  constructor(private createService: () => Promise<UserService>) {}
 
   public createRouter() {
     const router = express.Router();
 
     router.get("/", async (req, res) => {
-      const userService = await this.callback();
+      const userService = await this.createService();
       const users = await userService.getAllUsers();
       res.status(200).send({ users });
     });
 
     router.get("/:id", async (req, res) => {
-      const userService = await this.callback();
+      const userService = await this.createService();
       const id = req.params.id;
       const user = await userService.getUserById(id);
 
@@ -27,7 +27,7 @@ export class RestUser {
     });
 
     router.put("/:id", async (req, res) => {
-      const userService = await this.callback();
+      const userService = await this.createService();
       const id = req.params.id;
       const user = req.body as User;
       const result = await userService.updateUser(id, user);
