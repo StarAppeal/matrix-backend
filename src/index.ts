@@ -1,7 +1,6 @@
 import express from "express";
 import { ExtendedWebSocketServer } from "./websocket";
 import { RestWebSocket } from "./rest/restWebSocket";
-import { UserService } from "./db/services/database.service";
 import { RestUser } from "./rest/restUser";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
 import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
@@ -24,7 +23,7 @@ app.use(express.json({ limit: "15mb" }));
 
 const webSocketServer = new ExtendedWebSocketServer(server);
 const restWebSocket = new RestWebSocket(webSocketServer);
-const restUser = new RestUser(UserService.create);
+const restUser = new RestUser();
 const jwtTokenPropertiesExtractor = new JwtTokenPropertiesExtractor();
 
 app.use("/api/websocket", authenticateJwt, restWebSocket.createRouter());
