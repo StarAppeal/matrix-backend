@@ -22,7 +22,7 @@
     "dotenv": "^16.4.4",
     "express": "5.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.3.0",
+    "mongoose": "^8.8.2",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",
     "ws": "8.17.1"
