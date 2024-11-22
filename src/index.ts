@@ -5,12 +5,20 @@ import { UserService } from "./db/services/database.service";
 import { RestUser } from "./rest/restUser";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
 import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
+import cors from "cors";
 
 const app = express();
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+if (process.env.NODE_ENV === "development") {
+  console.log("development");
+  app.use(cors({
+    origin: 'http://localhost:8081', // Erlaube Anfragen von http://localhost:8081
+  }));
+}
 
 app.use(express.json({ limit: "15mb" }));
 
