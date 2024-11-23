@@ -1,6 +1,5 @@
 import { UserModel, IUser } from "../models/user";
 import {connectToDatabase} from "./database.service";
-import mongoose from "mongoose";
 
 export class UserService {
     private static _instance: UserService;
