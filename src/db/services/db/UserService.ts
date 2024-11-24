@@ -1,4 +1,4 @@
-import {IUser, UserModel} from "../models/user";
+import {IUser, UserModel} from "../../models/user";
 import {connectToDatabase} from "./database.service";
 
 export class UserService {
