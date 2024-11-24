@@ -1,5 +1,5 @@
 import express from "express";
-import {UserService} from "../db/services/UserService";
+import {UserService} from "../db/services/db/UserService";
 import {IUser} from "../db/models/user";
 
 export class RestUser {
