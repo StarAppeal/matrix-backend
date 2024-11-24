@@ -6,7 +6,6 @@ const clientId = process.env.SPOTIFY_CLIENT_ID;
 const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
 export class SpotifyTokenService {
-
     public async refreshToken(refreshToken: string) {
         console.log("refreshToken")
         const response = await axios.post(

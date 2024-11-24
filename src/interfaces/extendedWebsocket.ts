@@ -6,4 +6,5 @@ export interface ExtendedWebSocket extends WebSocket {
   payload: DecodedToken;
   isAlive: boolean;
   user:IUser;
+  spotifyUpdate?: NodeJS.Timeout
 }

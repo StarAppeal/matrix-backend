@@ -9,7 +9,8 @@ export interface IUser {
     uuid: string,
     id: ObjectId,
     config: UserConfig,
-    lastState: MatrixState
+    lastState: MatrixState,
+    spotifyConfig: SpotifyConfig
 }
 
 export interface UserConfig {
@@ -39,6 +40,13 @@ export interface MatrixState {
     music: {
         fullscreen: boolean;
     };
+}
+
+export interface SpotifyConfig {
+    accessToken: string;
+    refreshToken: string;
+    expirationDate: Date;
+    scope: string;
 }
 
 const userSchema = new mongoose.Schema<IUser>({
@@ -115,6 +123,24 @@ const userSchema = new mongoose.Schema<IUser>({
                 required: true,
             }
         }
+    },
+    spotifyConfig: {
+        accessToken: {
+            type: String,
+            required: true,
+        },
+        refreshToken: {
+            type: String,
+            required: true,
+        },
+        expirationDate: {
+            type: Date,
+            required: true,
+        },
+        scope: {
+            type: String,
+            required: true,
+        },
     },
 });
 
