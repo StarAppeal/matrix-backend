@@ -15,8 +15,13 @@ export class UserService {
         return this._instance;
     }
 
-    public async updateUser(id: string, user: Partial<IUser>): Promise<IUser | null> {
+    public async updateUserById(id: string, user: Partial<IUser>): Promise<IUser | null> {
         return await UserModel.findByIdAndUpdate(id, user, {new: true}).exec();
+    }
+
+    public async updateUser(user: IUser): Promise<IUser | null> {
+        const {id, ...rest} = user;
+        return this.updateUserById(id.toString(), rest);
     }
 
     public async getAllUsers(): Promise<IUser[]> {

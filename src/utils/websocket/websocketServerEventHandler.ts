@@ -17,7 +17,7 @@ export class WebsocketServerEventHandler {
         this.webSocketServer.on(
             "connection",
             async (ws: ExtendedWebSocket, request: ExtendedIncomingMessage) => {
-                const user = await (await UserService.create()).getUserByUUID(ws.payload._id);
+                const user = await (await UserService.create()).getUserByUUID(request.payload._id);
 
                 ws.user = user!;
 

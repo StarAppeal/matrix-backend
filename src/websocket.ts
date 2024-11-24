@@ -1,68 +1,68 @@
-import { Server } from "http";
-import { WebSocket, Server as WebSocketServer } from "ws";
-import { verifyClient } from "./utils/verifyClient";
-import { ExtendedWebSocket } from "./interfaces/extendedWebsocket";
-import { DecodedToken } from "./interfaces/decodedToken";
-import { WebsocketServerEventHandler } from "./utils/websocket/websocketServerEventHandler";
-import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
+import {Server} from "http";
+import {Server as WebSocketServer, WebSocket} from "ws";
+import {verifyClient} from "./utils/verifyClient";
+import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
+import {DecodedToken} from "./interfaces/decodedToken";
+import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
+import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
 
 export class ExtendedWebSocketServer {
-  private readonly _wss: WebSocketServer;
+    private readonly _wss: WebSocketServer;
 
-  constructor(server: Server) {
-    this._wss = new WebSocketServer({
-      server,
-      verifyClient: (info, callback) => verifyClient(info.req, callback),
-    });
+    constructor(server: Server) {
+        this._wss = new WebSocketServer({
+            server,
+            verifyClient: (info, callback) => verifyClient(info.req, callback),
+        });
 
-    this.setupWebSocket();
-  }
+        this.setupWebSocket();
+    }
 
-  private setupWebSocket() {
-    const serverEventHandler = new WebsocketServerEventHandler(this.wss);
-    serverEventHandler.enableConnectionEvent((ws) => {
-      const socketEventHandler = new WebsocketEventHandler(ws);
+    private get wss(): WebSocketServer {
+        return this._wss;
+    }
 
-      console.log("WebSocket client connected");
+    public broadcast(message: string) {
+        this.wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message, {binary: false});
+            }
+        });
+    }
 
-      socketEventHandler.enableErrorEvent();
-      socketEventHandler.enableDisconnectEvent();
-      socketEventHandler.enablePongEvent();
-      socketEventHandler.enableMessageEvent();
-    });
+    public sendMessageToUser(_id: string, message: string) {
+        this.wss.clients.forEach(
+            (client: WebSocket & { payload?: DecodedToken }) => {
+                if (
+                    client.payload?._id === _id &&
+                    client.readyState === WebSocket.OPEN
+                ) {
+                    client.send(message, {binary: false});
+                }
+            },
+        );
+    }
 
-    const interval = serverEventHandler.enableHeartbeat(30000);
-    serverEventHandler.enableCloseEvent(() => {
-      clearInterval(interval);
-    });
-  }
+    public getConnectedClients(): Set<ExtendedWebSocket> {
+        return this.wss.clients as Set<ExtendedWebSocket>;
+    }
 
-  public broadcast(message: string) {
-    this.wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message, { binary: false });
-      }
-    });
-  }
+    private setupWebSocket() {
+        const serverEventHandler = new WebsocketServerEventHandler(this.wss);
+        serverEventHandler.enableConnectionEvent((ws) => {
+            const socketEventHandler = new WebsocketEventHandler(ws);
 
-  public sendMessageToUser(_id: string, message: string) {
-    this.wss.clients.forEach(
-      (client: WebSocket & { payload?: DecodedToken }) => {
-        if (
-          client.payload?._id === _id &&
-          client.readyState === WebSocket.OPEN
-        ) {
-          client.send(message, { binary: false });
-        }
-      },
-    );
-  }
+            console.log("WebSocket client connected");
 
-  public getConnectedClients(): Set<ExtendedWebSocket> {
-    return this.wss.clients as Set<ExtendedWebSocket>;
-  }
+            socketEventHandler.enableErrorEvent();
+            socketEventHandler.enableDisconnectEvent();
+            socketEventHandler.enablePongEvent();
+            socketEventHandler.enableMessageEvent();
+        });
 
-  private get wss(): WebSocketServer {
-    return this._wss;
-  }
+        const interval = serverEventHandler.enableHeartbeat(30000);
+        serverEventHandler.enableCloseEvent(() => {
+            clearInterval(interval);
+        });
+    }
 }

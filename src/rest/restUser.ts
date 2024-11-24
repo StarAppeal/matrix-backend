@@ -25,10 +25,11 @@ export class RestUser {
     });
 
     router.put("/:id", async (req, res) => {
+      console.log("PUT /user/:id")
       const userService = await UserService.create();
       const id = req.params.id;
       const user = req.body as IUser;
-      const result = await userService.updateUser(id, user);
+      const result = await userService.updateUserById(id, user);
 
       result
         ? res.status(200).send(result)
