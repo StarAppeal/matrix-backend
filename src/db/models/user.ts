@@ -25,10 +25,10 @@ export interface MatrixState {
     };
     text: {
         text: string;
-        align: 'left' | 'center' | 'right'; // Annahme: Mögliche Ausrichtungen sind 'left', 'center', 'right'
+        align: 'left' | 'center' | 'right';
         speed: number;
         size: number;
-        color: [number, number, number]; // RGB-Werte
+        color: [number, number, number];
     };
     image: {
         image: string; // Der Name der Bilddatei
