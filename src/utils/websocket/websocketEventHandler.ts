@@ -1,5 +1,4 @@
 import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
-import {UserService} from "../../db/services/UserService";
 
 export class WebsocketEventHandler {
     constructor(private webSocket: ExtendedWebSocket) {
@@ -25,16 +24,12 @@ export class WebsocketEventHandler {
     }
 
     public enableMessageEvent() {
-        this.webSocket.on("message", async (data) => {
+        this.webSocket.on("message", (data) => {
             const message = data.toString();
             console.log("Received message:", message);
 
             if (message === "GET_STATE") {
-                const userService = await UserService.create();
-
-                const user = await userService.getUserByUUID(this.webSocket.payload._id);
-
-                this.webSocket.send(JSON.stringify(user?.lastState), {binary: false});
+                this.webSocket.send(JSON.stringify(this.webSocket.user.lastState), {binary: false});
             }
         });
     }
