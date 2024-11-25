@@ -23,7 +23,10 @@ export class WebsocketEventHandler {
         this.webSocket.onclose = (event) => {
             console.log("WebSocket closed:", event.code, event.reason, event.wasClean, event.type);
             console.log(`User: ${this.webSocket.payload.name} disconnected`);
-            clearInterval(this.webSocket.spotifyUpdate);
+            if (this.webSocket.spotifyUpdate) {
+                clearInterval(this.webSocket.spotifyUpdate);
+                console.log("Spotify updates stopped");
+            }
             callback();
         };
     }
@@ -72,8 +75,9 @@ export class WebsocketEventHandler {
 
             const token = await new SpotifyTokenService().refreshToken(spotifyConfig.refreshToken);
             user.spotifyConfig = {
+                // use old refresh token because you don't get a new one
+                refreshToken: user.spotifyConfig.refreshToken,
                 accessToken: token.access_token,
-                refreshToken: token.refresh_token,
                 expirationDate: new Date(Date.now() + token.expires_in * 1000),
                 scope: token.scope,
             };
