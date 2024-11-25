@@ -19,11 +19,12 @@ export class WebsocketEventHandler {
         });
     }
 
-    public enableDisconnectEvent() {
+    public enableDisconnectEvent(callback: () => void) {
         this.webSocket.onclose = (event) => {
             console.log("WebSocket closed:", event.code, event.reason, event.wasClean, event.type);
             console.log(`User: ${this.webSocket.payload.name} disconnected`);
             clearInterval(this.webSocket.spotifyUpdate);
+            callback();
         };
     }
 
