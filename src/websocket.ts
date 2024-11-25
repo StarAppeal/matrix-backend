@@ -5,6 +5,7 @@ import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
 import {DecodedToken} from "./interfaces/decodedToken";
 import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
+import {UserService} from "./db/services/db/UserService";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
@@ -55,9 +56,21 @@ export class ExtendedWebSocketServer {
             console.log("WebSocket client connected");
 
             socketEventHandler.enableErrorEvent();
-            socketEventHandler.enableDisconnectEvent();
             socketEventHandler.enablePongEvent();
             socketEventHandler.enableMessageEvent();
+
+            // update user every 30 seconds
+            const updateUserInterval = setInterval(async () => {
+                console.log("Updating user")
+                const userService = await UserService.create();
+                const user = await userService.getUserByUUID(ws.payload._id);
+                if (user) {
+                    ws.user = user;
+                }
+            }, 15000);
+            socketEventHandler.enableDisconnectEvent(() => {
+                clearInterval(updateUserInterval);
+            });
         });
 
         const interval = serverEventHandler.enableHeartbeat(30000);
