@@ -59,7 +59,6 @@ export class ExtendedWebSocketServer {
             socketEventHandler.enablePongEvent();
             socketEventHandler.enableMessageEvent();
 
-            // update user every 30 seconds
             const updateUserInterval = setInterval(async () => {
                 console.log("Updating user")
                 const userService = await UserService.create();
@@ -70,6 +69,7 @@ export class ExtendedWebSocketServer {
             }, 15000);
             socketEventHandler.enableDisconnectEvent(() => {
                 clearInterval(updateUserInterval);
+                console.log("stopped updating user");
             });
         });
 

@@ -2,6 +2,7 @@ import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
 import {getCurrentlyPlaying} from "../../db/services/spotifyApiService";
 import {SpotifyTokenService} from "../../db/services/spotifyTokenService";
 import {UserService} from "../../db/services/db/UserService";
+import {getCurrentWeather} from "../../db/services/owmApiService";
 
 export class WebsocketEventHandler {
     constructor(private webSocket: ExtendedWebSocket) {
@@ -23,9 +24,9 @@ export class WebsocketEventHandler {
         this.webSocket.onclose = (event) => {
             console.log("WebSocket closed:", event.code, event.reason, event.wasClean, event.type);
             console.log(`User: ${this.webSocket.payload.name} disconnected`);
-            if (this.webSocket.spotifyUpdate) {
-                clearInterval(this.webSocket.spotifyUpdate);
-                console.log("Spotify updates stopped");
+            if (this.webSocket.asyncUpdates) {
+                clearInterval(this.webSocket.asyncUpdates);
+                console.log("Async updates stopped");
             }
             callback();
         };
@@ -37,6 +38,15 @@ export class WebsocketEventHandler {
                 const messageJson = JSON.parse(message);
                 const {type} = messageJson;
                 console.log("Received message:", message);
+
+                if (type === "GET_SETTINGS") {
+                    this.webSocket.send(JSON.stringify({
+                        type: "SETTINGS",
+                        payload: {
+                            timezone: this.webSocket.user.timezone,
+                        },
+                    }), {binary: false});
+                }
 
                 if (type === "GET_STATE") {
                     const messageToSend = {
@@ -52,16 +62,25 @@ export class WebsocketEventHandler {
                     this.spotifyUpdates()
                         .then(() => {
                             // then set the interval
-                            this.webSocket.spotifyUpdate = setInterval(() => {
+                            this.webSocket.asyncUpdates = setInterval(() => {
                                 this.spotifyUpdates();
                             }, 1000);
                         });
                 }
+                if (type === "GET_WEATHER_UPDATES") {
+                    console.log("Starting weather updates");
+                    this.weatherUpdates().then(() => {
+                            this.webSocket.asyncUpdates = setInterval(() => {
+                                this.weatherUpdates();
+                            }, 1000 * 60);
+                        }
+                    )
+                }
 
-                if (type === "STOP_SPOTIFY_UPDATES") {
-                    if (this.webSocket.spotifyUpdate) {
-                        clearInterval(this.webSocket.spotifyUpdate);
-                        console.log("Spotify updates stopped");
+                if (type === "STOP_SPOTIFY_UPDATES" || type === "STOP_WEATHER_UPDATES") {
+                    if (this.webSocket.asyncUpdates) {
+                        clearInterval(this.webSocket.asyncUpdates);
+                        console.log("Async updates stopped");
                     }
                 }
 
@@ -98,6 +117,18 @@ export class WebsocketEventHandler {
         this.webSocket.send(JSON.stringify({
             type: "SPOTIFY_UPDATE",
             payload: musicData,
+        }), {binary: false});
+    }
+
+    private async weatherUpdates() {
+        console.log("Checking weather")
+        const user = this.webSocket.user;
+        const weather = await getCurrentWeather(user.location);
+        console.log(weather);
+
+        this.webSocket.send(JSON.stringify({
+            type: "WEATHER_UPDATE",
+            payload: weather,
         }), {binary: false});
     }
 }

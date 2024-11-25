@@ -10,7 +10,9 @@ export interface IUser {
     id: ObjectId,
     config: UserConfig,
     lastState: MatrixState,
-    spotifyConfig: SpotifyConfig
+    spotifyConfig: SpotifyConfig,
+    timezone: string
+    location: string
 }
 
 export interface UserConfig {
@@ -142,6 +144,14 @@ const userSchema = new mongoose.Schema<IUser>({
             required: true,
         },
     },
+    timezone: {
+        type: String,
+        required: true,
+    },
+    location: {
+        type: String,
+        required: true,
+    }
 });
 
 
