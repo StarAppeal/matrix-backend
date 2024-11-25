@@ -34,9 +34,11 @@ export class WebsocketEventHandler {
     public enableMessageEvent() {
         this.webSocket.on("message", (data) => {
                 const message = data.toString();
+                const messageJson = JSON.parse(message);
+                const {type} = messageJson;
                 console.log("Received message:", message);
 
-                if (message === "GET_STATE") {
+                if (type === "GET_STATE") {
                     const messageToSend = {
                         type: "STATE",
                         payload: this.webSocket.user.lastState,
@@ -44,7 +46,7 @@ export class WebsocketEventHandler {
                     this.webSocket.send(JSON.stringify(messageToSend), {binary: false});
                 }
 
-                if (message === "GET_SPOTIFY_UPDATES") {
+                if (type === "GET_SPOTIFY_UPDATES") {
                     console.log("Starting Spotify updates");
                     // first execute the function once
                     this.spotifyUpdates()
@@ -56,11 +58,17 @@ export class WebsocketEventHandler {
                         });
                 }
 
-                if (message === "STOP_SPOTIFY_UPDATES") {
+                if (type === "STOP_SPOTIFY_UPDATES") {
                     if (this.webSocket.spotifyUpdate) {
                         clearInterval(this.webSocket.spotifyUpdate);
                         console.log("Spotify updates stopped");
                     }
+                }
+
+                if (type === "ERROR") {
+                    const {message, traceback} = messageJson;
+                    console.warn("Error message received", message);
+                    console.warn("Traceback", traceback);
                 }
             }
         );
