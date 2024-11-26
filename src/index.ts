@@ -9,6 +9,7 @@ import {SpotifyTokenGenerator} from "./rest/spotifyTokenGenerator";
 
 const app = express();
 const port = process.env.PORT || 3000;
+console.log("server startet");
 const server = app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
