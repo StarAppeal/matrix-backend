@@ -63,7 +63,6 @@ export class ExtendedWebSocketServer {
                 console.log("Updating user")
                 const userService = await UserService.create();
                 const user = await userService.getUserByUUID(ws.payload._id);
-                console.log(user);
                 if (user) {
                     ws.user = user;
                 }
