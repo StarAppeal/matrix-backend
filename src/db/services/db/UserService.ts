@@ -35,4 +35,12 @@ export class UserService {
     public async getUserByUUID(uuid: string): Promise<IUser | null> {
         return await UserModel.findOne({uuid}).exec();
     }
+
+    public async getUserByName(name: string): Promise<IUser | null> {
+        return await UserModel.findOne({name}).exec();
+    }
+
+    public async createUser(user: IUser): Promise<IUser> {
+        return await UserModel.create(user);
+    }
 }
