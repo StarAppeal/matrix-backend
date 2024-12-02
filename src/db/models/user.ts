@@ -6,11 +6,12 @@ import mongoose from "mongoose";
 
 export interface IUser {
     name: string,
+    password?: string,
     uuid: string,
     id: ObjectId,
     config: UserConfig,
-    lastState: MatrixState,
-    spotifyConfig: SpotifyConfig,
+    lastState?: MatrixState,
+    spotifyConfig?: SpotifyConfig,
     timezone: string
     location: string
 }
@@ -56,6 +57,10 @@ const userSchema = new mongoose.Schema<IUser>({
         type: String,
         required: true,
     },
+    password: {
+        type: String,
+        required: true,
+    },
     uuid: {
         type: String,
         required: true,
@@ -78,70 +83,56 @@ const userSchema = new mongoose.Schema<IUser>({
         global: {
             mode: {
                 type: String,
-                required: true,
             },
             brightness: {
                 type: Number,
-                required: true,
             },
         },
         text: {
             text: {
                 type: String,
-                required: true,
             },
             align: {
                 type: String,
-                required: true,
             },
             speed: {
                 type: Number,
-                required: true,
             },
             size: {
                 type: Number,
-                required: true,
             },
             color: {
                 type: [Number],
-                required: true,
             },
         },
         image: {
             image: {
                 type: String,
-                required: true,
             },
         },
         clock: {
             color: {
                 type: [Number],
-                required: true,
             },
         },
         music: {
             fullscreen: {
                 type: Boolean,
-                required: true,
             }
         }
     },
     spotifyConfig: {
         accessToken: {
             type: String,
-            required: true,
         },
         refreshToken: {
             type: String,
-            required: true,
         },
         expirationDate: {
             type: Date,
-            required: true,
         },
         scope: {
             type: String,
-            required: true,
         },
     },
     timezone: {

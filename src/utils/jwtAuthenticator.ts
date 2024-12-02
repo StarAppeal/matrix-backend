@@ -17,4 +17,8 @@ export class JwtAuthenticator {
 
     return null;
   }
+
+  public generateToken(payload: object): string {
+    return jwt.sign(payload, this.secret);
+  }
 }

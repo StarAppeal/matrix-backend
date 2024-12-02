@@ -97,13 +97,17 @@ export class WebsocketEventHandler {
         console.log("Checking Spotify")
         const user = this.webSocket.user;
         const spotifyConfig = user.spotifyConfig;
+        if (!spotifyConfig) {
+            console.log("No Spotify config found");
+            return;
+        }
         if (Date.now() > spotifyConfig.expirationDate.getTime()) {
             console.log("Token expired");
 
             const token = await new SpotifyTokenService().refreshToken(spotifyConfig.refreshToken);
             user.spotifyConfig = {
                 // use old refresh token because you don't get a new one
-                refreshToken: user.spotifyConfig.refreshToken,
+                refreshToken: user.spotifyConfig!.refreshToken,
                 accessToken: token.access_token,
                 expirationDate: new Date(Date.now() + token.expires_in * 1000),
                 scope: token.scope,
@@ -112,7 +116,7 @@ export class WebsocketEventHandler {
             await userService.updateUser(user);
             console.log("Token refreshed and database updated");
         }
-        const musicData = await getCurrentlyPlaying(user.spotifyConfig.accessToken);
+        const musicData = await getCurrentlyPlaying(user.spotifyConfig!.accessToken);
 
         this.webSocket.send(JSON.stringify({
             type: "SPOTIFY_UPDATE",
