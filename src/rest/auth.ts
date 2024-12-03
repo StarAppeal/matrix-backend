@@ -47,14 +47,14 @@ export class RestAuth {
             const user = await userService.getUserByName(username);
 
             if (!user) {
-                res.status(404).send({success: false, message: "User not found"});
+                res.status(404).send({success: false, message: "User not found", id: "username"});
                 return;
             }
 
             const isValid = await bcrypt.compare(password, user.password!);
 
             if (!isValid) {
-                res.status(401).send({success: false, message: "Invalid password"});
+                res.status(401).send({success: false, message: "Invalid password", id: "password"});
                 return;
             }
 
