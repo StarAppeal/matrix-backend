@@ -1,25 +1,23 @@
 import "dotenv/config";
-
+import mongoose, {Document, Schema} from "mongoose";
 import {ObjectId} from "mongodb";
-import mongoose from "mongoose";
-
 
 export interface IUser {
-    name: string,
-    password?: string,
-    uuid: string,
-    id: ObjectId,
-    config: UserConfig,
-    lastState?: MatrixState,
-    spotifyConfig?: SpotifyConfig,
-    timezone: string
-    location: string
+    id: ObjectId;
+    name: string;
+    password?: string;
+    uuid: string;
+    config: UserConfig;
+    lastState?: MatrixState;
+    spotifyConfig?: SpotifyConfig;
+    timezone: string;
+    location: string;
 }
 
 export interface UserConfig {
-    isVisible: boolean,
-    canBeModified: boolean,
-    isAdmin: boolean
+    isVisible: boolean;
+    canBeModified: boolean;
+    isAdmin: boolean;
 }
 
 export interface MatrixState {
@@ -35,10 +33,10 @@ export interface MatrixState {
         color: [number, number, number];
     };
     image: {
-        image: string; // Der Name der Bilddatei
+        image: string;
     };
     clock: {
-        color: [number, number, number]; // RGB-Werte
+        color: [number, number, number];
     };
     music: {
         fullscreen: boolean;
@@ -52,98 +50,51 @@ export interface SpotifyConfig {
     scope: string;
 }
 
-const userSchema = new mongoose.Schema<IUser>({
-    name: {
-        type: String,
-        required: true,
+const matrixStateSchema = new Schema<MatrixState>({
+    global: {
+        mode: {type: String, enum: ['image', 'text', 'idle', 'music', 'clock']},
+        brightness: {type: Number},
     },
-    password: {
-        type: String,
-        required: true,
+    text: {
+        text: {type: String},
+        align: {type: String, enum: ['left', 'center', 'right']},
+        speed: {type: Number},
+        size: {type: Number},
+        color: {type: [Number]},
     },
-    uuid: {
-        type: String,
-        required: true,
+    image: {
+        image: {type: String},
     },
-    config: {
-        isVisible: {
-            type: Boolean,
-            required: true,
-        },
-        canBeModified: {
-            type: Boolean,
-            required: true,
-        },
-        isAdmin: {
-            type: Boolean,
-            required: true,
-        },
+    clock: {
+        color: {type: [Number]},
     },
-    lastState: {
-        global: {
-            mode: {
-                type: String,
-            },
-            brightness: {
-                type: Number,
-            },
-        },
-        text: {
-            text: {
-                type: String,
-            },
-            align: {
-                type: String,
-            },
-            speed: {
-                type: Number,
-            },
-            size: {
-                type: Number,
-            },
-            color: {
-                type: [Number],
-            },
-        },
-        image: {
-            image: {
-                type: String,
-            },
-        },
-        clock: {
-            color: {
-                type: [Number],
-            },
-        },
-        music: {
-            fullscreen: {
-                type: Boolean,
-            }
-        }
+    music: {
+        fullscreen: {type: Boolean},
     },
-    spotifyConfig: {
-        accessToken: {
-            type: String,
-        },
-        refreshToken: {
-            type: String,
-        },
-        expirationDate: {
-            type: Date,
-        },
-        scope: {
-            type: String,
-        },
-    },
-    timezone: {
-        type: String,
-        required: true,
-    },
-    location: {
-        type: String,
-        required: true,
-    }
+}, {_id: false});
+
+const spotifyConfigSchema = new Schema<SpotifyConfig>({
+    accessToken: {type: String},
+    refreshToken: {type: String},
+    expirationDate: {type: Date},
+    scope: {type: String},
+}, {_id: false});
+
+const userConfigSchema = new Schema<UserConfig>({
+    isVisible: {type: Boolean, required: true},
+    canBeModified: {type: Boolean, required: true},
+    isAdmin: {type: Boolean, required: true},
+}, {_id: false});
+
+const userSchema = new Schema<IUser>({
+    name: {type: String, required: true},
+    password: {type: String, required: true},
+    uuid: {type: String, required: true},
+    config: {type: userConfigSchema, required: true},
+    lastState: {type: matrixStateSchema},
+    spotifyConfig: {type: spotifyConfigSchema},
+    timezone: {type: String, required: true},
+    location: {type: String, required: true},
 });
 
-
-export const UserModel = mongoose.model<IUser>(process.env.USER_COLLECTION_NAME!, userSchema);
+export const UserModel = mongoose.model<IUser>('User', userSchema);
