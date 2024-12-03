@@ -11,8 +11,6 @@ export class RestWebSocket {
     router.post("/broadcast", (req: Request, res: Response) => {
       const payload: string = JSON.stringify(req.body.payload);
 
-      console.log(payload);
-
       this.webSocketServer.broadcast(payload);
 
       res.status(200).send("OK");
@@ -39,11 +37,6 @@ export class RestWebSocket {
       console.log("Connected clients:", result);
 
       res.status(200).send({ result });
-    });
-
-    router.get("/throw-error", (req, res) => {
-      console.log("Throwing error");
-      res.status(500).send("Internal Server Error");
     });
 
     return router;

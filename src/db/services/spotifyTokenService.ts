@@ -21,8 +21,6 @@ export class SpotifyTokenService {
             },
         );
 
-        console.log(response.data);
-
         return response.data as OAuthTokenResponse;
     }
 
