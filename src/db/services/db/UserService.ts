@@ -1,4 +1,4 @@
-import {IUser, UserModel} from "../../models/user";
+import {IUser, SpotifyConfig, UserModel} from "../../models/user";
 import {connectToDatabase} from "./database.service";
 
 export class UserService {
@@ -25,15 +25,15 @@ export class UserService {
     }
 
     public async getAllUsers(): Promise<IUser[]> {
-        return await UserModel.find().exec();
+        return await UserModel.find({}, {password: 0, spotifyConfig: 0, lastState: 0}).exec();
     }
 
     public async getUserById(id: string): Promise<IUser | null> {
-        return await UserModel.findById(id).exec();
+        return await UserModel.findById(id, {password: 0}).exec();
     }
 
     public async getUserByUUID(uuid: string): Promise<IUser | null> {
-        return await UserModel.findOne({uuid}).exec();
+        return await UserModel.findOne({uuid}, {password: 0}).exec();
     }
 
     public async getUserByName(name: string): Promise<IUser | null> {
@@ -42,7 +42,19 @@ export class UserService {
             .exec();
     }
 
-    public async createUser(user: IUser): Promise<IUser> {
-        return await UserModel.create(user);
+    public async getSpotifyConfigByUUID(uuid: string): Promise<SpotifyConfig | undefined> {
+        return await UserModel.findOne({uuid}, {spotifyConfig: 1}).exec().then(user => user?.spotifyConfig);
     }
+
+    public async createUser(user: IUser): Promise<IUser> {
+        const createdUser = await UserModel.create(user);
+
+        const {password, ...rest} = createdUser.toObject();
+        return rest as IUser;
+    }
+
+    public async existsUserByName(name: string): Promise<boolean> {
+        return !!(await UserModel.findOne({name}).exec());
+    }
+
 }

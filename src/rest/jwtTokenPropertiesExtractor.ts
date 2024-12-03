@@ -1,13 +1,22 @@
 import express from "express";
 
 export class JwtTokenPropertiesExtractor {
-  public createRouter() {
-    const router = express.Router();
+    public createRouter() {
+        const router = express.Router();
 
-    router.get("/_id", (req, res) => {
-      res.status(200).send(req.payload._id);
-    });
+        router.get("/id", (req, res) => {
+            res.status(200).send(req.payload.id);
+        });
 
-    return router;
-  }
+        router.get("/username", (req, res) => {
+            res.status(200).send(req.payload.username);
+        });
+
+        router.get("/uuid", (req, res) => {
+            res.status(200).send(req.payload.uuid);
+        });
+
+
+        return router;
+    }
 }

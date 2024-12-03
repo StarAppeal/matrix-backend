@@ -8,7 +8,7 @@ export function heartbeat(wss: WebSocketServer) {
         console.log(
           new Date().toLocaleString("de-DE") +
             ":" +
-            ws.payload?.name +
+            ws.payload?.username +
             ": isAlive: " +
             ws.isAlive,
         );

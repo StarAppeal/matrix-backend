@@ -31,11 +31,11 @@ export class ExtendedWebSocketServer {
         });
     }
 
-    public sendMessageToUser(_id: string, message: string) {
+    public sendMessageToUser(uuid: string, message: string) {
         this.wss.clients.forEach(
             (client: WebSocket & { payload?: DecodedToken }) => {
                 if (
-                    client.payload?._id === _id &&
+                    client.payload?.uuid === uuid &&
                     client.readyState === WebSocket.OPEN
                 ) {
                     client.send(message, {binary: false});
@@ -62,11 +62,12 @@ export class ExtendedWebSocketServer {
             const updateUserInterval = setInterval(async () => {
                 console.log("Updating user")
                 const userService = await UserService.create();
-                const user = await userService.getUserByUUID(ws.payload._id);
+                const user = await userService.getUserByUUID(ws.payload.id);
                 if (user) {
                     ws.user = user;
                 }
             }, 15000);
+
             socketEventHandler.enableDisconnectEvent(() => {
                 clearInterval(updateUserInterval);
                 console.log("stopped updating user");

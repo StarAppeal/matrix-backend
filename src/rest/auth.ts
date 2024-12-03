@@ -15,29 +15,28 @@ export class RestAuth {
             const location = req.body.location;
             const password = req.body.password;
             const userService = await UserService.create();
-            const user = await userService.getUserByName(username);
 
-            if (user) {
+            if (await userService.existsUserByName(username)) {
                 res.status(409).send({message: "Username already exists"});
-            } else {
-                const hashedPassword = await bcrypt.hash(password, 10);
-                const newUser: IUser = {
-                    id: ObjectId.createFromTime(Date.now()),
-                    name: username,
-                    password: hashedPassword,
-                    uuid: crypto.randomUUID(),
-                    config: {
-                        isVisible: false,
-                        isAdmin: false,
-                        canBeModified: false
-                    },
-                    timezone,
-                    location
-                };
-                const result = await userService.createUser(newUser);
-                result.password = undefined;
-                res.status(201).send({success: true, user: result});
+                return;
             }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const newUser: IUser = {
+                id: ObjectId.createFromTime(Date.now()),
+                name: username,
+                password: hashedPassword,
+                uuid: crypto.randomUUID(),
+                config: {
+                    isVisible: false,
+                    isAdmin: false,
+                    canBeModified: false
+                },
+                timezone,
+                location
+            };
+            const result = await userService.createUser(newUser);
+            res.status(201).send({success: true, user: result});
         });
 
         router.post("/login", async (req, res) => {
@@ -45,6 +44,7 @@ export class RestAuth {
             const password = req.body.password;
             const userService = await UserService.create();
             const user = await userService.getUserByName(username);
+            console.log(user);
 
             if (!user) {
                 res.status(404).send({success: false, message: "User not found", id: "username"});
@@ -58,10 +58,11 @@ export class RestAuth {
                 return;
             }
 
+
             // generate JWT token here
             const jwtToken = new JwtAuthenticator(
                 process.env.SECRET_KEY!,
-            ).generateToken({username: user.name, id: user.id, uuid: user.uuid});
+            ).generateToken({username: user.name, id: user.id.toString(), uuid: user.uuid});
 
             res.status(200).send({success: true, token: jwtToken});
         });
