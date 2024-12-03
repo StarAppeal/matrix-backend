@@ -1,4 +1,5 @@
 export interface DecodedToken {
-  name: string;
-  _id: string;
+  username: string;
+  id: string;
+  uuid: string;
 }

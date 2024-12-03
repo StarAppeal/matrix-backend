@@ -23,7 +23,7 @@ export class WebsocketEventHandler {
     public enableDisconnectEvent(callback: () => void) {
         this.webSocket.onclose = (event) => {
             console.log("WebSocket closed:", event.code, event.reason, event.wasClean, event.type);
-            console.log(`User: ${this.webSocket.payload.name} disconnected`);
+            console.log(`User: ${this.webSocket.payload.username} disconnected`);
             if (this.webSocket.asyncUpdates) {
                 clearInterval(this.webSocket.asyncUpdates);
                 console.log("Async updates stopped");
