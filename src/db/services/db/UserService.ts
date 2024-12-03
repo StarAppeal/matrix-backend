@@ -37,7 +37,9 @@ export class UserService {
     }
 
     public async getUserByName(name: string): Promise<IUser | null> {
-        return await UserModel.findOne({name}).exec();
+        return await UserModel.findOne({name})
+            .collation({locale: "en", strength: 2})
+            .exec();
     }
 
     public async createUser(user: IUser): Promise<IUser> {
