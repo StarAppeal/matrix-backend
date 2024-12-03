@@ -22,10 +22,10 @@ export class RestAuth {
             } else {
                 const hashedPassword = await bcrypt.hash(password, 10);
                 const newUser: IUser = {
+                    id: ObjectId.createFromTime(Date.now()),
                     name: username,
                     password: hashedPassword,
                     uuid: crypto.randomUUID(),
-                    id: ObjectId.createFromTime(Date.now()),
                     config: {
                         isVisible: false,
                         isAdmin: false,
