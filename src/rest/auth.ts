@@ -4,6 +4,7 @@ import {IUser} from "../db/models/user";
 import {ObjectId} from "mongodb";
 import {JwtAuthenticator} from "../utils/jwtAuthenticator";
 import bcrypt from "bcrypt";
+import crypto from "crypto"
 
 export class RestAuth {
     public createRouter() {
