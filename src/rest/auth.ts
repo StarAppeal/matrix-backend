@@ -9,7 +9,7 @@ export class RestAuth {
     public createRouter() {
         const router = express.Router();
 
-        router.put("/register", async (req, res) => {
+        router.post("/register", async (req, res) => {
             const username = req.body.username;
             const timezone = req.body.timezone;
             const location = req.body.location;
@@ -44,7 +44,6 @@ export class RestAuth {
             const password = req.body.password;
             const userService = await UserService.create();
             const user = await userService.getUserByName(username);
-            console.log(user);
 
             if (!user) {
                 res.status(404).send({success: false, message: "User not found", id: "username"});
@@ -57,7 +56,6 @@ export class RestAuth {
                 res.status(401).send({success: false, message: "Invalid password", id: "password"});
                 return;
             }
-
 
             // generate JWT token here
             const jwtToken = new JwtAuthenticator(

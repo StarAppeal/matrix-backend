@@ -25,7 +25,6 @@ export class RestUser {
     });
 
     router.put("/:id", async (req, res) => {
-      console.log("PUT /user/:id")
       const userService = await UserService.create();
       const id = req.params.id;
       const user = req.body as IUser;
