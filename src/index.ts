@@ -13,13 +13,10 @@ const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+}));
 
-if (process.env.NODE_ENV === "development") {
-    console.log("development");
-    app.use(cors({
-        origin: 'http://localhost:8081', // Erlaube Anfragen von http://localhost:8081
-    }));
-}
 
 app.use(express.json({limit: "15mb"}));
 
