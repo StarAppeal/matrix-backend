@@ -12,6 +12,7 @@ export function authenticateJwt(
   const jwtAuthenticator = new JwtAuthenticator(
       process.env.SECRET_KEY as string,
   );
+
   const decodedToken = jwtAuthenticator.verifyToken(token);
   if (!decodedToken) {
     return res.status(401).send("Unauthorized");
