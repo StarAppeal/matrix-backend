@@ -1,6 +1,7 @@
 import express from "express";
 import {UserService} from "../db/services/db/UserService";
 import {IUser} from "../db/models/user";
+import {PasswordUtils} from "../utils/passwordUtils";
 
 export class RestUser {
     public createRouter() {
@@ -16,6 +17,38 @@ export class RestUser {
             const userService = await UserService.create();
             const user = await userService.getUserByUUID(req.payload.uuid);
             res.status(200).send(user);
+        });
+
+        router.put("/me/password", async (req, res) => {
+            const userService = await UserService.create();
+            const user = await userService.getUserByUUID(req.payload.uuid);
+            const password = req.body.password;
+            const passwordConfirmation = req.body.passwordConfirmation;
+
+            if (password !== passwordConfirmation) {
+                res.status(400).send({
+                    result: {
+                        success: false,
+                        message: "Passwörter stimmen nicht überein"
+                    }
+                });
+                return;
+            }
+
+            const passwordValidation = PasswordUtils.validatePassword(password);
+
+            if (!passwordValidation.valid) {
+                res.status(400).send({result: passwordValidation});
+                return;
+            }
+
+            PasswordUtils.hashPassword(password).then(hashedPassword => {
+                user!.password = hashedPassword;
+                userService.updateUser(user!)
+                    .then(() => {
+                        res.status(200).send({result: {success: true, message: "Passwort erfolgreich geändert"}});
+                    });
+            });
         });
 
         router.get("/:id", async (req, res) => {
