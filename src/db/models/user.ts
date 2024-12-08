@@ -1,5 +1,5 @@
 import "dotenv/config";
-import mongoose, {Document, Schema} from "mongoose";
+import mongoose, {Schema} from "mongoose";
 import {ObjectId} from "mongodb";
 
 export interface IUser {
@@ -95,6 +95,6 @@ const userSchema = new Schema<IUser>({
     spotifyConfig: {type: spotifyConfigSchema},
     timezone: {type: String, required: true},
     location: {type: String, required: true},
-});
+}, {optimisticConcurrency: true});
 
 export const UserModel = mongoose.model<IUser>('User', userSchema);

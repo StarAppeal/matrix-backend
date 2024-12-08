@@ -3,8 +3,8 @@ import {UserService} from "../db/services/db/UserService";
 import {IUser} from "../db/models/user";
 import {ObjectId} from "mongodb";
 import {JwtAuthenticator} from "../utils/jwtAuthenticator";
-import bcrypt from "bcrypt";
 import crypto from "crypto"
+import {PasswordUtils} from "../utils/passwordUtils";
 
 export class RestAuth {
     public createRouter() {
@@ -22,7 +22,14 @@ export class RestAuth {
                 return;
             }
 
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const passwordValidation = PasswordUtils.validatePassword(password);
+
+            if (!passwordValidation.valid) {
+                res.status(400).send({success: false, message: passwordValidation.message});
+                return;
+            }
+
+            const hashedPassword = await PasswordUtils.hashPassword(password);
             const newUser: IUser = {
                 id: ObjectId.createFromTime(Date.now()),
                 name: username,
@@ -51,7 +58,7 @@ export class RestAuth {
                 return;
             }
 
-            const isValid = await bcrypt.compare(password, user.password!);
+            const isValid = await PasswordUtils.comparePassword(password, user.password!);
 
             if (!isValid) {
                 res.status(401).send({success: false, message: "Invalid password", id: "password"});
