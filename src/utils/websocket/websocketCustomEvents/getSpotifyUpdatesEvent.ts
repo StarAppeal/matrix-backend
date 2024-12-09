@@ -4,6 +4,8 @@ import {SpotifyTokenService} from "../../../db/services/spotifyTokenService";
 import {UserService} from "../../../db/services/db/UserService";
 import {getCurrentlyPlaying} from "../../../db/services/spotifyApiService";
 
+export const SpotifyAsyncUpdateEvent = "SPOTIFY_UPDATE";
+
 export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent {
 
     event = WebsocketEventType.GET_SPOTIFY_UPDATES;
@@ -12,9 +14,14 @@ export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent {
         console.log("Starting Spotify updates");
         this.ws.emit(WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE, {});
 
-        this.ws.asyncUpdates = setInterval(() => {
+        if (this.ws.asyncUpdates.has(SpotifyAsyncUpdateEvent)) {
+            console.log("Spotify updates already running");
+            return;
+        }
+
+        this.ws.asyncUpdates.set(SpotifyAsyncUpdateEvent, setInterval(() => {
             this.ws.emit(WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE, {});
-        }, 1000);
+        }, 1000));
 
     }
 }

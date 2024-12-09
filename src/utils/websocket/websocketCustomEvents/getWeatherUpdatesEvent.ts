@@ -2,6 +2,8 @@ import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
 import {getCurrentWeather} from "../../../db/services/owmApiService";
 
+export const WeatherAsyncUpdateEvent = "WEATHER_UPDATE";
+
 export class GetWeatherUpdatesEvent extends CustomWebsocketEvent {
 
     event = WebsocketEventType.GET_WEATHER_UPDATES;
@@ -10,9 +12,16 @@ export class GetWeatherUpdatesEvent extends CustomWebsocketEvent {
         console.log("Starting weather updates");
         this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
 
-        this.ws.asyncUpdates = setInterval(() => {
+        if (this.ws.asyncUpdates.has(WeatherAsyncUpdateEvent)) {
+            console.log("Weather updates already running");
+            return;
+        }
+
+        this.ws.asyncUpdates.set(WeatherAsyncUpdateEvent, setInterval(() => {
             this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
-        }, 1000 * 60);
+        }, 1000 * 60));
+
+
     }
 }
 

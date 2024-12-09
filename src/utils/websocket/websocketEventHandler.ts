@@ -21,9 +21,9 @@ export class WebsocketEventHandler {
         this.webSocket.onclose = (event) => {
             console.log("WebSocket closed:", event.code, event.reason, event.wasClean, event.type);
             console.log(`User: ${this.webSocket.payload.username} disconnected`);
-            if (this.webSocket.asyncUpdates) {
-                clearInterval(this.webSocket.asyncUpdates);
-                console.log("Async updates stopped");
+            for (const [key, value] of this.webSocket.asyncUpdates) {
+                console.log("Stopping Update:", key);
+                clearInterval(value);
             }
             callback();
         };
@@ -42,7 +42,7 @@ export class WebsocketEventHandler {
         );
     }
 
-    public registerCustomEvent(customWebsocketEvent:CustomWebsocketEvent ) {
+    public registerCustomEvent(customWebsocketEvent: CustomWebsocketEvent) {
         // bind needed?
         this.webSocket.on(customWebsocketEvent.event, customWebsocketEvent.handler.bind(customWebsocketEvent));
     }

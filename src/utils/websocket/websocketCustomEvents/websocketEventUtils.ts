@@ -6,8 +6,9 @@ import {GetStateEvent} from "./getStateEvent";
 import {GetSingleWeatherUpdateEvent, GetWeatherUpdatesEvent} from "./getWeatherUpdatesEvent";
 import {StopSpotifyUpdatesEvent} from "./stopSpotifyUpdatesEvent";
 import {StopWeatherUpdatesEvent} from "./stopWeatherUpdatesEvent";
-import {UpdateUserEvent} from "./updateUserEvent";
+import {UpdateUserEvent, UpdateUserSingleEvent} from "./updateUserEvent";
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
+import {StopUpdateUserEvent} from "./stopUpdateUserEvent";
 
 export function getEventListeners(ws: ExtendedWebSocket): CustomWebsocketEvent[] {
     return [
@@ -20,6 +21,8 @@ export function getEventListeners(ws: ExtendedWebSocket): CustomWebsocketEvent[]
         new GetWeatherUpdatesEvent(ws),
         new StopWeatherUpdatesEvent(ws),
         new UpdateUserEvent(ws),
+        new UpdateUserSingleEvent(ws),
+        new StopUpdateUserEvent(ws),
         new ErrorEvent(ws)
     ];
 }
