@@ -62,7 +62,7 @@ export class ExtendedWebSocketServer {
             socketEventHandler.enableMessageEvent();
 
             // Register custom events
-            getEventListeners(ws).forEach(socketEventHandler.registerCustomEvent);
+            getEventListeners(ws).forEach(socketEventHandler.registerCustomEvent, socketEventHandler);
 
             const updateUserInterval = setInterval(async () => {
                 const userService = await UserService.create();
