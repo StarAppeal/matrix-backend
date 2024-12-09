@@ -6,6 +6,7 @@ import {DecodedToken} from "./interfaces/decodedToken";
 import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
 import {UserService} from "./db/services/db/UserService";
+import {getEventListeners} from "./utils/websocket/websocketCustomEvents/websocketEventUtils";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
@@ -59,19 +60,26 @@ export class ExtendedWebSocketServer {
             socketEventHandler.enablePongEvent();
             socketEventHandler.enableMessageEvent();
 
+            // Register custom events
+            getEventListeners(ws).forEach((eventListener) => {
+                socketEventHandler.registerCustomEvent(eventListener);
+            });
+
             const updateUserInterval = setInterval(async () => {
-                console.log("Updating user")
                 const userService = await UserService.create();
-                const user = await userService.getUserByUUID(ws.payload.id);
-                if (user) {
-                    ws.user = user;
-                }
+                const user = await userService.getUserByUUID(ws.payload.uuid);
+                ws.emit("UPDATE_USER", user);
             }, 15000);
 
             socketEventHandler.enableDisconnectEvent(() => {
                 clearInterval(updateUserInterval);
                 console.log("stopped updating user");
             });
+
+            // send initial state and settings
+            // think about emitting the data needed directly to the event Handler
+            ws.emit("GET_STATE", {});
+            ws.emit("GET_SETTINGS", {});
         });
 
         const interval = serverEventHandler.enableHeartbeat(30000);
