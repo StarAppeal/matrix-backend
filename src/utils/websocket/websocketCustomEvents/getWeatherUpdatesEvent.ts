@@ -8,12 +8,21 @@ export class GetWeatherUpdatesEvent extends CustomWebsocketEvent {
 
     handler = async () => {
         console.log("Starting weather updates");
-        this.weatherUpdates().then(() => {
-                this.ws.asyncUpdates = setInterval(() => {
-                    this.weatherUpdates();
-                }, 1000 * 60);
-            }
-        );
+        this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
+
+        this.ws.asyncUpdates = setInterval(() => {
+            this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
+        }, 1000 * 60);
+    }
+}
+
+export class GetSingleWeatherUpdateEvent extends CustomWebsocketEvent {
+
+    event = WebsocketEventType.GET_SINGLE_WEATHER_UPDATE;
+
+    handler = async () => {
+        console.log("Getting single weather update event");
+        await this.weatherUpdates();
     }
 
     private async weatherUpdates() {

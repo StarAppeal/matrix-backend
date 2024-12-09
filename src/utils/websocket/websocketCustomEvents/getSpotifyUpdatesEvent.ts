@@ -10,14 +10,22 @@ export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent {
 
     handler = async () => {
         console.log("Starting Spotify updates");
-        // first execute the function once
-        this.spotifyUpdates()
-            .then(() => {
-                // then set the interval
-                this.ws.asyncUpdates = setInterval(() => {
-                    this.spotifyUpdates();
-                }, 1000);
-            });
+        this.ws.emit(WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE, {});
+
+        this.ws.asyncUpdates = setInterval(() => {
+            this.ws.emit(WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE, {});
+        }, 1000);
+
+    }
+}
+
+export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEvent {
+
+    event = WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE;
+
+    handler = async () => {
+        console.log("Getting single Spotify update event");
+        await this.spotifyUpdates();
     }
 
     private async spotifyUpdates() {
