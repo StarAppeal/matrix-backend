@@ -62,9 +62,7 @@ export class ExtendedWebSocketServer {
             socketEventHandler.enableMessageEvent();
 
             // Register custom events
-            getEventListeners(ws).forEach((eventListener) => {
-                socketEventHandler.registerCustomEvent(eventListener);
-            });
+            getEventListeners(ws).forEach(socketEventHandler.registerCustomEvent);
 
             const updateUserInterval = setInterval(async () => {
                 const userService = await UserService.create();
@@ -86,6 +84,7 @@ export class ExtendedWebSocketServer {
             if (mode === "clock" && !ws.asyncUpdates) {
                 ws.emit(WebsocketEventType.GET_WEATHER_UPDATES, {})
             }
+
             if (mode === "music" && !ws.asyncUpdates) {
                 ws.emit(WebsocketEventType.GET_SPOTIFY_UPDATES, {})
             }
