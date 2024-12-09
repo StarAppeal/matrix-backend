@@ -5,7 +5,6 @@ import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
 import {DecodedToken} from "./interfaces/decodedToken";
 import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
-import {UserService} from "./db/services/db/UserService";
 import {getEventListeners} from "./utils/websocket/websocketCustomEvents/websocketEventUtils";
 import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
 
@@ -64,21 +63,17 @@ export class ExtendedWebSocketServer {
             // Register custom events
             getEventListeners(ws).forEach(socketEventHandler.registerCustomEvent, socketEventHandler);
 
-            const updateUserInterval = setInterval(async () => {
-                const userService = await UserService.create();
-                const user = await userService.getUserByUUID(ws.payload.uuid);
-                ws.emit(WebsocketEventType.UPDATE_USER, user);
-            }, 15000);
-
             socketEventHandler.enableDisconnectEvent(() => {
-                clearInterval(updateUserInterval);
-                console.log("stopped updating user");
+                console.log("User disconnected");
             });
 
             // send initial state and settings
             // think about emitting the data needed directly to the event Handler
             ws.emit(WebsocketEventType.GET_STATE, {});
             ws.emit(WebsocketEventType.GET_SETTINGS, {});
+
+            // initiate update user event
+            ws.emit(WebsocketEventType.UPDATE_USER, {});
 
             const mode = ws.user.lastState?.global.mode;
             if (mode === "clock" && !ws.asyncUpdates) {
