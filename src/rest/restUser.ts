@@ -1,6 +1,5 @@
 import express from "express";
 import {UserService} from "../db/services/db/UserService";
-import {IUser} from "../db/models/user";
 import {PasswordUtils} from "../utils/passwordUtils";
 
 export class RestUser {
@@ -17,6 +16,16 @@ export class RestUser {
             const userService = await UserService.create();
             const user = await userService.getUserByUUID(req.payload.uuid);
             res.status(200).send(user);
+        });
+
+        router.put("/me/spotify", async (req, res) => {
+            const userService = await UserService.create();
+            const user = await userService.getUserByUUID(req.payload.uuid);
+            user!.spotifyConfig = req.body;
+            userService.updateUser(user!)
+                .then(() => {
+                    res.status(200).send({result: {success: true, message: "Spotify Config erfolgreich geändert"}});
+                });
         });
 
         router.put("/me/password", async (req, res) => {
@@ -61,17 +70,6 @@ export class RestUser {
                 : res
                     .status(404)
                     .send(`Unable to find matching document with id: ${req.params.id}`);
-        });
-
-        router.put("/:id", async (req, res) => {
-            const userService = await UserService.create();
-            const id = req.params.id;
-            const user = req.body as IUser;
-            const result = await userService.updateUserById(id, user);
-
-            result
-                ? res.status(200).send(result)
-                : res.status(304).send("Not Modified");
         });
 
         return router;
