@@ -7,6 +7,7 @@ import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEven
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
 import {UserService} from "./db/services/db/UserService";
 import {getEventListeners} from "./utils/websocket/websocketCustomEvents/websocketEventUtils";
+import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
@@ -68,7 +69,7 @@ export class ExtendedWebSocketServer {
             const updateUserInterval = setInterval(async () => {
                 const userService = await UserService.create();
                 const user = await userService.getUserByUUID(ws.payload.uuid);
-                ws.emit("UPDATE_USER", user);
+                ws.emit(WebsocketEventType.UPDATE_USER, user);
             }, 15000);
 
             socketEventHandler.enableDisconnectEvent(() => {
@@ -78,8 +79,16 @@ export class ExtendedWebSocketServer {
 
             // send initial state and settings
             // think about emitting the data needed directly to the event Handler
-            ws.emit("GET_STATE", {});
-            ws.emit("GET_SETTINGS", {});
+            ws.emit(WebsocketEventType.GET_STATE, {});
+            ws.emit(WebsocketEventType.GET_SETTINGS, {});
+
+            const mode = ws.user.lastState?.global.mode;
+            if (mode === "clock" && !ws.asyncUpdates) {
+                ws.emit(WebsocketEventType.GET_WEATHER_UPDATES, {})
+            }
+            if (mode === "music" && !ws.asyncUpdates) {
+                ws.emit(WebsocketEventType.GET_SPOTIFY_UPDATES, {})
+            }
         });
 
         const interval = serverEventHandler.enableHeartbeat(30000);
