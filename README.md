@@ -1,3 +1,6 @@
+This is work in progress!
+
+
 # Matrix-Backend
 
 **Matrix-Backend** serves as an interface between the user and the Raspberry Pi controller. It facilitates data exchange between various WebSocket clients and offers a RESTful API for managing user data and interactions.
