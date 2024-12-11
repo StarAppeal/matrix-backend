@@ -230,8 +230,8 @@ npm run start
     ```json
     {
       "payload": {
-        "anything": object,
-        "you": object,
+        "anything": {},
+        "you": {},
         "want": true
       }
     }
@@ -245,8 +245,8 @@ npm run start
     ```json
     {
       "payload": {
-        "anything": object,
-        "you": object,
+        "anything": {},
+        "you": {},
         "want": true
       }
       "users": [
