@@ -89,14 +89,16 @@ npm run start
     {
       "username": "string",
       "password": "string",
-      "email": "string"
+      "email": "string",
+      "location": "string",
+      "timezone": "string"
     }
     ```
   - **Response**:
     ```json
     {
       "message": "string",
-      "userId": "string"
+      "success": boolean
     }
     ```
 
@@ -112,28 +114,15 @@ npm run start
   - **Response**:
     ```json
     {
+      "success": boolean,
       "token": "string",
-      "refreshToken": "string"
-    }
-    ```
-
-- **POST** `/auth/refresh`
-  - **Description**: Refreshes an expired JWT using a refresh token.
-  - **Request Body**:
-    ```json
-    {
-      "refreshToken": "string"
-    }
-    ```
-  - **Response**:
-    ```json
-    {
-      "token": "string"
+      "message": "string",
+      "id": "string" 
     }
     ```
 
 #### Token Properties
-- **GET** `/auth/id`
+- **GET** `/jwt/id`
   - **Description**: Retrieves the user's ID from the JWT.
   - **Response**:
     ```json
@@ -142,7 +131,7 @@ npm run start
     }
     ```
 
-- **GET** `/auth/username`
+- **GET** `/jwt/username`
   - **Description**: Retrieves the user's username from the JWT.
   - **Response**:
     ```json
@@ -151,7 +140,7 @@ npm run start
     }
     ```
 
-- **GET** `/auth/uuid`
+- **GET** `/jwt/uuid`
   - **Description**: Retrieves the user's UUID from the JWT.
   - **Response**:
     ```json
@@ -190,12 +179,16 @@ npm run start
   - **Request Body**:
     ```json
     {
-      "spotifyToken": "string"
+      "accessToken": "string",
+      "refreshToken": "string",
+      "expirationDate": Date,
+      "scope": string
     }
     ```
   - **Response**:
     ```json
     {
+      "success": boolean,
       "message": "Spotify information updated successfully."
     }
     ```
@@ -205,14 +198,17 @@ npm run start
   - **Request Body**:
     ```json
     {
-      "oldPassword": "string",
-      "newPassword": "string"
+      "password": "string",
+      "passwordConfirmation": "string"
     }
     ```
   - **Response**:
     ```json
     {
-      "message": "Password updated successfully."
+      "result": {
+         "success": boolean,
+         "message": "string"
+      }
     }
     ```
 
@@ -233,45 +229,28 @@ npm run start
   - **Request Body**:
     ```json
     {
-      "message": "string"
+      "payload": JSON
     }
     ```
   - **Response**:
-    ```json
-    {
-      "status": "success",
-      "clientsNotified": "number"
-    }
-    ```
+  
+   "OK"
 
 - **POST** `/websocket/send-message`
   - **Description**: Sends a direct message to a specific WebSocket client.
   - **Request Body**:
     ```json
     {
-      "clientId": "string",
-      "message": "string"
-    }
-    ```
-  - **Response**:
-    ```json
-    {
-      "status": "success",
-      "clientNotified": "boolean"
-    }
-    ```
-
-- **GET** `/websocket/all-clients`
-  - **Description**: Retrieves a list of all connected WebSocket clients.
-  - **Response**:
-    ```json
-    [
-      {
-        "clientId": "string",
-        "status": "string"
-      }
+      "payload": JSON,
+      "users": [
+        "uuid1",
+        "uuid2"
     ]
+    }
     ```
+  - **Response**:
+ 
+  "OK"
 
 #### Spotify Token Management
 - **GET** `/spotify/token/refresh/:refresh_token`
@@ -279,8 +258,10 @@ npm run start
   - **Response**:
     ```json
     {
-      "token": "string",
-      "expiresIn": "number"
+      "access_token": "string",
+      "refresh_token": "string", 
+      "expiresIn": "number",
+      "scope": "string
     }
     ```
 
@@ -291,7 +272,8 @@ npm run start
     {
       "token": "string",
       "refreshToken": "string",
-      "expiresIn": "number"
+      "expiresIn": "number",
+      "scope": "string"
     }
     ```
 
