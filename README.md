@@ -229,28 +229,34 @@ npm run start
   - **Request Body**:
     ```json
     {
-      "payload": JSON
+      "payload": {
+        "anything": object,
+        "you": object,
+        "want": boolean
+      }
     }
     ```
   - **Response**:
-  
-   "OK"
+    "OK"
 
 - **POST** `/websocket/send-message`
   - **Description**: Sends a direct message to a specific WebSocket client.
   - **Request Body**:
     ```json
     {
-      "payload": JSON,
+      "payload": {
+        "anything": object,
+        "you": object,
+        "want": boolean
+      }
       "users": [
         "uuid1",
         "uuid2"
-    ]
+      ]
     }
     ```
   - **Response**:
- 
-  "OK"
+    "OK"
 
 #### Spotify Token Management
 - **GET** `/spotify/token/refresh/:refresh_token`
@@ -261,7 +267,7 @@ npm run start
       "access_token": "string",
       "refresh_token": "string", 
       "expiresIn": "number",
-      "scope": "string
+      "scope": "string"
     }
     ```
 
