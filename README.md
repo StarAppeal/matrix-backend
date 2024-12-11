@@ -77,12 +77,12 @@ npm run start
 ## Endpoints
 
 ### WebSocket
-- **Path**: `/websocket`
+- **Path**: `/api/websocket`
 - **Function**: Enables real-time communication between clients and the server.
 
 ### REST API
 #### Authentication
-- **POST** `/auth/register`
+- **POST** `/api/auth/register`
   - **Description**: Registers a new user.
   - **Request Body**:
     ```json
@@ -102,7 +102,7 @@ npm run start
     }
     ```
 
-- **POST** `/auth/login`
+- **POST** `/api/auth/login`
   - **Description**: Logs in a user and generates a JWT.
   - **Request Body**:
     ```json
@@ -122,7 +122,7 @@ npm run start
     ```
 
 #### Token Properties
-- **GET** `/jwt/id`
+- **GET** `/api/jwt/id`
   - **Description**: Retrieves the user's ID from the JWT.
   - **Response**:
     ```json
@@ -131,7 +131,7 @@ npm run start
     }
     ```
 
-- **GET** `/jwt/username`
+- **GET** `/api/jwt/api/username`
   - **Description**: Retrieves the user's username from the JWT.
   - **Response**:
     ```json
@@ -140,7 +140,7 @@ npm run start
     }
     ```
 
-- **GET** `/jwt/uuid`
+- **GET** `/api/jwt/uuid`
   - **Description**: Retrieves the user's UUID from the JWT.
   - **Response**:
     ```json
@@ -150,7 +150,7 @@ npm run start
     ```
 
 #### User Management
-- **GET** `/user`
+- **GET** `/api/user`
   - **Description**: Lists all users.
   - **Response**:
     ```json
@@ -163,7 +163,7 @@ npm run start
     ]
     ```
 
-- **GET** `/user/me`
+- **GET** `/api/user/me`
   - **Description**: Retrieves details of the currently authenticated user.
   - **Response**:
     ```json
@@ -174,7 +174,7 @@ npm run start
     }
     ```
 
-- **PUT** `/user/me/spotify`
+- **PUT** `/api/user/me/api/spotify`
   - **Description**: Updates the user's Spotify information.
   - **Request Body**:
     ```json
@@ -193,7 +193,7 @@ npm run start
     }
     ```
 
-- **PUT** `/user/me/password`
+- **PUT** `/api/user/me/password`
   - **Description**: Updates the user's password.
   - **Request Body**:
     ```json
@@ -212,7 +212,7 @@ npm run start
     }
     ```
 
-- **GET** `/user/:id`
+- **GET** `/api/user/:id`
   - **Description**: Retrieves details of a specific user by ID.
   - **Response**:
     ```json
@@ -224,7 +224,7 @@ npm run start
     ```
 
 #### WebSocket Management
-- **POST** `/websocket/broadcast`
+- **POST** `/api/websocket/broadcast`
   - **Description**: Sends a broadcast message to all connected WebSocket clients.
   - **Request Body**:
     ```json
@@ -239,7 +239,7 @@ npm run start
   - **Response**:
     "OK"
 
-- **POST** `/websocket/send-message`
+- **POST** `/api/websocket/send-message`
   - **Description**: Sends a direct message to a specific WebSocket client.
   - **Request Body**:
     ```json
@@ -259,7 +259,7 @@ npm run start
     "OK"
 
 #### Spotify Token Management
-- **GET** `/spotify/token/refresh/:refresh_token`
+- **GET** `/api/spotify/token/refresh/:refresh_token`
   - **Description**: Refreshes a Spotify token using a provided refresh token.
   - **Response**:
     ```json
@@ -271,7 +271,7 @@ npm run start
     }
     ```
 
-- **GET** `/spotify/token/generate/code/:auth_code/redirect-uri/:redirect_uri`
+- **GET** `/api/spotify/token/generate/code/:auth_code/redirect-uri/:redirect_uri`
   - **Description**: Generates a Spotify token using an authorization code and redirect URI.
   - **Response**:
     ```json
