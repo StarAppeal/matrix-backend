@@ -295,7 +295,7 @@ npm run start
     }
     ```
 
-## Dependencies (Excerpt)
+## Dependencies
 - **Express**: Web server
 - **ws**: WebSocket support
 - **jsonwebtoken**: JWT processing
