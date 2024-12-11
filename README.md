@@ -98,7 +98,7 @@ npm run start
     ```json
     {
       "message": "string",
-      "success": Boolean
+      "success": true
     }
     ```
 
@@ -114,7 +114,7 @@ npm run start
   - **Response**:
     ```json
     {
-      "success": Boolean,
+      "success": true,
       "token": "string",
       "message": "string",
       "id": "string" 
@@ -188,7 +188,7 @@ npm run start
   - **Response**:
     ```json
     {
-      "success": Boolean,
+      "success": true,
       "message": "Spotify information updated successfully."
     }
     ```
@@ -206,7 +206,7 @@ npm run start
     ```json
     {
       "result": {
-         "success": Boolean,
+         "success": true,
          "message": "string"
       }
     }
@@ -232,7 +232,7 @@ npm run start
       "payload": {
         "anything": object,
         "you": object,
-        "want": Boolean
+        "want": true
       }
     }
     ```
@@ -247,7 +247,7 @@ npm run start
       "payload": {
         "anything": object,
         "you": object,
-        "want": Boolean
+        "want": true
       }
       "users": [
         "uuid1",
