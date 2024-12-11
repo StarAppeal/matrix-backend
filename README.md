@@ -2,6 +2,7 @@
 
 ## Project Overview
 The **Matrix-Backend** is a TypeScript-based server project that provides WebSocket communication, REST API endpoints, and integration with external services such as Spotify and OpenWeatherMap. It offers a modular and extensible architecture for various applications.
+
 **Matrix-Backend** serves as an interface between the user and the Raspberry Pi controller. It facilitates data exchange between various WebSocket clients and offers a RESTful API for managing user data and interactions.
 
 
