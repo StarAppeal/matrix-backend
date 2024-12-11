@@ -98,7 +98,7 @@ npm run start
     ```json
     {
       "message": "string",
-      "success": boolean
+      "success": Boolean
     }
     ```
 
@@ -114,7 +114,7 @@ npm run start
   - **Response**:
     ```json
     {
-      "success": boolean,
+      "success": Boolean,
       "token": "string",
       "message": "string",
       "id": "string" 
@@ -182,13 +182,13 @@ npm run start
       "accessToken": "string",
       "refreshToken": "string",
       "expirationDate": Date,
-      "scope": string
+      "scope": "string"
     }
     ```
   - **Response**:
     ```json
     {
-      "success": boolean,
+      "success": Boolean,
       "message": "Spotify information updated successfully."
     }
     ```
@@ -206,7 +206,7 @@ npm run start
     ```json
     {
       "result": {
-         "success": boolean,
+         "success": Boolean,
          "message": "string"
       }
     }
@@ -232,7 +232,7 @@ npm run start
       "payload": {
         "anything": object,
         "you": object,
-        "want": boolean
+        "want": Boolean
       }
     }
     ```
@@ -247,7 +247,7 @@ npm run start
       "payload": {
         "anything": object,
         "you": object,
-        "want": boolean
+        "want": Boolean
       }
       "users": [
         "uuid1",
