@@ -61,6 +61,10 @@ export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEvent {
             console.log("Token refreshed and database updated");
         }
         const musicData = await getCurrentlyPlaying(user.spotifyConfig!.accessToken);
+        if (!musicData) {
+            console.log("No music data found, maybe error from spotify, skipping this update");
+            return;
+        }
         console.log("Sending Spotify update");
         console.log(musicData);
 
