@@ -61,6 +61,8 @@ export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEvent {
             console.log("Token refreshed and database updated");
         }
         const musicData = await getCurrentlyPlaying(user.spotifyConfig!.accessToken);
+        console.log("Sending Spotify update");
+        console.log(musicData);
 
         this.ws.send(JSON.stringify({
             type: "SPOTIFY_UPDATE",
