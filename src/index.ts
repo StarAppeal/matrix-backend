@@ -33,7 +33,7 @@ app.use((_req, res, next) => {
 
 app.use(express.json({limit: "2mb"}));
 
-app.get("/healthz", (_req, res) => res.status(200).send({status: "ok"}));
+app.get("/api/healthz", (_req, res) => res.status(200).send({status: "ok"}));
 
 const server = app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
