@@ -1,34 +1,49 @@
 import express from "express";
 import {SpotifyTokenService} from "../db/services/spotifyTokenService";
-import {UserService} from "../db/services/db/UserService";
+import { asyncHandler } from "./middleware/asyncHandler";
+import { validateBody, v } from "./middleware/validate";
+import { ok, internalError } from "./utils/responses";
 
 export class SpotifyTokenGenerator {
+
+    private tokenService = new SpotifyTokenService();
 
     public createRouter() {
         const router = express.Router();
 
-        router.get("/token/refresh/:refresh_token", async (req, res) => {
-            const refreshToken = req.params.refresh_token;
+        router.post(
+            "/token/refresh",
+            validateBody({
+                refreshToken: { required: true, validator: v.isString({ nonEmpty: true }) },
+            }),
+            asyncHandler(async (req, res) => {
+                const { refreshToken } = req.body as { refreshToken: string };
 
-            const token = await new SpotifyTokenService().refreshToken(refreshToken);
+                const token = await this.tokenService.refreshToken(refreshToken);
 
-            res.status(200).send({token});
-        });
-
-        router.get(
-            "/token/generate/code/:auth_code/redirect-uri/:redirect_uri",
-            async (req, res) => {
-                const authCode = req.params.auth_code;
-                const redirectUri = req.params.redirect_uri;
-
-                const token = await new SpotifyTokenService().generateToken(
-                    authCode,
-                    redirectUri,
-                );
-
-                res.status(200).send({token});
-            },
+                return ok(res, { token });
+            })
         );
+
+
+        router.post(
+            "/token/generate",
+            validateBody({
+                authCode: { required: true, validator: v.isString({ nonEmpty: true }) },
+                redirectUri: { required: true, validator: v.isUrl() },
+            }),
+            asyncHandler(async (req, res) => {
+                const { authCode, redirectUri } = req.body as { authCode: string; redirectUri: string };
+
+                const token = await this.tokenService.generateToken(authCode, redirectUri);
+
+                return ok(res, { token });
+            })
+        );
+
+        router.use((err: any, _req: any, res: any, _next: any) => {
+            return internalError(res, "Failed to handle spotify token request");
+        });
 
         return router;
     }

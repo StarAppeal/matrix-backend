@@ -1,78 +1,89 @@
 import express from "express";
 import {UserService} from "../db/services/db/UserService";
 import {IUser} from "../db/models/user";
-import {ObjectId} from "mongodb";
 import {JwtAuthenticator} from "../utils/jwtAuthenticator";
-import crypto from "crypto"
+import crypto from "crypto";
 import {PasswordUtils} from "../utils/passwordUtils";
+import { asyncHandler } from "./middleware/asyncHandler";
+import { validateBody, v } from "./middleware/validate";
+import {ok, badRequest, unauthorized, created, conflict, notFound} from "./utils/responses";
 
 export class RestAuth {
     public createRouter() {
         const router = express.Router();
 
-        router.post("/register", async (req, res) => {
-            const username = req.body.username;
-            const timezone = req.body.timezone;
-            const location = req.body.location;
-            const password = req.body.password;
-            const userService = await UserService.create();
+        router.post(
+            "/register",
+            validateBody({
+                username: { required: true, validator: v.isString({ nonEmpty: true, min: 3 }) },
+                password: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
+                timezone: { required: true, validator: v.isString({ nonEmpty: true }) },
+                location: { required: true, validator: v.isString({ nonEmpty: true }) },
+            }),
+            asyncHandler(async (req, res) => {
+                const { username, password, timezone, location } = req.body as {
+                    username: string; password: string; timezone: string; location: string;
+                };
+                const userService = await UserService.create();
 
-            if (await userService.existsUserByName(username)) {
-                res.status(409).send({message: "Username already exists"});
-                return;
-            }
+                if (await userService.existsUserByName(username)) {
+                    return conflict(res, "Username already exists");
+                }
 
-            const passwordValidation = PasswordUtils.validatePassword(password);
+                const passwordValidation = PasswordUtils.validatePassword(password);
+                if (!passwordValidation.valid) {
+                    return badRequest(res, passwordValidation.message ?? "Invalid password");
+                }
 
-            if (!passwordValidation.valid) {
-                res.status(400).send({success: false, message: passwordValidation.message});
-                return;
-            }
+                const hashedPassword = await PasswordUtils.hashPassword(password);
+                const newUser: IUser = {
+                    name: username,
+                    password: hashedPassword,
+                    uuid: crypto.randomUUID(),
+                    config: {
+                        isVisible: false,
+                        isAdmin: false,
+                        canBeModified: false
+                    },
+                    timezone,
+                    location
+                };
 
-            const hashedPassword = await PasswordUtils.hashPassword(password);
-            const newUser: IUser = {
-                id: ObjectId.createFromTime(Date.now()),
-                name: username,
-                password: hashedPassword,
-                uuid: crypto.randomUUID(),
-                config: {
-                    isVisible: false,
-                    isAdmin: false,
-                    canBeModified: false
-                },
-                timezone,
-                location
-            };
-            const result = await userService.createUser(newUser);
-            res.status(201).send({success: true, user: result});
-        });
+                const result = await userService.createUser(newUser);
+                return created(res, {user: result });
+            })
+        );
 
-        router.post("/login", async (req, res) => {
-            const username = req.body.username;
-            const password = req.body.password;
-            const userService = await UserService.create();
-            const user = await userService.getUserByName(username);
+        router.post(
+            "/login",
+            validateBody({
+                username: { required: true, validator: v.isString({ nonEmpty: true }) },
+                password: { required: true, validator: v.isString({ nonEmpty: true }) },
+            }),
+            asyncHandler(async (req, res) => {
+                const { username, password } = req.body as { username: string; password: string };
+                const userService = await UserService.create();
+                const user = await userService.getUserAuthByName(username);
 
-            if (!user) {
-                res.status(404).send({success: false, message: "User not found", id: "username"});
-                return;
-            }
+                if (!user) {
+                    return notFound(res, "User not found");
+                }
 
-            const isValid = await PasswordUtils.comparePassword(password, user.password!);
+                const isValid = await PasswordUtils.comparePassword(password, user.password!);
+                if (!isValid) {
+                    return unauthorized(res, "Invalid password");
+                }
 
-            if (!isValid) {
-                res.status(401).send({success: false, message: "Invalid password", id: "password"});
-                return;
-            }
+                const jwtToken = new JwtAuthenticator(process.env.SECRET_KEY!)
+                    .generateToken({
+                        username: user.name,
+                        id: (user as any).id?.toString?.() ?? (user as any)._id?.toString?.(),
+                        uuid: user.uuid
+                    });
 
-            // generate JWT token here
-            const jwtToken = new JwtAuthenticator(
-                process.env.SECRET_KEY!,
-            ).generateToken({username: user.name, id: user.id.toString(), uuid: user.uuid});
-
-            res.status(200).send({success: true, token: jwtToken});
-        });
-
+                return ok(res, { token: jwtToken });
+            })
+        );
 
         return router;
     }
