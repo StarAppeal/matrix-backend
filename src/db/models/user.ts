@@ -50,7 +50,7 @@ export interface SpotifyConfig {
     scope: string;
 }
 
-const matrixStateSchema = new Schema<MatrixState>({
+const matrixStateSchema = new Schema({
     global: {
         mode: {type: String, enum: ['image', 'text', 'idle', 'music', 'clock'], default: 'idle'},
         brightness: {type: Number, min: 0, max: 100, default: 50},
@@ -89,20 +89,20 @@ const matrixStateSchema = new Schema<MatrixState>({
     },
 }, {_id: false});
 
-const spotifyConfigSchema = new Schema<SpotifyConfig>({
+const spotifyConfigSchema = new Schema({
     accessToken: {type: String},
     refreshToken: {type: String},
     expirationDate: {type: Date},
     scope: {type: String},
 }, {_id: false});
 
-const userConfigSchema = new Schema<UserConfig>({
+const userConfigSchema = new Schema({
     isVisible: {type: Boolean, required: true},
     canBeModified: {type: Boolean, required: true},
     isAdmin: {type: Boolean, required: true},
 }, {_id: false});
 
-const userSchema = new Schema<IUser>({
+const userSchema = new Schema({
     name: {type: String, required: true, index: true},
     password: {type: String, required: true, select: false},
     uuid: {type: String, required: true, unique: true, index: true},
@@ -114,18 +114,6 @@ const userSchema = new Schema<IUser>({
 }, {
     optimisticConcurrency: true,
     timestamps: true,
-    toJSON: {
-        transform(_doc, ret) {
-            delete ret.password;
-            return ret;
-        },
-    },
-    toObject: {
-        transform(_doc, ret) {
-            delete ret.password;
-            return ret;
-        },
-    },
 });
 
 userSchema.virtual("id").get(function (this: any) {
@@ -148,7 +136,6 @@ async function hashIfNeeded(next: Function, user: any) {
 }
 
 userSchema.pre("save", function (next) {
-    // @ts-ignore
     return hashIfNeeded(next, this);
 });
 
