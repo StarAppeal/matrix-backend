@@ -1,5 +1,6 @@
 import {IUser, SpotifyConfig, UserModel} from "../../models/user";
 import {connectToDatabase} from "./database.service";
+import {UpdateQuery} from "mongoose";
 
 export class UserService {
     private static _instance: UserService;
@@ -23,20 +24,29 @@ export class UserService {
     }
 
     public async updateUser(user: IUser): Promise<IUser | null> {
-        const {id, ...rest} = user;
-        return this.updateUserById(id.toString(), rest);
+        const anyUser = user as any;
+        const targetId: string | undefined = anyUser?.id?.toString?.() ?? anyUser?._id?.toString?.();
+
+        if (!targetId) {
+            throw new Error("updateUser requires user.id or user._id");
+        }
+
+        const { id, _id, ...rest } = anyUser;
+
+        return this.updateUserById(targetId, rest as Partial<IUser>);
     }
 
+
     public async getAllUsers(): Promise<IUser[]> {
-        return await UserModel.find({}, {password: 0, spotifyConfig: 0, lastState: 0}).exec();
+        return await UserModel.find({}, {spotifyConfig: 0, lastState: 0}).exec();
     }
 
     public async getUserById(id: string): Promise<IUser | null> {
-        return await UserModel.findById(id, {password: 0}).exec();
+        return await UserModel.findById(id).exec();
     }
 
     public async getUserByUUID(uuid: string): Promise<IUser | null> {
-        return await UserModel.findOne({uuid}, {password: 0}).exec();
+        return await UserModel.findOne({uuid}).exec();
     }
 
     public async getUserByName(name: string): Promise<IUser | null> {
@@ -44,6 +54,14 @@ export class UserService {
             .collation({locale: "en", strength: 2})
             .exec();
     }
+
+    public async getUserAuthByName(name: string): Promise<IUser | null> {
+        return await UserModel.findOne({name})
+            .collation({locale: "en", strength: 2})
+            .select("+password")
+            .exec();
+    }
+
 
     public async getSpotifyConfigByUUID(uuid: string): Promise<SpotifyConfig | undefined> {
         return await UserModel.findOne({uuid}, {spotifyConfig: 1}).exec().then(user => user?.spotifyConfig);
@@ -59,5 +77,14 @@ export class UserService {
     public async existsUserByName(name: string): Promise<boolean> {
         return !!(await UserModel.findOne({name}).exec());
     }
+
+    public async clearSpotifyConfigByUUID(uuid: string): Promise<IUser | null> {
+        return await UserModel.findOneAndUpdate(
+            { uuid },
+            { $unset: { spotifyConfig: 1 } } as UpdateQuery<IUser>,
+            { new: true, projection: { password: 0 } }
+        ).exec();
+    }
+
 
 }

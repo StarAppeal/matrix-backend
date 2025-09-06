@@ -1,44 +1,64 @@
-import express, { Request, Response, Router } from "express";
+import express, { Router, Request, Response } from "express";
 import { ExtendedWebSocketServer } from "../websocket";
-import { DecodedToken } from "../interfaces/decodedToken";
+import { asyncHandler } from "./middleware/asyncHandler";
+import { validateBody, v } from "./middleware/validate";
+import { ok } from "./utils/responses";
+import {ExtendedWebSocket} from "../interfaces/extendedWebsocket";
 
 export class RestWebSocket {
-  constructor(private webSocketServer: ExtendedWebSocketServer) {}
+    constructor(private webSocketServer: ExtendedWebSocketServer) {}
 
-  public createRouter(): Router {
-    const router = express.Router();
+    public createRouter(): Router {
+        const router = express.Router();
 
-    router.post("/broadcast", (req: Request, res: Response) => {
-      const payload: string = JSON.stringify(req.body.payload);
+        router.post(
+            "/broadcast",
+            validateBody({
+                payload: {
+                    required: true,
+                    // allow any json
+                    validator: (_: unknown) => true,
+                },
+            }),
+            asyncHandler(async (req: Request, res: Response) => {
+                const payload: string = JSON.stringify(req.body.payload);
+                this.webSocketServer.broadcast(payload);
+                return ok(res, { status: "OK" });
+            })
+        );
 
-      this.webSocketServer.broadcast(payload);
+        router.post(
+            "/send-message",
+            validateBody({
+                payload: {
+                    required: true,
+                    validator: (_: unknown) => true,
+                },
+                users: {
+                    required: true,
+                    validator: (value: any) =>
+                        Array.isArray(value) && value.length > 0 && value.every((s) => typeof s === "string" && s.trim().length > 0)
+                            ? true
+                            : "must be a non-empty array of strings",
+                },
+            }),
+            asyncHandler(async (req: Request, res: Response) => {
+                const payload = JSON.stringify(req.body.payload);
+                const users: Array<string> = req.body.users;
 
-      res.status(200).send("OK");
-    });
+                users.forEach((user) => this.webSocketServer.sendMessageToUser(user, payload));
 
-    router.post("/send-message", (req, res) => {
-      const payload = JSON.stringify(req.body.payload);
-      const users: Array<string> = req.body.users;
+                return ok(res, { status: "OK" });
+            })
+        );
 
-      users.forEach((user) =>
-        this.webSocketServer.sendMessageToUser(user, payload),
-      );
+        router.get("/all-clients", asyncHandler(async (_req: Request, res: Response) => {
+            const connectedClients = this.webSocketServer.getConnectedClients();
+            const result = Array.from(connectedClients).map((client: ExtendedWebSocket) => client.payload);
+            return ok(res, { result });
+        }));
 
-      res.status(200).send("OK");
-    });
 
-    router.get("/all-clients", (req, res) => {
-      const connectedClients = this.webSocketServer.getConnectedClients();
-
-      const result: Array<DecodedToken> = [];
-
-      connectedClients.forEach((client) => result.push(client.payload));
-
-      console.log("Connected clients:", result);
-
-      res.status(200).send({ result });
-    });
-
-    return router;
-  }
+        return router;
+    }
 }

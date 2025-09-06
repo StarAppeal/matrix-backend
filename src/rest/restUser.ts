@@ -1,76 +1,115 @@
 import express from "express";
 import {UserService} from "../db/services/db/UserService";
 import {PasswordUtils} from "../utils/passwordUtils";
+import {asyncHandler} from "./middleware/asyncHandler";
+import {v, validateBody, validateParams} from "./middleware/validate";
+import {badRequest, ok} from "./utils/responses";
 
 export class RestUser {
     public createRouter() {
         const router = express.Router();
 
-        router.get("/", async (req, res) => {
+        router.get("/", asyncHandler(async (_req, res) => {
             const userService = await UserService.create();
             const users = await userService.getAllUsers();
-            res.status(200).send({users});
-        });
+            return ok(res, { users });
+        }));
 
-        router.get("/me", async (req, res) => {
+        router.get("/me", asyncHandler(async (req, res) => {
             const userService = await UserService.create();
             const user = await userService.getUserByUUID(req.payload.uuid);
-            res.status(200).send(user);
-        });
+            return ok(res, user);
+        }));
 
-        router.put("/me/spotify", async (req, res) => {
+        router.put(
+            "/me/spotify",
+            validateBody({
+                accessToken: { required: true, validator: v.isString({ nonEmpty: true }) },
+                refreshToken: { required: true, validator: v.isString({ nonEmpty: true }) },
+                scope: { required: true, validator: v.isString({ nonEmpty: true }) },
+                expirationDate: { required: true, validator: v.isString({ nonEmpty: true }) },
+            }),
+            asyncHandler(async (req, res) => {
+                const userService = await UserService.create();
+                const user = await userService.getUserByUUID(req.payload.uuid);
+                if (!user) {
+                    return badRequest(res, "User not found");
+                }
+
+                const { accessToken, refreshToken, scope, expirationDate } = req.body as {
+                    accessToken: string; refreshToken: string; scope: string; expirationDate: string;
+                };
+
+                user.spotifyConfig = {
+                    accessToken,
+                    refreshToken,
+                    scope,
+                    expirationDate: new Date(expirationDate),
+                };
+
+                await userService.updateUser(user);
+                return ok(res, { message: "Spotify Config erfolgreich geändert" });
+            })
+        );
+
+        router.delete("/me/spotify", asyncHandler(async (req, res) => {
             const userService = await UserService.create();
             const user = await userService.getUserByUUID(req.payload.uuid);
-            user!.spotifyConfig = req.body;
-            userService.updateUser(user!)
-                .then(() => {
-                    res.status(200).send({result: {success: true, message: "Spotify Config erfolgreich geändert"}});
-                });
-        });
-
-        router.put("/me/password", async (req, res) => {
-            const userService = await UserService.create();
-            const user = await userService.getUserByUUID(req.payload.uuid);
-            const password = req.body.password;
-            const passwordConfirmation = req.body.passwordConfirmation;
-
-            if (password !== passwordConfirmation) {
-                res.status(400).send({
-                    result: {
-                        success: false,
-                        message: "Passwörter stimmen nicht überein"
-                    }
-                });
-                return;
+            if (!user) {
+                return badRequest(res, "User not found");
             }
 
-            const passwordValidation = PasswordUtils.validatePassword(password);
+            const updated = await userService.clearSpotifyConfigByUUID(req.payload.uuid);
+            return ok(res, { user: updated });
+        }));
 
-            if (!passwordValidation.valid) {
-                res.status(400).send({result: passwordValidation});
-                return;
-            }
+        router.put(
+            "/me/password",
+            validateBody({
+                password: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
+                passwordConfirmation: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
+            }),
+            asyncHandler(async (req, res) => {
+                const userService = await UserService.create();
+                const user = await userService.getUserByUUID(req.payload.uuid);
+                if (!user) {
+                    return badRequest(res, "User not found");
+                }
 
-            PasswordUtils.hashPassword(password).then(hashedPassword => {
-                user!.password = hashedPassword;
-                userService.updateUser(user!)
-                    .then(() => {
-                        res.status(200).send({result: {success: true, message: "Passwort erfolgreich geändert"}});
-                    });
-            });
-        });
+                const { password, passwordConfirmation } = req.body as { password: string; passwordConfirmation: string };
 
-        router.get("/:id", async (req, res) => {
-            const userService = await UserService.create();
-            const id = req.params.id;
-            const user = await userService.getUserById(id);
+                if (password !== passwordConfirmation) {
+                    return badRequest(res, "Passwörter stimmen nicht überein");
+                }
 
-            user
-                ? res.status(200).send(user)
-                : res
-                    .status(404)
-                    .send(`Unable to find matching document with id: ${req.params.id}`);
-        });
+                const passwordValidation = PasswordUtils.validatePassword(password);
+                if (!passwordValidation.valid) {
+                    return badRequest(res, passwordValidation.message ?? "Ungültiges Passwort");
+                }
+
+                user.password = await PasswordUtils.hashPassword(password);
+
+                await userService.updateUser(user);
+                return ok(res, { message: "Passwort erfolgreich geändert" });
+            })
+        );
+
+        router.get(
+            "/:id",
+            validateParams({
+                id: { required: true, validator: v.isString({ nonEmpty: true }) },
+            }),
+            asyncHandler(async (req, res) => {
+                const userService = await UserService.create();
+                const id = req.params.id;
+                const user = await userService.getUserById(id);
+
+                if (!user) {
+                    return badRequest(res, `Unable to find matching document with id: ${id}`);
+                }
+                return ok(res, user);
+            })
+        );
 
         return router;
     }

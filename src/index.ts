@@ -7,18 +7,37 @@ import {JwtTokenPropertiesExtractor} from "./rest/jwtTokenPropertiesExtractor";
 import cors from "cors";
 import {SpotifyTokenGenerator} from "./rest/spotifyTokenGenerator";
 import {RestAuth} from "./rest/auth";
+import { config } from "./config";
+import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = config.port;
+
+app.set("trust proxy", 1);
+
+app.use(cors({
+    origin: config.cors.origin,
+    credentials: config.cors.credentials,
+}));
+
+app.use((_req, res, next) => {
+    res.set({
+        "X-DNS-Prefetch-Control": "off",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "geolocation=()",
+    });
+    next();
+});
+
+app.use(express.json({limit: "2mb"}));
+
+app.get("/healthz", (_req, res) => res.status(200).send({status: "ok"}));
+
 const server = app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
-app.use(cors({
-    origin: process.env.FRONTEND_URL,
-}));
-
-
-app.use(express.json({limit: "15mb"}));
 
 const webSocketServer = new ExtendedWebSocketServer(server);
 const restWebSocket = new RestWebSocket(webSocketServer);
@@ -27,6 +46,10 @@ const auth = new RestAuth();
 const jwtTokenPropertiesExtractor = new JwtTokenPropertiesExtractor();
 const spotify = new SpotifyTokenGenerator();
 
+app.use("/api/auth", authLimiter, auth.createRouter());
+
+app.use("/api/spotify", authenticateJwt, spotifyLimiter, spotify.createRouter());
+
 app.use("/api/websocket", authenticateJwt, restWebSocket.createRouter());
 app.use("/api/user", authenticateJwt, restUser.createRouter());
 app.use(
@@ -34,6 +57,17 @@ app.use(
     authenticateJwt,
     jwtTokenPropertiesExtractor.createRouter(),
 );
-app.use("/api/spotify", authenticateJwt, spotify.createRouter());
 
-app.use("/api/auth", auth.createRouter());
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error(err);
+    res
+      .status(err?.status || 500)
+      .send({ ok: false, data: {}, error: err?.message || "Internal Server Error" });
+});
+
+process.on("SIGTERM", () => {
+    server.close(() => {
+        console.log("HTTP server closed");
+        process.exit(0);
+    });
+});
