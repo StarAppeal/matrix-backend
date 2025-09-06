@@ -116,11 +116,14 @@ describe("validateBody Middleware", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: "Validation failed",
-        details: expect.arrayContaining([
-          "name must be a non-empty string",
-          "age must be >= 0",
-        ]),
+          ok: false,
+          data: {
+              message: "Validation failed",
+              details: expect.arrayContaining([
+                  "name must be a non-empty string",
+                  "age must be >= 0",
+              ]),
+          }
       })
     );
   });
@@ -137,8 +140,11 @@ describe("validateBody Middleware", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        error: "Validation failed",
-        details: expect.arrayContaining(["name is required"]),
+          ok: false,
+          data: {
+              message: "Validation failed",
+              details: expect.arrayContaining(["name is required"]),
+          }
       })
     );
   });
