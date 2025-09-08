@@ -21,7 +21,6 @@ export class GetWeatherUpdatesEvent extends CustomWebsocketEvent {
             this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
         }, 1000 * 60));
 
-
     }
 }
 
