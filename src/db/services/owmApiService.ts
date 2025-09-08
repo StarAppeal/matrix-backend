@@ -1,11 +1,15 @@
 import OpenWeatherAPI from "openweather-api-node"
 
-const weather = new OpenWeatherAPI({
-    key: process.env.OWM_API_KEY,
-});
+
+
+function getWeatherInstance(): OpenWeatherAPI {
+    return  new OpenWeatherAPI({
+        key: process.env.OWM_API_KEY,
+    });
+}
 
 export async function getCurrentWeather(location: string) {
-    return weather.getCurrent({
+    return getWeatherInstance().getCurrent({
         locationName: location,
         units: "metric"
     });
