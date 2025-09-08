@@ -38,5 +38,7 @@ describe("RateLimit", () => {
 
         const res = await request(app).get("/spotify-test");
         expect(res.status).toBe(429);
+
+        expect(res.headers["ratelimit-policy"]).toBeTruthy();
     });
 });

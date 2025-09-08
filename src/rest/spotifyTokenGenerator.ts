@@ -25,7 +25,6 @@ export class SpotifyTokenGenerator {
             })
         );
 
-
         router.post(
             "/token/generate",
             validateBody({
