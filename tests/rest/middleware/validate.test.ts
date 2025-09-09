@@ -67,6 +67,19 @@ describe("v.isArrayLength", () => {
   });
 });
 
+describe("v.isObject", () => {
+    it("accepts objects", () => {
+        expect(v.isObject()({})).toBe(true);
+        expect(v.isObject()({ a: 1 })).toBe(true);
+        expect(v.isObject()("not object")).toBe("must be an object");
+    });
+
+    it("forces nonEmpty", () => {
+        expect(v.isObject({ nonEmpty: true })({})).toBe("must be a non-empty object");
+        expect(v.isObject({ nonEmpty: true })({ a: 1 })).toBe(true);
+    });
+});
+
 describe("v.isUrl", () => {
   it("accepts valid urls", () => {
     expect(v.isUrl()("https://example.com")).toBe(true);

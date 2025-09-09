@@ -84,7 +84,7 @@ export class RestUser {
 
                 const passwordValidation = PasswordUtils.validatePassword(password);
                 if (!passwordValidation.valid) {
-                    return badRequest(res, passwordValidation.message ?? "Ungültiges Passwort");
+                    return badRequest(res, passwordValidation.message ?? "Invalid password");
                 }
 
                 user.password = await PasswordUtils.hashPassword(password);

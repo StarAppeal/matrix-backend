@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from "express";
 import { ExtendedWebSocketServer } from "../websocket";
 import { asyncHandler } from "./middleware/asyncHandler";
-import { validateBody, v } from "./middleware/validate";
+import {v, validateBody} from "./middleware/validate";
 import { ok } from "./utils/responses";
 import {ExtendedWebSocket} from "../interfaces/extendedWebsocket";
 
@@ -16,8 +16,7 @@ export class RestWebSocket {
             validateBody({
                 payload: {
                     required: true,
-                    // allow any json
-                    validator: (_: unknown) => true,
+                    validator: v.isObject({ nonEmpty: true }),
                 },
             }),
             asyncHandler(async (req: Request, res: Response) => {
@@ -32,7 +31,7 @@ export class RestWebSocket {
             validateBody({
                 payload: {
                     required: true,
-                    validator: (_: unknown) => true,
+                    validator: v.isObject({ nonEmpty: true }),
                 },
                 users: {
                     required: true,

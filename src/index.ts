@@ -71,3 +71,6 @@ process.on("SIGTERM", () => {
         process.exit(0);
     });
 });
+
+// Export the app for testing purposes
+export default app; // optional
