@@ -66,6 +66,13 @@ export const v = {
   isArrayLength: (len: number): Validator => {
     return (value: any) => (Array.isArray(value) && value.length === len ? true : `must be an array of length ${len}`);
   },
+  isObject: (opts?: { nonEmpty?: boolean }): Validator => {
+    return (value: any) => {
+      if (typeof value !== "object" || value === null) return "must be an object";
+      if (opts?.nonEmpty && Object.keys(value).length === 0) return "must be a non-empty object";
+      return true;
+    };
+  },
   isUrl: (): Validator => {
     return (value: any) => {
       if (typeof value !== "string") return "must be a string URL";
