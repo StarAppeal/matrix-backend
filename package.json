@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start dist/src/index.js --name 'matrix-backend'",
-    "start-local": "tsc && cross-env NODE_ENV=development node dist/src/index.js",
+    "start": "tsc && cross-env NODE_ENV=development node dist/src/index.js",
     "clean": "rimraf dist",
     "build": "npm run clean & tsc",
     "test": "vitest run",
