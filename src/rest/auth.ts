@@ -81,7 +81,22 @@ export class RestAuth {
                         uuid: user.uuid
                     });
 
+                res.cookie('auth-token', jwtToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    maxAge: 24 * 60 * 60 * 1000
+                });
+
                 return ok(res, { token: jwtToken });
+            })
+        );
+
+        router.post(
+            "/logout",
+            asyncHandler(async (req, res) => {
+                res.clearCookie('auth-token');
+                return ok(res, { message: "Successfully logged out" });
             })
         );
 
