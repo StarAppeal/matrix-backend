@@ -8,12 +8,15 @@ import cors from "cors";
 import {SpotifyTokenGenerator} from "./rest/spotifyTokenGenerator";
 import {RestAuth} from "./rest/auth";
 import { config } from "./config";
+import cookieParser from 'cookie-parser';
 import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
+import {cookieJwtAuth} from "./rest/middleware/cookieAuth";
 
 const app = express();
 const port = config.port;
 
 app.set("trust proxy", 1);
+app.use(cookieParser());
 
 app.use(cors({
     origin: config.cors.origin,
@@ -48,6 +51,7 @@ const spotify = new SpotifyTokenGenerator();
 
 app.use("/api/auth", authLimiter, auth.createRouter());
 
+app.use(cookieJwtAuth);
 app.use("/api/spotify", authenticateJwt, spotifyLimiter, spotify.createRouter());
 
 app.use("/api/websocket", authenticateJwt, restWebSocket.createRouter());
