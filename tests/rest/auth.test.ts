@@ -103,6 +103,8 @@ describe("RestAuth", () => {
             const response = await request(app).post("/auth/register").send(validRegistrationData).expect(409);
             expect(response.body.ok).toBe(false);
             expect(response.body.data.message).toBe("Username already exists");
+            expect(response.body.data.details.field).toBe("username");
+            expect(response.body.data.details.code).toBe("USERNAME_TAKEN");
         });
 
         it("should return bad request for invalid password", async () => {
@@ -115,6 +117,9 @@ describe("RestAuth", () => {
             expect(response.body.ok).toBe(false);
             expect(response.body.data.message).toBe("Password is not valid.");
             expect(mockPasswordUtils.hashPassword).not.toHaveBeenCalled();
+            expect(response.body.data.details.field).toBe("password");
+            expect(response.body.data.details.code).toBe("INVALID_PASSWORD_FORMAT");
+
         });
 
         it.each([
@@ -221,6 +226,9 @@ describe("RestAuth", () => {
                 const response = await request(app).post("/auth/login").send(validLoginData).expect(404);
                 expect(response.body.ok).toBe(false);
                 expect(response.body.data.message).toBe("User not found");
+                expect(response.body.data.details.field).toBe("username")
+                expect(response.body.data.details.code).toBe("INVALID_USER")
+
             });
 
             it("should return unauthorized for invalid password", async () => {
@@ -230,6 +238,8 @@ describe("RestAuth", () => {
                 const response = await request(app).post("/auth/login").send(validLoginData).expect(401);
                 expect(response.body.ok).toBe(false);
                 expect(response.body.data.message).toBe("Invalid password");
+                expect(response.body.data.details.field).toBe("password")
+                expect(response.body.data.details.code).toBe("INVALID_PASSWORD")
             });
 
             it.each([
