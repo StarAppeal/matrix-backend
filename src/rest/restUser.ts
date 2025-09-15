@@ -4,12 +4,13 @@ import {PasswordUtils} from "../utils/passwordUtils";
 import {asyncHandler} from "./middleware/asyncHandler";
 import {v, validateBody, validateParams} from "./middleware/validate";
 import {badRequest, ok} from "./utils/responses";
+import {isAdmin} from "./middleware/isAdmin";
 
 export class RestUser {
     public createRouter() {
         const router = express.Router();
 
-        router.get("/", asyncHandler(async (_req, res) => {
+        router.get("/",isAdmin,  asyncHandler(async (_req, res) => {
             const userService = await UserService.create();
             const users = await userService.getAllUsers();
             return ok(res, { users });
@@ -99,6 +100,7 @@ export class RestUser {
             validateParams({
                 id: { required: true, validator: v.isString({ nonEmpty: true }) },
             }),
+            isAdmin,
             asyncHandler(async (req, res) => {
                 const userService = await UserService.create();
                 const id = req.params.id;

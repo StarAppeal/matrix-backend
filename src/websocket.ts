@@ -69,8 +69,8 @@ export class ExtendedWebSocketServer {
 
             // send initial state and settings
             // think about emitting the data needed directly to the event Handler
-            ws.emit(WebsocketEventType.GET_STATE, {});
             ws.emit(WebsocketEventType.GET_SETTINGS, {});
+            ws.emit(WebsocketEventType.GET_STATE, {});
 
             // initiate update user event
             ws.emit(WebsocketEventType.UPDATE_USER, {});
