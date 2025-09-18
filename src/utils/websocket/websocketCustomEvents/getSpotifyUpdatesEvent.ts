@@ -49,14 +49,14 @@ export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService
             console.log("Token expired");
 
             const token = await new SpotifyTokenService().refreshToken(spotifyConfig.refreshToken);
-            user.spotifyConfig = {
+            const newSpotifyConfig = {
                 // use old refresh token because you don't get a new one
                 refreshToken: user.spotifyConfig!.refreshToken,
                 accessToken: token.access_token,
                 expirationDate: new Date(Date.now() + token.expires_in * 1000),
                 scope: token.scope,
             };
-            await this.userService.updateUser(user);
+            await this.userService.updateUserById(user.id, {spotifyConfig: newSpotifyConfig});
             console.log("Token refreshed and database updated");
         }
         const musicData = await getCurrentlyPlaying(user.spotifyConfig!.accessToken);

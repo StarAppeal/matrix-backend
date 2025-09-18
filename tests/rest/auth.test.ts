@@ -202,23 +202,6 @@ describe("RestAuth", () => {
                 expect(authTokenCookie).toContain("Expires=Thu, 01 Jan 1970 00:00:00 GMT");
             });
 
-            it("should handle user with _id instead of id", async () => {
-                const mockUser = {name: "testuser", password: "hashed", uuid: "uuid-123", _id: "user-id-123"};
-                const mockToken = "jwt-token-123";
-
-                mockUserService.getUserAuthByName.mockResolvedValue(mockUser);
-                mockPasswordUtils.comparePassword.mockResolvedValue(true);
-                mockJwtAuthenticator.generateToken.mockReturnValue(mockToken);
-
-                await request(app).post("/auth/login").send(validLoginData).expect(200);
-
-                expect(mockJwtAuthenticator.generateToken).toHaveBeenCalledWith({
-                    username: "testuser",
-                    id: "user-id-123",
-                    uuid: "uuid-123",
-                });
-            });
-
             it("should return not found when user does not exist", async () => {
                 mockUserService.getUserAuthByName.mockResolvedValue(null);
                 const response = await request(app).post("/auth/login").send(validLoginData).expect(404);

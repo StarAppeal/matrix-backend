@@ -1,9 +1,8 @@
 import "dotenv/config";
-import mongoose, {Schema} from "mongoose";
-import bcrypt from "bcrypt";
+import mongoose, {Schema, Document} from "mongoose";
 import {PasswordUtils} from "../../utils/passwordUtils";
 
-export interface IUser {
+export interface IUser extends Document {
     name: string;
     password?: string;
     uuid: string;
@@ -148,8 +147,7 @@ userSchema.pre("findOneAndUpdate", async function (next) {
     if (isBcryptHash(newPassword)) return next();
 
     try {
-        const saltRounds = 10;
-        const hashed = await bcrypt.hash(newPassword, saltRounds);
+        const hashed = await PasswordUtils.hashPassword(newPassword);
         if (update.password) update.password = hashed;
         if (update.$set?.password) update.$set.password = hashed;
         return next();

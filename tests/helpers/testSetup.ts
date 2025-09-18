@@ -49,7 +49,6 @@ export const createMockUserService = () => ({
     getAllUsers: vi.fn(),
     getUserByUUID: vi.fn(),
     getUserById: vi.fn(),
-    updateUser: vi.fn(),
     updateUserById: vi.fn(),
     getUserByName: vi.fn(),
     getSpotifyConfigByUUID: vi.fn(),

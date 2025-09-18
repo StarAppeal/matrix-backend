@@ -73,7 +73,7 @@ describe("RestUser", () => {
             };
 
             mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
-            mockedUserService.updateUser.mockResolvedValue(mockUser);
+            mockedUserService.updateUserById.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
                 .put("/user/me/spotify")
@@ -82,8 +82,8 @@ describe("RestUser", () => {
 
             expect(response.body.data.message).toBe("Spotify Config erfolgreich geändert");
             expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
-            expect(mockedUserService.updateUser).toHaveBeenCalledWith({
-                ...mockUser,
+            expect(mockedUserService.updateUserById).toHaveBeenCalledWith(
+                mockUser.id, {
                 spotifyConfig: {
                     accessToken: "access-token-123",
                     refreshToken: "refresh-token-123",
@@ -219,7 +219,7 @@ describe("RestUser", () => {
             mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
             vi.mocked(PasswordUtils.validatePassword).mockReturnValue({valid: true});
             vi.mocked(PasswordUtils.hashPassword).mockResolvedValue("new-hashed-password");
-            mockedUserService.updateUser.mockResolvedValue(mockUser);
+            mockedUserService.updateUserById.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
                 .put("/user/me/password")
@@ -229,8 +229,8 @@ describe("RestUser", () => {
             expect(response.body.data.message).toBe("Passwort erfolgreich geändert");
             expect(PasswordUtils.validatePassword).toHaveBeenCalledWith("newpassword123");
             expect(PasswordUtils.hashPassword).toHaveBeenCalledWith("newpassword123");
-            expect(mockedUserService.updateUser).toHaveBeenCalledWith({
-                ...mockUser,
+            expect(mockedUserService.updateUserById).toHaveBeenCalledWith(
+                mockUser.id, {
                 password: "new-hashed-password"
             });
         });

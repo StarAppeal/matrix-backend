@@ -7,6 +7,7 @@ import {PasswordUtils} from "../utils/passwordUtils";
 import {asyncHandler} from "./middleware/asyncHandler";
 import {validateBody, v} from "./middleware/validate";
 import {ok, badRequest, unauthorized, created, conflict, notFound} from "./utils/responses";
+import {Document} from "mongoose";
 
 export class RestAuth {
     private readonly userService: UserService;
@@ -44,7 +45,7 @@ export class RestAuth {
                 }
 
                 const hashedPassword = await PasswordUtils.hashPassword(password);
-                const newUser: IUser = {
+                const newUser: Omit<IUser, keyof Document> = {
                     name: username,
                     password: hashedPassword,
                     uuid: crypto.randomUUID(),
@@ -84,7 +85,7 @@ export class RestAuth {
                 const jwtToken = new JwtAuthenticator(process.env.SECRET_KEY!)
                     .generateToken({
                         username: user.name,
-                        id: (user as any).id?.toString?.() ?? (user as any)._id?.toString?.(),
+                        id: user.id,
                         uuid: user.uuid
                     });
 
