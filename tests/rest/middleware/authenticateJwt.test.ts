@@ -2,24 +2,25 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vi
 import { Request, Response, NextFunction } from "express";
 
 import { authenticateJwt } from "../../../src/rest/middleware/authenticateJwt";
-import { JwtAuthenticator } from "../../../src/utils/jwtAuthenticator";
 import { createMockJwtAuthenticator } from "../../helpers/testSetup";
 
 vi.mock("../../../src/utils/jwtAuthenticator");
+
 
 describe("authenticateJwt middleware", () => {
     let mockJwtInstance: ReturnType<typeof createMockJwtAuthenticator>;
     let req: Mocked<Request>;
     let res: Mocked<Response>;
     let next: Mocked<NextFunction>;
+    let _authenticateJwt: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.stubEnv('SECRET_KEY', 'test-secret-key');
 
         mockJwtInstance = createMockJwtAuthenticator();
 
-        vi.mocked(JwtAuthenticator).mockImplementation(() => mockJwtInstance as any);
+        // @ts-ignore
+        _authenticateJwt = authenticateJwt(mockJwtInstance);
 
         req = { headers: {} } as Mocked<Request>;
         res = {
@@ -39,9 +40,8 @@ describe("authenticateJwt middleware", () => {
             req.headers.authorization = "Bearer valid-jwt-token";
             mockJwtInstance.verifyToken.mockReturnValue(mockPayload);
 
-            authenticateJwt(req, res, next);
+            _authenticateJwt(req, res, next);
 
-            expect(vi.mocked(JwtAuthenticator)).toHaveBeenCalledWith("test-secret-key");
             expect(mockJwtInstance.verifyToken).toHaveBeenCalledWith("valid-jwt-token");
             expect(req.payload).toEqual(mockPayload);
             expect(next).toHaveBeenCalledOnce();
@@ -51,19 +51,25 @@ describe("authenticateJwt middleware", () => {
 
     describe("Failure Scenarios", () => {
         it.each([
-            { description: "no authorization header", authHeader: undefined, expectedToken: undefined },
-            { description: "empty authorization header", authHeader: "", expectedToken: "" },
-            { description: "header with only 'Bearer '", authHeader: "Bearer ", expectedToken: "" },
-            { description: "an invalid/expired token", authHeader: "Bearer invalid-token", expectedToken: "invalid-token" },
-        ])("should return 401 Unauthorized when there is $description", ({ authHeader, expectedToken }) => {
+            { description: "no authorization header", authHeader: undefined, errorMessage: "Unauthorized: No Authorization header provided" },
+            { description: "empty authorization header", authHeader: "", errorMessage: "Unauthorized: No Authorization header provided" },
+            { description: "header with only 'Bearer '", authHeader: "Bearer ", errorMessage: "Unauthorized: Token is missing" },
+            { description: "an invalid/expired token", authHeader: "Bearer invalid-token", errorMessage: "Unauthorized: Invalid token", callVerifyToken: true },
+        ])("should return 401 Unauthorized when there is $description", ({ authHeader, errorMessage, callVerifyToken }) => {
             req.headers.authorization = authHeader;
-            mockJwtInstance.verifyToken.mockReturnValue(null); // Alle Fehlerfälle führen zu null
+            mockJwtInstance.verifyToken.mockReturnValue(null);
 
-            authenticateJwt(req, res, next);
+            _authenticateJwt(req, res, next);
 
-            expect(mockJwtInstance.verifyToken).toHaveBeenCalledWith(expectedToken);
+            const expected = { ok: false, data: {details: undefined, message: errorMessage}}
+
+            if (!callVerifyToken) {
+                expect(mockJwtInstance.verifyToken).not.toHaveBeenCalled();
+            } else {
+                expect(mockJwtInstance.verifyToken).toHaveBeenCalled();
+            }
             expect(res.status).toHaveBeenCalledWith(401);
-            expect(res.send).toHaveBeenCalledWith("Unauthorized");
+            expect(res.send).toHaveBeenCalledWith(expected);
             expect(next).not.toHaveBeenCalled();
         });
     });
