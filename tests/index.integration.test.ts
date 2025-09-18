@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
 import request from "supertest";
-import express from "express";
+import express, {Router} from "express";
 import http from "http";
 import { authLimiter } from "../src/rest/middleware/rateLimit";
 
@@ -26,6 +26,30 @@ vi.mock("../src/rest/middleware/rateLimit", async (importOriginal) => {
         authLimiter: vi.fn((req, res, next) => next()),
         spotifyLimiter: vi.fn((req, res, next) => next()),
     };
+});
+
+// feels kinda hacky tbh
+vi.mock("../src/rest/auth", () => {
+    const RestAuth = vi.fn().mockImplementation(() => {
+        return {
+            createRouter: () => {
+                const router = Router();
+
+                router.get("/test-500-error", (_req, _res, _next) => {
+                    throw new Error("Simulated internal server error!");
+                });
+
+                router.get("/test-400-error", (_req, _res, next) => {
+                    const clientError = new Error("Simulated client error.");
+                    (clientError as any).status = 400;
+                    next(clientError);
+                });
+
+                return router;
+            }
+        };
+    });
+    return { RestAuth };
 });
 
 let app: express.Application;
@@ -92,5 +116,29 @@ describe("Express App Integration Test", () => {
 
     it("should return a 404 for an unknown route", async () => {
         await request(app).get("/api/this-route-does-not-exist").expect(404);
+    });
+});
+
+describe("Error Handling Middleware", () => {
+
+    it("should handle a 500 internal server error and return a generic message with an errorId", async () => {
+        const response = await request(app)
+            .get("/api/auth/test-500-error")
+            .expect(500);
+
+        expect(response.body.ok).toBe(false);
+        expect(response.body.data.error).toBe("An unexpected error occurred.");
+        expect(response.body.data.errorId).toBeDefined();
+        expect(typeof response.body.data.errorId).toBe("string");
+    });
+
+    it("should handle a 400 client error and return the specific message without an errorId", async () => {
+        const response = await request(app)
+            .get("/api/auth/test-400-error")
+            .expect(400);
+
+        expect(response.body.ok).toBe(false);
+        expect(response.body.data.error).toBe("Simulated client error.");
+        expect(response.body.data.errorId).toBeUndefined();
     });
 });
