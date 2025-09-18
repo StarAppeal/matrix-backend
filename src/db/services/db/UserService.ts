@@ -19,7 +19,6 @@ export class UserService {
     public async updateUserById(id: string, user: Partial<IUser>): Promise<IUser | null> {
         return await UserModel.findByIdAndUpdate(id, user, {
             new: true,
-            projection: {password: 0},
         }).exec();
     }
 
@@ -82,7 +81,7 @@ export class UserService {
         return await UserModel.findOneAndUpdate(
             { uuid },
             { $unset: { spotifyConfig: 1 } } as UpdateQuery<IUser>,
-            { new: true, projection: { password: 0 } }
+            { new: true }
         ).exec();
     }
 
