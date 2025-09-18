@@ -1,6 +1,6 @@
 import {IUser, SpotifyConfig, UserModel} from "../../models/user";
 import {connectToDatabase} from "./database.service";
-import {UpdateQuery} from "mongoose";
+import {Document, UpdateQuery} from "mongoose";
 
 export class UserService {
     private static _instance: UserService;
@@ -21,20 +21,6 @@ export class UserService {
             new: true,
         }).exec();
     }
-
-    public async updateUser(user: IUser): Promise<IUser | null> {
-        const anyUser = user as any;
-        const targetId: string | undefined = anyUser?.id?.toString?.() ?? anyUser?._id?.toString?.();
-
-        if (!targetId) {
-            throw new Error("updateUser requires user.id or user._id");
-        }
-
-        const { id, _id, ...rest } = anyUser;
-
-        return this.updateUserById(targetId, rest as Partial<IUser>);
-    }
-
 
     public async getAllUsers(): Promise<IUser[]> {
         return await UserModel.find({}, {spotifyConfig: 0, lastState: 0}).exec();
@@ -66,11 +52,27 @@ export class UserService {
         return await UserModel.findOne({uuid}, {spotifyConfig: 1}).exec().then(user => user?.spotifyConfig);
     }
 
-    public async createUser(user: IUser): Promise<IUser> {
-        const createdUser = await UserModel.create(user);
+    public async createUser(userData: Omit<IUser, keyof Document>): Promise<IUser> {
+        try {
+            const newUser = await UserModel.create(userData);
 
-        const {password, ...rest} = createdUser.toObject();
-        return rest as IUser;
+            const userObject = newUser.toObject();
+            delete userObject.password;
+
+            return userObject as IUser;
+
+        } catch (error: any) {
+            if (error.code === 11000 && error.keyPattern?.uuid) {
+                throw new Error("User with that uuid already exists");
+            }
+
+            if (error.name === 'ValidationError') {
+                throw new Error(`ValidationError: ${error.message}`);
+            }
+
+            console.error("Error creating user:", error);
+            throw new Error("User could not be created.");
+        }
     }
 
     public async existsUserByName(name: string): Promise<boolean> {

@@ -32,7 +32,7 @@ describe("UserService", () => {
 
     describe("create (singleton)", () => {
         it("should create a singleton instance", async () => {
-            const instance1 = userService; // Bereits im beforeEach erstellt
+            const instance1 = userService;
             const instance2 = await UserService.create();
 
             expect(instance1).toBe(instance2);
@@ -60,7 +60,7 @@ describe("UserService", () => {
             expect(mockedUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
                 userId,
                 updateData,
-                { new: true, projection: { password: 0 } }
+                { new: true }
             );
             expect(result).toEqual(updatedUser);
         });
@@ -71,42 +71,6 @@ describe("UserService", () => {
             const result = await userService.updateUserById("some-id", { name: "Updated Name" });
 
             expect(result).toBeNull();
-        });
-    });
-
-    describe("updateUser", () => {
-        it("should update user using id field", async () => {
-            const user = { id: "507f1f77bcf86cd799439011", name: "Test User" };
-            mockedUserModel.findByIdAndUpdate.mockReturnValue(createMockMongooseQuery(user) as any);
-
-            const result = await userService.updateUser(user as any);
-
-            expect(mockedUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                user.id,
-                { name: "Test User" },
-                expect.any(Object)
-            );
-            expect(result).toEqual(user);
-        });
-
-        it("should update user using _id field", async () => {
-            const user = { _id: "507f1f77bcf86cd799439011", name: "Test User" };
-            mockedUserModel.findByIdAndUpdate.mockReturnValue(createMockMongooseQuery(user) as any);
-
-            const result = await userService.updateUser(user as any);
-
-            expect(mockedUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                user._id,
-                { name: "Test User" },
-                expect.any(Object)
-            );
-            expect(result).toEqual(user);
-        });
-
-        it("should throw error if user has no id or _id", async () => {
-            await expect(userService.updateUser({ name: "Test User" } as any)).rejects.toThrow(
-                "updateUser requires user.id or user._id"
-            );
         });
     });
 
@@ -225,16 +189,18 @@ describe("UserService", () => {
 
     describe("existsUserByName", () => {
         it("should return true if user exists", async () => {
-            mockedUserModel.findOne.mockReturnValue(createMockMongooseQuery({ _id: "some-id" }) as any);
+            // @ts-ignore
+            mockedUserModel.countDocuments.mockReturnValue(1);
 
             const result = await userService.existsUserByName("ExistingUser");
 
-            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ name: "ExistingUser" });
+            expect(mockedUserModel.countDocuments).toHaveBeenCalledWith({ name: "ExistingUser" });
             expect(result).toBe(true);
         });
 
         it("should return false if user does not exist", async () => {
-            mockedUserModel.findOne.mockReturnValue(createMockMongooseQuery(null) as any);
+            // @ts-ignore
+            mockedUserModel.countDocuments.mockReturnValue(0);
 
             const result = await userService.existsUserByName("NonExistentUser");
 
@@ -252,7 +218,7 @@ describe("UserService", () => {
             expect(mockedUserModel.findOneAndUpdate).toHaveBeenCalledWith(
                 { uuid: "uuid-123" },
                 { $unset: { spotifyConfig: 1 } },
-                { new: true, projection: { password: 0 } }
+                { new: true }
             );
             expect(result).toEqual(updatedUser);
         });

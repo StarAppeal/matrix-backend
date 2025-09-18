@@ -17,9 +17,9 @@ export class RestUser {
     public createRouter() {
         const router = express.Router();
 
-        router.get("/",isAdmin(this.userService),  asyncHandler(async (_req, res) => {
+        router.get("/", isAdmin(this.userService), asyncHandler(async (_req, res) => {
             const users = await this.userService.getAllUsers();
-            return ok(res, { users });
+            return ok(res, {users});
         }));
 
         router.get("/me", asyncHandler(async (req, res) => {
@@ -30,10 +30,10 @@ export class RestUser {
         router.put(
             "/me/spotify",
             validateBody({
-                accessToken: { required: true, validator: v.isString({ nonEmpty: true }) },
-                refreshToken: { required: true, validator: v.isString({ nonEmpty: true }) },
-                scope: { required: true, validator: v.isString({ nonEmpty: true }) },
-                expirationDate: { required: true, validator: v.isString({ nonEmpty: true }) },
+                accessToken: {required: true, validator: v.isString({nonEmpty: true})},
+                refreshToken: {required: true, validator: v.isString({nonEmpty: true})},
+                scope: {required: true, validator: v.isString({nonEmpty: true})},
+                expirationDate: {required: true, validator: v.isString({nonEmpty: true})},
             }),
             asyncHandler(async (req, res) => {
                 const user = await this.userService.getUserByUUID(req.payload.uuid);
@@ -41,19 +41,19 @@ export class RestUser {
                     return badRequest(res, "User not found");
                 }
 
-                const { accessToken, refreshToken, scope, expirationDate } = req.body as {
+                const {accessToken, refreshToken, scope, expirationDate} = req.body as {
                     accessToken: string; refreshToken: string; scope: string; expirationDate: string;
                 };
 
-                user.spotifyConfig = {
+                const spotifyConfig = {
                     accessToken,
                     refreshToken,
                     scope,
                     expirationDate: new Date(expirationDate),
                 };
 
-                await this.userService.updateUser(user);
-                return ok(res, { message: "Spotify Config erfolgreich geändert" });
+                await this.userService.updateUserById(user.id, {spotifyConfig: spotifyConfig});
+                return ok(res, {message: "Spotify Config erfolgreich geändert"});
             })
         );
 
@@ -64,14 +64,14 @@ export class RestUser {
             }
 
             const updated = await this.userService.clearSpotifyConfigByUUID(req.payload.uuid);
-            return ok(res, { user: updated });
+            return ok(res, {user: updated});
         }));
 
         router.put(
             "/me/password",
             validateBody({
-                password: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
-                passwordConfirmation: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
+                password: {required: true, validator: v.isString({nonEmpty: true, min: 8})},
+                passwordConfirmation: {required: true, validator: v.isString({nonEmpty: true, min: 8})},
             }),
             asyncHandler(async (req, res) => {
                 const user = await this.userService.getUserByUUID(req.payload.uuid);
@@ -79,7 +79,7 @@ export class RestUser {
                     return badRequest(res, "User not found");
                 }
 
-                const { password, passwordConfirmation } = req.body as { password: string; passwordConfirmation: string };
+                const {password, passwordConfirmation} = req.body as { password: string; passwordConfirmation: string };
 
                 if (password !== passwordConfirmation) {
                     return badRequest(res, "Passwörter stimmen nicht überein");
@@ -90,17 +90,17 @@ export class RestUser {
                     return badRequest(res, passwordValidation.message ?? "Invalid password");
                 }
 
-                user.password = await PasswordUtils.hashPassword(password);
+                const newPassword = await PasswordUtils.hashPassword(password);
 
-                await this.userService.updateUser(user);
-                return ok(res, { message: "Passwort erfolgreich geändert" });
+                await this.userService.updateUserById(user.id, {password: newPassword});
+                return ok(res, {message: "Passwort erfolgreich geändert"});
             })
         );
 
         router.get(
             "/:id",
             validateParams({
-                id: { required: true, validator: v.isString({ nonEmpty: true }) },
+                id: {required: true, validator: v.isString({nonEmpty: true})},
             }),
             isAdmin(this.userService),
             asyncHandler(async (req, res) => {
