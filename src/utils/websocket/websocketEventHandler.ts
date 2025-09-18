@@ -1,8 +1,10 @@
 import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
 import {CustomWebsocketEvent} from "./websocketCustomEvents/customWebsocketEvent";
+import {UserService} from "../../db/services/db/UserService";
+import {getEventListeners} from "./websocketCustomEvents/websocketEventUtils";
 
 export class WebsocketEventHandler {
-    constructor(private webSocket: ExtendedWebSocket) {
+    constructor(private webSocket: ExtendedWebSocket, private userService: UserService) {
     }
 
     public enableErrorEvent() {
@@ -42,8 +44,12 @@ export class WebsocketEventHandler {
         );
     }
 
-    public registerCustomEvent(customWebsocketEvent: CustomWebsocketEvent) {
-        // bind needed?
+    public registerCustomEvents() {
+        const events = getEventListeners(this.webSocket, this.userService);
+        events.forEach(this.registerCustomEvent, this);
+    }
+
+    private registerCustomEvent(customWebsocketEvent: CustomWebsocketEvent) {
         this.webSocket.on(customWebsocketEvent.event, customWebsocketEvent.handler.bind(customWebsocketEvent));
     }
 

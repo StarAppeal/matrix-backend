@@ -5,6 +5,8 @@ import { ExtendedWebSocketServer } from "../src/websocket";
 import { WebsocketServerEventHandler } from "../src/utils/websocket/websocketServerEventHandler";
 import { WebsocketEventHandler } from "../src/utils/websocket/websocketEventHandler";
 import { getEventListeners } from "../src/utils/websocket/websocketCustomEvents/websocketEventUtils";
+import {UserService} from "../src/db/services/db/UserService";
+import {createMockUserService} from "./helpers/testSetup";
 
 let mockWssInstance: Mocked<WebSocketServer>;
 let mockServerEventHandler: Mocked<WebsocketServerEventHandler>;
@@ -24,6 +26,7 @@ vi.mock("../src/utils/websocket/websocketCustomEvents/websocketEventUtils");
 describe("ExtendedWebSocketServer", () => {
     let mockHttpServer: Mocked<Server>;
     let extendedWss: ExtendedWebSocketServer;
+    let mockUserService: Mocked<UserService>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -42,7 +45,9 @@ describe("ExtendedWebSocketServer", () => {
             close: vi.fn(),
         } as unknown as Mocked<WebSocketServer>;
 
-        extendedWss = new ExtendedWebSocketServer(mockHttpServer);
+        mockUserService = createMockUserService();
+
+        extendedWss = new ExtendedWebSocketServer(mockHttpServer, mockUserService);
     });
 
     describe("Constructor and Setup", () => {
@@ -53,8 +58,8 @@ describe("ExtendedWebSocketServer", () => {
             });
         });
 
-        it("should create and use a WebsocketServerEventHandler", () => {
-            expect(WebsocketServerEventHandler).toHaveBeenCalledWith(mockWssInstance);
+        it("should create and use a WebsocketServerEventHandler with the correct service", () => {
+            expect(WebsocketServerEventHandler).toHaveBeenCalledWith(mockWssInstance, mockUserService);
         });
 
         it("should enable the heartbeat", () => {
@@ -99,9 +104,11 @@ describe("ExtendedWebSocketServer", () => {
                 emit: vi.fn(), on: vi.fn(), user: { lastState: { global: { mode: "idle" } } },
             };
             mockClientEventHandler = {
-                enableErrorEvent: vi.fn(), enablePongEvent: vi.fn(),
-                enableMessageEvent: vi.fn(), enableDisconnectEvent: vi.fn(),
-                registerCustomEvent: vi.fn(),
+                enableErrorEvent: vi.fn(),
+                enablePongEvent: vi.fn(),
+                enableMessageEvent: vi.fn(),
+                enableDisconnectEvent: vi.fn(),
+                registerCustomEvents: vi.fn(),
             } as unknown as Mocked<WebsocketEventHandler>;
 
             vi.mocked(WebsocketEventHandler).mockImplementation(() => mockClientEventHandler);
@@ -110,12 +117,12 @@ describe("ExtendedWebSocketServer", () => {
 
         it("should create and configure a WebsocketEventHandler for new clients", () => {
             connectionHandler(mockWsClient, {});
-            expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(mockWsClient);
+            expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(mockWsClient, mockUserService);
             expect(mockClientEventHandler.enableErrorEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enablePongEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enableMessageEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enableDisconnectEvent).toHaveBeenCalled();
-            expect(mockClientEventHandler.registerCustomEvent).toHaveBeenCalled();
+            expect(mockClientEventHandler.registerCustomEvents).toHaveBeenCalled();
         });
 
         it("should emit initial events to the new client", () => {

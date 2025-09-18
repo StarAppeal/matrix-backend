@@ -1,8 +1,8 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
 import {SpotifyTokenService} from "../../../db/services/spotifyTokenService";
-import {UserService} from "../../../db/services/db/UserService";
 import {getCurrentlyPlaying} from "../../../db/services/spotifyApiService";
+import {CustomWebsocketEventUserService} from "./customWebsocketEventUserService";
 
 export const SpotifyAsyncUpdateEvent = "SPOTIFY_UPDATE";
 
@@ -26,7 +26,7 @@ export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent {
     }
 }
 
-export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEvent {
+export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService {
 
     event = WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE;
 
@@ -56,8 +56,7 @@ export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEvent {
                 expirationDate: new Date(Date.now() + token.expires_in * 1000),
                 scope: token.scope,
             };
-            const userService = await UserService.create();
-            await userService.updateUser(user);
+            await this.userService.updateUser(user);
             console.log("Token refreshed and database updated");
         }
         const musicData = await getCurrentlyPlaying(user.spotifyConfig!.accessToken);

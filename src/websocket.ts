@@ -5,17 +5,20 @@ import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
 import {DecodedToken} from "./interfaces/decodedToken";
 import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
-import {getEventListeners} from "./utils/websocket/websocketCustomEvents/websocketEventUtils";
 import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
+import {UserService} from "./db/services/db/UserService";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
+    private readonly userService: UserService;
 
-    constructor(server: Server) {
+    constructor(server: Server, userService: UserService) {
         this._wss = new WebSocketServer({
             server,
             verifyClient: (info, callback) => verifyClient(info.req, callback),
         });
+
+        this.userService = userService;
 
         this.setupWebSocket();
     }
@@ -50,9 +53,9 @@ export class ExtendedWebSocketServer {
     }
 
     private setupWebSocket() {
-        const serverEventHandler = new WebsocketServerEventHandler(this.wss);
+        const serverEventHandler = new WebsocketServerEventHandler(this.wss, this.userService);
         serverEventHandler.enableConnectionEvent((ws) => {
-            const socketEventHandler = new WebsocketEventHandler(ws);
+            const socketEventHandler = new WebsocketEventHandler(ws, this.userService);
 
             console.log("WebSocket client connected");
 
@@ -61,7 +64,7 @@ export class ExtendedWebSocketServer {
             socketEventHandler.enableMessageEvent();
 
             // Register custom events
-            getEventListeners(ws).forEach(socketEventHandler.registerCustomEvent, socketEventHandler);
+            socketEventHandler.registerCustomEvents();
 
             socketEventHandler.enableDisconnectEvent(() => {
                 console.log("User disconnected");

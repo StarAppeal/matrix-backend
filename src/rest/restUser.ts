@@ -7,18 +7,23 @@ import {badRequest, ok} from "./utils/responses";
 import {isAdmin} from "./middleware/isAdmin";
 
 export class RestUser {
+
+    private readonly userService: UserService;
+
+    constructor(userService: UserService) {
+        this.userService = userService;
+    }
+
     public createRouter() {
         const router = express.Router();
 
-        router.get("/",isAdmin,  asyncHandler(async (_req, res) => {
-            const userService = await UserService.create();
-            const users = await userService.getAllUsers();
+        router.get("/",isAdmin(this.userService),  asyncHandler(async (_req, res) => {
+            const users = await this.userService.getAllUsers();
             return ok(res, { users });
         }));
 
         router.get("/me", asyncHandler(async (req, res) => {
-            const userService = await UserService.create();
-            const user = await userService.getUserByUUID(req.payload.uuid);
+            const user = await this.userService.getUserByUUID(req.payload.uuid);
             return ok(res, user);
         }));
 
@@ -31,8 +36,7 @@ export class RestUser {
                 expirationDate: { required: true, validator: v.isString({ nonEmpty: true }) },
             }),
             asyncHandler(async (req, res) => {
-                const userService = await UserService.create();
-                const user = await userService.getUserByUUID(req.payload.uuid);
+                const user = await this.userService.getUserByUUID(req.payload.uuid);
                 if (!user) {
                     return badRequest(res, "User not found");
                 }
@@ -48,19 +52,18 @@ export class RestUser {
                     expirationDate: new Date(expirationDate),
                 };
 
-                await userService.updateUser(user);
+                await this.userService.updateUser(user);
                 return ok(res, { message: "Spotify Config erfolgreich geändert" });
             })
         );
 
         router.delete("/me/spotify", asyncHandler(async (req, res) => {
-            const userService = await UserService.create();
-            const user = await userService.getUserByUUID(req.payload.uuid);
+            const user = await this.userService.getUserByUUID(req.payload.uuid);
             if (!user) {
                 return badRequest(res, "User not found");
             }
 
-            const updated = await userService.clearSpotifyConfigByUUID(req.payload.uuid);
+            const updated = await this.userService.clearSpotifyConfigByUUID(req.payload.uuid);
             return ok(res, { user: updated });
         }));
 
@@ -71,8 +74,7 @@ export class RestUser {
                 passwordConfirmation: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
             }),
             asyncHandler(async (req, res) => {
-                const userService = await UserService.create();
-                const user = await userService.getUserByUUID(req.payload.uuid);
+                const user = await this.userService.getUserByUUID(req.payload.uuid);
                 if (!user) {
                     return badRequest(res, "User not found");
                 }
@@ -90,7 +92,7 @@ export class RestUser {
 
                 user.password = await PasswordUtils.hashPassword(password);
 
-                await userService.updateUser(user);
+                await this.userService.updateUser(user);
                 return ok(res, { message: "Passwort erfolgreich geändert" });
             })
         );
@@ -100,11 +102,10 @@ export class RestUser {
             validateParams({
                 id: { required: true, validator: v.isString({ nonEmpty: true }) },
             }),
-            isAdmin,
+            isAdmin(this.userService),
             asyncHandler(async (req, res) => {
-                const userService = await UserService.create();
                 const id = req.params.id;
-                const user = await userService.getUserById(id);
+                const user = await this.userService.getUserById(id);
 
                 if (!user) {
                     return badRequest(res, `Unable to find matching document with id: ${id}`);
