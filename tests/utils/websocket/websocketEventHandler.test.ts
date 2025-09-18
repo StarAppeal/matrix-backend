@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vi
 import { WebsocketEventHandler } from "../../../src/utils/websocket/websocketEventHandler";
 import { ExtendedWebSocket } from "../../../src/interfaces/extendedWebsocket";
 import { CustomWebsocketEvent } from "../../../src/utils/websocket/websocketCustomEvents/customWebsocketEvent";
+import {UserService} from "../../../src/db/services/db/UserService";
 
 describe("WebsocketEventHandler", () => {
     let mockWebSocket: Mocked<ExtendedWebSocket>;
     let websocketEventHandler: WebsocketEventHandler;
+    let mockUserService: Mocked<UserService>;
     let registeredHandlers: Map<string, (...args: any[]) => void>;
 
     beforeEach(() => {
@@ -27,7 +29,10 @@ describe("WebsocketEventHandler", () => {
             asyncUpdates: new Map([["update1", 123], ["update2", 456]]),
         } as unknown as Mocked<ExtendedWebSocket>;
 
-        websocketEventHandler = new WebsocketEventHandler(mockWebSocket);
+        // not used in this test
+        mockUserService = {} as Mocked<UserService>;
+
+        websocketEventHandler = new WebsocketEventHandler(mockWebSocket, mockUserService);
     });
 
     afterEach(() => {
@@ -108,6 +113,7 @@ describe("WebsocketEventHandler", () => {
             // @ts-ignore
             const bindSpy = vi.spyOn(customEvent.handler, "bind");
 
+            // @ts-ignore - Access to private method for testing purposes
             websocketEventHandler.registerCustomEvent(customEvent);
 
             expect(mockWebSocket.on).toHaveBeenCalledWith("custom_event", expect.any(Function));

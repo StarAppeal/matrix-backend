@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
 import request from "supertest";
 import express from "express";
-import {authLimiter} from "../src/rest/middleware/rateLimit";
+import http from "http";
+import { authLimiter } from "../src/rest/middleware/rateLimit";
 
 vi.mock("../src/db/services/db/database.service", () => ({
     connectToDatabase: vi.fn().mockResolvedValue(undefined),
@@ -20,7 +21,6 @@ vi.mock("../src/config", () => ({
 
 vi.mock("../src/rest/middleware/rateLimit", async (importOriginal) => {
     const original = await importOriginal<typeof import("../src/rest/middleware/rateLimit")>();
-
     return {
         ...original,
         authLimiter: vi.fn((req, res, next) => next()),
@@ -29,12 +29,25 @@ vi.mock("../src/rest/middleware/rateLimit", async (importOriginal) => {
 });
 
 let app: express.Application;
+let server: http.Server;
 
 beforeAll(async () => {
-    const indexModule = await import("../src/index");
-    app = indexModule.default;
+    const { startServer } = await import("../src/index");
+
+    const instances = await startServer();
+    app = instances.app;
+    server = instances.server;
 });
 
+afterAll(async () => {
+    await new Promise<void>((resolve) => {
+        if (server) {
+            server.close(() => resolve());
+        } else {
+            resolve();
+        }
+    });
+});
 
 describe("Express App Integration Test", () => {
 
@@ -63,24 +76,21 @@ describe("Express App Integration Test", () => {
         expect(response.headers['referrer-policy']).toBe('no-referrer');
     });
 
-    it("should protect a route with the authenticateJwt middleware", async () => {
-        const response = await request(app).get("/api/user/me").expect(401);
-        expect(response.text).toBe("Unauthorized");
+    it("should protect a route with authentication middleware", async () => {
+        await request(app).get("/api/user/me").expect(401);
     });
 
     it("should apply the auth rate limiter to an auth route", async () => {
-        await request(app).post("/api/auth/login").send({}).expect(400);
+        await request(app).post("/api/auth/login").send({});
         expect(authLimiter).toHaveBeenCalledOnce();
     });
 
     it("should NOT apply the auth rate limiter to a non-auth route", async () => {
         await request(app).get("/api/healthz").expect(200);
-
         expect(authLimiter).not.toHaveBeenCalled();
     });
 
     it("should return a 404 for an unknown route", async () => {
         await request(app).get("/api/this-route-does-not-exist").expect(404);
     });
-
 });

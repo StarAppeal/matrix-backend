@@ -1,15 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vitest";
+import { WebsocketServerEventHandler } from "../../../src/utils/websocket/websocketServerEventHandler";
+import type { UserService } from "../../../src/db/services/db/UserService";
 
-const { heartbeatSpy, getUserByUUID } = vi.hoisted(() => ({
-    heartbeatSpy: vi.fn(),
-    getUserByUUID: vi.fn(),
+const heartbeatSpy = vi.fn();
+vi.mock("../../../src/utils/websocket/websocketServerHeartbeatInterval", () => ({
+    heartbeat: () => heartbeatSpy,
 }));
-
-vi.mock("../../../src/utils/websocket/websocketServerHeartbeatInterval", () => {
-    return {
-        heartbeat: () => heartbeatSpy,
-    };
-});
 
 const userObj = {
     name: "tester",
@@ -19,38 +15,27 @@ const userObj = {
     lastState: { global: { mode: "idle", brightness: 50 } },
 };
 
-vi.mock("../../../src/db/services/db/UserService", () => {
-    return {
-        UserService: {
-            create: vi.fn().mockResolvedValue({
-                getUserByUUID,
-            }),
-        },
-    };
-});
-
 class FakeWSS {
-    clients = new Set<any>();
     handlers = new Map<string, Function>();
     on(event: string, handler: Function) {
         this.handlers.set(event, handler);
     }
     emit(event: string, ...args: any[]) {
-        const h = this.handlers.get(event);
-        if (h) h(...args);
+        this.handlers.get(event)?.(...args);
     }
 }
 
-import { WebsocketServerEventHandler } from "../../../src/utils/websocket/websocketServerEventHandler";
-
 describe("WebsocketServerEventHandler", () => {
     let wss: FakeWSS;
+    let mockUserService: Mocked<UserService>; // Variable für unseren Mock-Service
 
     beforeEach(() => {
         wss = new FakeWSS();
-        heartbeatSpy.mockReset();
-        getUserByUUID.mockReset();
-        getUserByUUID.mockResolvedValue(userObj);
+        heartbeatSpy.mockClear();
+
+        mockUserService = {
+            getUserByUUID: vi.fn().mockResolvedValue(userObj),
+        } as any;
     });
 
     afterEach(() => {
@@ -58,12 +43,10 @@ describe("WebsocketServerEventHandler", () => {
     });
 
     it("enableConnectionEvent sets user/payload/isAlive/asyncUpdates and calls callback", async () => {
-        const handler = new WebsocketServerEventHandler(wss as any);
+        const handler = new WebsocketServerEventHandler(wss as any, mockUserService);
         const cb = vi.fn();
 
-        const done = new Promise<void>((resolve) => {
-            cb.mockImplementation(() => resolve());
-        });
+        const done = new Promise<void>((resolve) => cb.mockImplementation(() => resolve()));
 
         handler.enableConnectionEvent(cb);
 
@@ -74,7 +57,7 @@ describe("WebsocketServerEventHandler", () => {
 
         await done;
 
-        expect(getUserByUUID).toHaveBeenCalledWith("uuid-1");
+        expect(mockUserService.getUserByUUID).toHaveBeenCalledWith("uuid-1");
         expect(ws.user).toEqual(userObj);
         expect(ws.payload).toEqual(req.payload);
         expect(ws.isAlive).toBe(true);
@@ -84,7 +67,7 @@ describe("WebsocketServerEventHandler", () => {
 
     it("enableHeartbeat starts interval and calls heartbeat()", () => {
         vi.useFakeTimers();
-        const handler = new WebsocketServerEventHandler(wss as any);
+        const handler = new WebsocketServerEventHandler(wss as any, mockUserService);
 
         const id = handler.enableHeartbeat(1000);
         expect(["number", "object"]).toContain(typeof id);
@@ -97,16 +80,16 @@ describe("WebsocketServerEventHandler", () => {
     });
 
     it("enableCloseEvent registers Listener and calls callback on close", () => {
-        const handler = new WebsocketServerEventHandler(wss as any);
+        const handler = new WebsocketServerEventHandler(wss as any, mockUserService);
         const cb = vi.fn();
-
         const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-        handler.enableCloseEvent(cb);
 
+        handler.enableCloseEvent(cb);
         wss.emit("close");
 
         expect(cb).toHaveBeenCalledTimes(1);
         expect(logSpy).toHaveBeenCalledWith("WebSocket server closed");
+
         logSpy.mockRestore();
     });
 });

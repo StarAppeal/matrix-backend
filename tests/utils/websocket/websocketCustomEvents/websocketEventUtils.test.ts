@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach, type Mocked } from "vitest";
 import { getEventListeners } from "../../../../src/utils/websocket/websocketCustomEvents/websocketEventUtils";
 import { WebsocketEventType } from "../../../../src/utils/websocket/websocketCustomEvents/websocketEventType";
 import { CustomWebsocketEvent } from "../../../../src/utils/websocket/websocketCustomEvents/customWebsocketEvent";
+import type { UserService } from "../../../../src/db/services/db/UserService";
+import {
+    CustomWebsocketEventUserService
+} from "../../../../src/utils/websocket/websocketCustomEvents/customWebsocketEventUserService";
 
 type MockWs = {
     user: {
@@ -9,10 +13,16 @@ type MockWs = {
         lastState: { global: { mode: string; brightness: number } };
     };
     send: Mocked<(data: any, options: { binary: boolean }) => void>;
+    on: Mocked<(event: string, listener: (...args: any[]) => void) => void>;
+    emit: Mocked<(event: string, ...args: any[]) => void>;
 };
+
+type MockUserService = Mocked<UserService>;
+
 
 describe("websocketEventUtils.getEventListeners", () => {
     let mockWs: MockWs;
+    let mockUserService: MockUserService;
     let listeners: CustomWebsocketEvent[];
 
     beforeEach(() => {
@@ -22,8 +32,16 @@ describe("websocketEventUtils.getEventListeners", () => {
                 lastState: { global: { mode: "idle", brightness: 42 } },
             },
             send: vi.fn(),
+            on: vi.fn(),
+            emit: vi.fn(),
         };
-        listeners = getEventListeners(mockWs as any);
+
+        mockUserService = {
+            getUserByUUID: vi.fn(),
+            updateUser: vi.fn(),
+        } as any;
+
+        listeners = getEventListeners(mockWs as any, mockUserService);
     });
 
     it("should return an array of event listener objects", () => {
@@ -34,6 +52,9 @@ describe("websocketEventUtils.getEventListeners", () => {
             expect(listener).toHaveProperty("event");
             expect(listener).toHaveProperty("handler");
             expect(typeof listener.handler).toBe("function");
+            if (typeof listener === typeof CustomWebsocketEventUserService){
+                expect(listener).toHaveProperty("userService", mockUserService);
+            }
         }
     });
 

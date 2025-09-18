@@ -6,9 +6,11 @@ import {UserService} from "../../db/services/db/UserService";
 
 export class WebsocketServerEventHandler {
     private readonly heartbeat: () => void;
+    private readonly userService: UserService;
 
-    constructor(private webSocketServer: WebSocketServer) {
+    constructor(private webSocketServer: WebSocketServer, userService: UserService) {
         this.heartbeat = heartbeat(this.webSocketServer);
+        this.userService = userService;
     }
 
     public enableConnectionEvent(
@@ -17,7 +19,7 @@ export class WebsocketServerEventHandler {
         this.webSocketServer.on(
             "connection",
             async (ws: ExtendedWebSocket, request: ExtendedIncomingMessage) => {
-                const user = await (await UserService.create()).getUserByUUID(request.payload.uuid);
+                const user = await this.userService.getUserByUUID(request.payload.uuid);
 
                 ws.user = user!;
 

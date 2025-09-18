@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vi
 import { Request, Response, NextFunction } from "express";
 import { isAdmin } from "../../../src/rest/middleware/isAdmin";
 import { createMockUserService } from "../../helpers/testSetup";
-import { UserService } from "../../../src/db/services/db/UserService";
 import { notFound } from "../../../src/rest/utils/responses";
 
 vi.mock("../../../src/db/services/db/UserService", () => ({
@@ -27,7 +26,6 @@ describe("isAdmin middleware", () => {
         vi.clearAllMocks();
 
         mockedUserService = createMockUserService();
-        vi.mocked(UserService.create).mockResolvedValue(mockedUserService);
 
         req = {
             payload: { uuid, username: "username", id: ""}
@@ -50,9 +48,8 @@ describe("isAdmin middleware", () => {
             const mockUser = { uuid, config: { isAdmin: true } };
             mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
 
-            await isAdmin(req as Request, res, next);
+            await isAdmin(mockedUserService)(req as Request, res, next);
 
-            expect(UserService.create).toHaveBeenCalledOnce();
             expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(uuid);
             expect(next).toHaveBeenCalledOnce();
             expect(res.status).not.toHaveBeenCalled();
@@ -66,7 +63,7 @@ describe("isAdmin middleware", () => {
             const mockUser = { uuid, config: { isAdmin: false } };
             mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
 
-            await isAdmin(req as Request, res, next);
+            await isAdmin(mockedUserService)(req as Request, res, next);
 
             expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(uuid);
             expect(notFound).toHaveBeenCalledWith(res);
@@ -76,7 +73,7 @@ describe("isAdmin middleware", () => {
         it("should call notFound if user does not exist", async () => {
             mockedUserService.getUserByUUID.mockResolvedValue(null);
 
-            await isAdmin(req as Request, res, next);
+            await isAdmin(mockedUserService)(req as Request, res, next);
 
             expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(uuid);
             expect(notFound).toHaveBeenCalledWith(res);
@@ -87,7 +84,7 @@ describe("isAdmin middleware", () => {
             const dbError = new Error("Database error");
             mockedUserService.getUserByUUID.mockRejectedValue(dbError);
 
-            await isAdmin(req as Request, res, next);
+            await isAdmin(mockedUserService)(req as Request, res, next);
 
             expect(next).toHaveBeenCalledWith(expect.objectContaining({ message: 'Database error' }));
         });

@@ -9,18 +9,19 @@ import {StopWeatherUpdatesEvent} from "./stopWeatherUpdatesEvent";
 import {UpdateUserEvent, UpdateUserSingleEvent} from "./updateUserEvent";
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {StopUpdateUserEvent} from "./stopUpdateUserEvent";
+import {UserService} from "../../../db/services/db/UserService";
 
-export function getEventListeners(ws: ExtendedWebSocket): CustomWebsocketEvent[] {
+export function getEventListeners(ws: ExtendedWebSocket, userService: UserService): CustomWebsocketEvent[] {
     return [
         new GetStateEvent(ws),
         new GetSettingsEvent(ws),
-        new GetSingleSpotifyUpdateEvent(ws),
+        new GetSingleSpotifyUpdateEvent(ws, userService),
         new GetSpotifyUpdatesEvent(ws),
         new StopSpotifyUpdatesEvent(ws),
         new GetSingleWeatherUpdateEvent(ws),
         new GetWeatherUpdatesEvent(ws),
         new StopWeatherUpdatesEvent(ws),
-        new UpdateUserEvent(ws),
+        new UpdateUserEvent(ws, userService),
         new UpdateUserSingleEvent(ws),
         new StopUpdateUserEvent(ws),
         new ErrorEvent(ws)

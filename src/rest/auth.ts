@@ -9,6 +9,12 @@ import {validateBody, v} from "./middleware/validate";
 import {ok, badRequest, unauthorized, created, conflict, notFound} from "./utils/responses";
 
 export class RestAuth {
+    private readonly userService: UserService;
+
+    constructor(userService: UserService) {
+        this.userService = userService;
+    }
+
     public createRouter() {
         const router = express.Router();
 
@@ -24,9 +30,8 @@ export class RestAuth {
                 const {username, password, timezone, location} = req.body as {
                     username: string; password: string; timezone: string; location: string;
                 };
-                const userService = await UserService.create();
 
-                if (await userService.existsUserByName(username)) {
+                if (await this.userService.existsUserByName(username)) {
                     return conflict(res, "Username already exists", {field: "username", code: "USERNAME_TAKEN"});
                 }
 
@@ -52,7 +57,7 @@ export class RestAuth {
                     location
                 };
 
-                const result = await userService.createUser(newUser);
+                const result = await this.userService.createUser(newUser);
                 return created(res, {user: result});
             })
         );
@@ -65,8 +70,7 @@ export class RestAuth {
             }),
             asyncHandler(async (req, res) => {
                 const {username, password} = req.body as { username: string; password: string };
-                const userService = await UserService.create();
-                const user = await userService.getUserAuthByName(username);
+                const user = await this.userService.getUserAuthByName(username);
 
                 if (!user) {
                     return notFound(res, "User not found", {field: "username", code: "INVALID_USER"});

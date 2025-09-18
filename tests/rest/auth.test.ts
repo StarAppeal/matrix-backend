@@ -2,7 +2,6 @@ import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import request from "supertest";
 import express from "express";
 import {RestAuth} from "../../src/rest/auth";
-import {UserService} from "../../src/db/services/db/UserService";
 import {JwtAuthenticator} from "../../src/utils/jwtAuthenticator";
 import {PasswordUtils} from "../../src/utils/passwordUtils";
 import {createMockJwtAuthenticator, createMockUserService, createPublicTestApp} from "../helpers/testSetup";
@@ -40,7 +39,6 @@ describe("RestAuth", () => {
         vi.clearAllMocks();
 
         mockUserService = createMockUserService();
-        vi.mocked(UserService.create).mockResolvedValue(mockUserService);
 
         mockPasswordUtils = vi.mocked(PasswordUtils);
         mockCrypto = vi.mocked(crypto);
@@ -48,7 +46,7 @@ describe("RestAuth", () => {
         mockJwtAuthenticator = createMockJwtAuthenticator();
         vi.mocked(JwtAuthenticator).mockImplementation(() => mockJwtAuthenticator);
 
-        const restAuth = new RestAuth();
+        const restAuth = new RestAuth(mockUserService);
         app = createPublicTestApp(restAuth.createRouter(), "/auth");
 
         process.env.SECRET_KEY = "test-secret-key";

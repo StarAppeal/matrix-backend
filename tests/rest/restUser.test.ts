@@ -2,7 +2,7 @@ import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import request from "supertest";
 
 import {RestUser} from "../../src/rest/restUser";
-import {setupTestEnvironment, type TestEnvironment} from "../helpers/testSetup";
+import {createMockUserService, setupTestEnvironment, type TestEnvironment} from "../helpers/testSetup";
 
 vi.mock("../../src/db/services/db/UserService", () => ({
     UserService: {
@@ -24,11 +24,12 @@ describe("RestUser", () => {
     const requestingUserUUID = "test-user-uuid";
     const adminUser = { uuid: requestingUserUUID, config: { isAdmin: true } };
     const nonAdminUser = { uuid: requestingUserUUID, config: { isAdmin: false } };
+    const mockedUserService = createMockUserService();
 
     beforeEach(() => {
         vi.clearAllMocks();
 
-        const restUser = new RestUser();
+        const restUser = new RestUser(mockedUserService);
         testEnv = setupTestEnvironment(restUser.createRouter(), "/user");
     });
 
@@ -44,14 +45,14 @@ describe("RestUser", () => {
                 uuid: "test-user-uuid"
             };
 
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(mockUser);
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
                 .get("/user/me")
                 .expect(200);
 
             expect(response.body.data).toEqual(mockUser);
-            expect(testEnv.mockUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
+            expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
         });
     });
 
@@ -71,8 +72,8 @@ describe("RestUser", () => {
                 spotifyConfig: null
             };
 
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(mockUser);
-            testEnv.mockUserService.updateUser.mockResolvedValue(mockUser);
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
+            mockedUserService.updateUser.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
                 .put("/user/me/spotify")
@@ -80,8 +81,8 @@ describe("RestUser", () => {
                 .expect(200);
 
             expect(response.body.data.message).toBe("Spotify Config erfolgreich geändert");
-            expect(testEnv.mockUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
-            expect(testEnv.mockUserService.updateUser).toHaveBeenCalledWith({
+            expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
+            expect(mockedUserService.updateUser).toHaveBeenCalledWith({
                 ...mockUser,
                 spotifyConfig: {
                     accessToken: "access-token-123",
@@ -93,7 +94,7 @@ describe("RestUser", () => {
         });
 
         it("should return bad request when user not found", async () => {
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(null);
+            mockedUserService.getUserByUUID.mockResolvedValue(null);
 
             const response = await request(testEnv.app)
                 .put("/user/me/spotify")
@@ -176,20 +177,20 @@ describe("RestUser", () => {
                 spotifyConfig: null
             };
 
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(mockUser);
-            testEnv.mockUserService.clearSpotifyConfigByUUID.mockResolvedValue(updatedUser);
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
+            mockedUserService.clearSpotifyConfigByUUID.mockResolvedValue(updatedUser);
 
             const response = await request(testEnv.app)
                 .delete("/user/me/spotify")
                 .expect(200);
 
             expect(response.body.data.user).toEqual(updatedUser);
-            expect(testEnv.mockUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
-            expect(testEnv.mockUserService.clearSpotifyConfigByUUID).toHaveBeenCalledWith("test-user-uuid");
+            expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
+            expect(mockedUserService.clearSpotifyConfigByUUID).toHaveBeenCalledWith("test-user-uuid");
         });
 
         it("should return bad request when user not found", async () => {
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(null);
+            mockedUserService.getUserByUUID.mockResolvedValue(null);
 
             const response = await request(testEnv.app)
                 .delete("/user/me/spotify")
@@ -215,10 +216,10 @@ describe("RestUser", () => {
                 password: "old-hashed-password"
             };
 
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(mockUser);
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
             vi.mocked(PasswordUtils.validatePassword).mockReturnValue({valid: true});
             vi.mocked(PasswordUtils.hashPassword).mockResolvedValue("new-hashed-password");
-            testEnv.mockUserService.updateUser.mockResolvedValue(mockUser);
+            mockedUserService.updateUser.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
                 .put("/user/me/password")
@@ -228,14 +229,14 @@ describe("RestUser", () => {
             expect(response.body.data.message).toBe("Passwort erfolgreich geändert");
             expect(PasswordUtils.validatePassword).toHaveBeenCalledWith("newpassword123");
             expect(PasswordUtils.hashPassword).toHaveBeenCalledWith("newpassword123");
-            expect(testEnv.mockUserService.updateUser).toHaveBeenCalledWith({
+            expect(mockedUserService.updateUser).toHaveBeenCalledWith({
                 ...mockUser,
                 password: "new-hashed-password"
             });
         });
 
         it("should return bad request when user not found", async () => {
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(null);
+            mockedUserService.getUserByUUID.mockResolvedValue(null);
 
             const response = await request(testEnv.app)
                 .put("/user/me/password")
@@ -252,7 +253,7 @@ describe("RestUser", () => {
                 uuid: "test-user-uuid"
             };
 
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(mockUser);
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
 
             const invalidData = {
                 password: "newpassword123",
@@ -276,7 +277,7 @@ describe("RestUser", () => {
                 uuid: "test-user-uuid"
             };
 
-            testEnv.mockUserService.getUserByUUID.mockResolvedValue(mockUser);
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
             vi.mocked(PasswordUtils.validatePassword).mockReturnValue({
                 valid: false,
                 message: "Password too weak"
@@ -331,7 +332,7 @@ describe("RestUser", () => {
 
         describe("when user is an admin", () => {
             beforeEach(() => {
-                testEnv.mockUserService.getUserByUUID.mockResolvedValue(adminUser);
+                mockedUserService.getUserByUUID.mockResolvedValue(adminUser);
             });
 
             it("should return all users", async () => {
@@ -339,19 +340,19 @@ describe("RestUser", () => {
                     {id: "1", name: "user1", uuid: "uuid1"},
                     {id: "2", name: "user2", uuid: "uuid2"}
                 ];
-                testEnv.mockUserService.getAllUsers.mockResolvedValue(mockUsers);
+                mockedUserService.getAllUsers.mockResolvedValue(mockUsers);
 
                 const response = await request(testEnv.app)
                     .get("/user/")
                     .expect(200);
 
                 expect(response.body.data.users).toEqual(mockUsers);
-                expect(testEnv.mockUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
-                expect(testEnv.mockUserService.getAllUsers).toHaveBeenCalled();
+                expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
+                expect(mockedUserService.getAllUsers).toHaveBeenCalled();
             });
 
             it("should handle empty user list", async () => {
-                testEnv.mockUserService.getAllUsers.mockResolvedValue([]);
+                mockedUserService.getAllUsers.mockResolvedValue([]);
 
                 const response = await request(testEnv.app)
                     .get("/user/")
@@ -363,7 +364,7 @@ describe("RestUser", () => {
 
         describe("when user is not an admin", () => {
             it("should return 404 Not Found if user is not an admin", async () => {
-                testEnv.mockUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
+                mockedUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
 
                 await request(testEnv.app)
                     .get("/user/")
@@ -371,7 +372,7 @@ describe("RestUser", () => {
             });
 
             it("should return 404 Not Found if user does not exist", async () => {
-                testEnv.mockUserService.getUserByUUID.mockResolvedValue(null);
+                mockedUserService.getUserByUUID.mockResolvedValue(null);
 
                 await request(testEnv.app)
                     .get("/user/")
@@ -390,23 +391,23 @@ describe("RestUser", () => {
 
         describe("when user is an admin", () => {
             beforeEach(() => {
-                testEnv.mockUserService.getUserByUUID.mockResolvedValue(adminUser);
+                mockedUserService.getUserByUUID.mockResolvedValue(adminUser);
             });
 
             it("should return user by id", async () => {
-                testEnv.mockUserService.getUserById.mockResolvedValue(mockUser);
+                mockedUserService.getUserById.mockResolvedValue(mockUser);
 
                 const response = await request(testEnv.app)
                     .get(`/user/${specificUserId}`)
                     .expect(200);
 
                 expect(response.body.data).toEqual(mockUser);
-                expect(testEnv.mockUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
-                expect(testEnv.mockUserService.getUserById).toHaveBeenCalledWith(specificUserId);
+                expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
+                expect(mockedUserService.getUserById).toHaveBeenCalledWith(specificUserId);
             });
 
             it("should return bad request when target user is not found", async () => {
-                testEnv.mockUserService.getUserById.mockResolvedValue(null);
+                mockedUserService.getUserById.mockResolvedValue(null);
 
                 const response = await request(testEnv.app)
                     .get(`/user/nonexistent-id`)
@@ -418,7 +419,7 @@ describe("RestUser", () => {
 
         describe("when user is not an admin", () => {
             it("should return 404 Not Found if user is not an admin", async () => {
-                testEnv.mockUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
+                mockedUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
 
                 await request(testEnv.app)
                     .get(`/user/${specificUserId}`)
@@ -426,7 +427,7 @@ describe("RestUser", () => {
             });
 
             it("should return 404 Not Found if user does not exist", async () => {
-                testEnv.mockUserService.getUserByUUID.mockResolvedValue(null);
+                mockedUserService.getUserByUUID.mockResolvedValue(null);
 
                 await request(testEnv.app)
                     .get(`/user/${specificUserId}`)
