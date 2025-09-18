@@ -1,17 +1,18 @@
 import express from "express";
-import { ExtendedWebSocketServer } from "./websocket";
-import { RestWebSocket } from "./rest/restWebSocket";
-import { RestUser } from "./rest/restUser";
-import { authenticateJwt } from "./rest/middleware/authenticateJwt";
-import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
+import {ExtendedWebSocketServer} from "./websocket";
+import {RestWebSocket} from "./rest/restWebSocket";
+import {RestUser} from "./rest/restUser";
+import {authenticateJwt} from "./rest/middleware/authenticateJwt";
+import {JwtTokenPropertiesExtractor} from "./rest/jwtTokenPropertiesExtractor";
 import cors from "cors";
-import { SpotifyTokenGenerator } from "./rest/spotifyTokenGenerator";
-import { RestAuth } from "./rest/auth";
-import { config } from "./config";
+import {SpotifyTokenGenerator} from "./rest/spotifyTokenGenerator";
+import {RestAuth} from "./rest/auth";
+import {config} from "./config";
 import cookieParser from 'cookie-parser';
-import { authLimiter, spotifyLimiter } from "./rest/middleware/rateLimit";
-import { cookieJwtAuth } from "./rest/middleware/cookieAuth";
-import { UserService } from "./db/services/db/UserService";
+import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
+import {cookieJwtAuth} from "./rest/middleware/cookieAuth";
+import {UserService} from "./db/services/db/UserService";
+import {randomUUID} from "crypto";
 
 export async function startServer() {
     const app = express();
@@ -36,8 +37,8 @@ export async function startServer() {
         next();
     });
 
-    app.use(express.json({ limit: "2mb" }));
-    app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
+    app.use(express.json({limit: "2mb"}));
+    app.get("/api/healthz", (_req, res) => res.status(200).send({status: "ok"}));
 
     console.log("Connecting to database and creating UserService...");
     const userService = await UserService.create();
@@ -67,10 +68,33 @@ export async function startServer() {
     );
 
     app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-        console.error(err);
-        res
-            .status(err?.status || 500)
-            .send({ ok: false, data: {}, error: err?.message || "Internal Server Error" });
+        const errorId = randomUUID();
+
+        console.error(`Error ID: ${errorId} | Status: ${err?.status || 500} | Message: ${err?.message}`);
+        console.error(`Stack Trace [${errorId}]:`, err.stack);
+
+        const statusCode = err?.status || 500;
+        let errorMessage = err?.message || "Internal Server Error";
+        let errorResponse: { ok: boolean; data: { error: string; errorId?: string } } = {
+            ok: false,
+            data: {
+                error: errorMessage,
+            }
+        };
+
+        if (statusCode >= 500) {
+            errorMessage = "An unexpected error occurred.";
+
+            errorResponse = {
+                ok: false,
+                data: {
+                    error: errorMessage,
+                    errorId: errorId,
+                }
+            };
+        }
+
+        res.status(statusCode).send(errorResponse);
     });
 
     process.on("SIGTERM", () => {
@@ -81,7 +105,7 @@ export async function startServer() {
         });
     });
 
-    return { app, server };
+    return {app, server};
 }
 
 if (process.env.NODE_ENV !== 'test') {
