@@ -74,7 +74,7 @@ export class UserService {
     }
 
     public async existsUserByName(name: string): Promise<boolean> {
-        return !!(await UserModel.findOne({name}).exec());
+        return (await UserModel.countDocuments({ name })) > 0;
     }
 
     public async clearSpotifyConfigByUUID(uuid: string): Promise<IUser | null> {
