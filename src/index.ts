@@ -2,7 +2,6 @@ import express from "express";
 import {ExtendedWebSocketServer} from "./websocket";
 import {RestWebSocket} from "./rest/restWebSocket";
 import {RestUser} from "./rest/restUser";
-import {authenticateJwt} from "./rest/middleware/authenticateJwt";
 import {JwtTokenPropertiesExtractor} from "./rest/jwtTokenPropertiesExtractor";
 import cors from "cors";
 import {SpotifyTokenGenerator} from "./rest/spotifyTokenGenerator";
@@ -13,8 +12,10 @@ import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
 import {cookieJwtAuth} from "./rest/middleware/cookieAuth";
 import {UserService} from "./db/services/db/UserService";
 import {randomUUID} from "crypto";
+import {JwtAuthenticator} from "./utils/jwtAuthenticator";
+import {authenticateJwt} from "./rest/middleware/authenticateJwt";
 
-export async function startServer() {
+export async function startServer(jwtSecret: string) {
     const app = express();
     const port = config.port;
 
@@ -44,6 +45,8 @@ export async function startServer() {
     const userService = await UserService.create();
     console.log("UserService created successfully.");
 
+    const _authenticateJwt = authenticateJwt(new JwtAuthenticator(jwtSecret));
+
     const server = app.listen(port, () => {
         console.log(`Server is running on port ${port}`);
     });
@@ -58,12 +61,12 @@ export async function startServer() {
     app.use("/api/auth", authLimiter, auth.createRouter());
 
     app.use(cookieJwtAuth);
-    app.use("/api/spotify", authenticateJwt, spotifyLimiter, spotify.createRouter());
-    app.use("/api/websocket", authenticateJwt, restWebSocket.createRouter());
-    app.use("/api/user", authenticateJwt, restUser.createRouter());
+    app.use("/api/spotify", _authenticateJwt, spotifyLimiter, spotify.createRouter());
+    app.use("/api/websocket", _authenticateJwt, restWebSocket.createRouter());
+    app.use("/api/user", _authenticateJwt, restUser.createRouter());
     app.use(
         "/api/jwt",
-        authenticateJwt,
+        _authenticateJwt,
         jwtTokenPropertiesExtractor.createRouter(),
     );
 
@@ -108,8 +111,16 @@ export async function startServer() {
     return {app, server};
 }
 
+
 if (process.env.NODE_ENV !== 'test') {
-    startServer().catch(error => {
+    const JWT_SECRET = process.env.SECRET_KEY;
+
+    if (!JWT_SECRET || JWT_SECRET.length < 32) {
+        console.error("CRITICAL ERROR: SECRET_KEY environment variable is not set or too short. Aborting.");
+        process.exit(1);
+    }
+
+    startServer(JWT_SECRET).catch(error => {
         console.error("Fatal error during server startup:", error);
         process.exit(1);
     });
