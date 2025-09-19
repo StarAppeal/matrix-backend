@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
-export const cookieJwtAuth = (req: Request, res: Response, next: NextFunction) => {
+export const extractTokenFromCookie = (req: Request, res: Response, next: NextFunction) => {
     if (req.headers.authorization) {
         return next();
     }
