@@ -7,18 +7,21 @@ import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEven
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
 import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
 import {UserService} from "./db/services/db/UserService";
+import {SpotifyTokenService} from "./db/services/spotifyTokenService";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
     private readonly userService: UserService;
+    private readonly spotifyTokenService: SpotifyTokenService;
 
-    constructor(server: Server, userService: UserService) {
+    constructor(server: Server, userService: UserService, spotifyTokenService: SpotifyTokenService) {
         this._wss = new WebSocketServer({
             server,
             verifyClient: (info, callback) => verifyClient(info.req, callback),
         });
 
         this.userService = userService;
+        this.spotifyTokenService = spotifyTokenService;
 
         this.setupWebSocket();
     }
@@ -55,7 +58,7 @@ export class ExtendedWebSocketServer {
     private setupWebSocket() {
         const serverEventHandler = new WebsocketServerEventHandler(this.wss, this.userService);
         serverEventHandler.enableConnectionEvent((ws) => {
-            const socketEventHandler = new WebsocketEventHandler(ws, this.userService);
+            const socketEventHandler = new WebsocketEventHandler(ws, this.userService, this.spotifyTokenService);
 
             console.log("WebSocket client connected");
 

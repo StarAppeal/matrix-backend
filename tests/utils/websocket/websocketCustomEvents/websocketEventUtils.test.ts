@@ -6,6 +6,7 @@ import type { UserService } from "../../../../src/db/services/db/UserService";
 import {
     CustomWebsocketEventUserService
 } from "../../../../src/utils/websocket/websocketCustomEvents/customWebsocketEventUserService";
+import {createMockSpotifyTokenService} from "../../../helpers/testSetup";
 
 type MockWs = {
     user: {
@@ -41,7 +42,9 @@ describe("websocketEventUtils.getEventListeners", () => {
             updateUser: vi.fn(),
         } as any;
 
-        listeners = getEventListeners(mockWs as any, mockUserService);
+
+
+        listeners = getEventListeners(mockWs as any, mockUserService, createMockSpotifyTokenService() as any);
     });
 
     it("should return an array of event listener objects", () => {

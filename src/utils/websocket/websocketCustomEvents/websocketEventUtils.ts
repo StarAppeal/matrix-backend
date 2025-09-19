@@ -10,12 +10,13 @@ import {UpdateUserEvent, UpdateUserSingleEvent} from "./updateUserEvent";
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {StopUpdateUserEvent} from "./stopUpdateUserEvent";
 import {UserService} from "../../../db/services/db/UserService";
+import {SpotifyTokenService} from "../../../db/services/spotifyTokenService";
 
-export function getEventListeners(ws: ExtendedWebSocket, userService: UserService): CustomWebsocketEvent[] {
+export function getEventListeners(ws: ExtendedWebSocket, userService: UserService, spotifyTokenService: SpotifyTokenService): CustomWebsocketEvent[] {
     return [
         new GetStateEvent(ws),
         new GetSettingsEvent(ws),
-        new GetSingleSpotifyUpdateEvent(ws, userService),
+        new GetSingleSpotifyUpdateEvent(ws, userService, spotifyTokenService),
         new GetSpotifyUpdatesEvent(ws),
         new StopSpotifyUpdatesEvent(ws),
         new GetSingleWeatherUpdateEvent(ws),
