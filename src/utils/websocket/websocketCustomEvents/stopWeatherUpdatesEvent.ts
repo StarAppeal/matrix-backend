@@ -1,8 +1,9 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
 import {WeatherAsyncUpdateEvent} from "./getWeatherUpdatesEvent";
+import {NoData} from "./NoData";
 
-export class StopWeatherUpdatesEvent extends CustomWebsocketEvent {
+export class StopWeatherUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.STOP_WEATHER_UPDATES;
 

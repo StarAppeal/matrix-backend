@@ -2,10 +2,11 @@ import {WebsocketEventType} from "./websocketEventType";
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {IUser} from "../../../db/models/user";
 import {CustomWebsocketEventUserService} from "./customWebsocketEventUserService";
+import {NoData} from "./NoData";
 
 export const UserAsyncUpdateEvent = "USER_UPDATE";
 
-export class UpdateUserEvent extends CustomWebsocketEventUserService {
+export class UpdateUserEvent extends CustomWebsocketEventUserService<NoData> {
     event = WebsocketEventType.UPDATE_USER;
 
     handler = async () => {
@@ -23,7 +24,7 @@ export class UpdateUserEvent extends CustomWebsocketEventUserService {
     }
 }
 
-export class UpdateUserSingleEvent extends CustomWebsocketEvent {
+export class UpdateUserSingleEvent extends CustomWebsocketEvent<IUser> {
     event = WebsocketEventType.UPDATE_USER_SINGLE;
 
     handler = async (data: IUser) => {
