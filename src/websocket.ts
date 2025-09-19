@@ -79,11 +79,11 @@ export class ExtendedWebSocketServer {
             ws.emit(WebsocketEventType.UPDATE_USER, {});
 
             const mode = ws.user.lastState?.global.mode;
-            if (mode === "clock" && !ws.asyncUpdates) {
+            if (mode === "clock") {
                 ws.emit(WebsocketEventType.GET_WEATHER_UPDATES, {})
             }
 
-            if (mode === "music" && !ws.asyncUpdates) {
+            if (mode === "music") {
                 ws.emit(WebsocketEventType.GET_SPOTIFY_UPDATES, {})
             }
         });

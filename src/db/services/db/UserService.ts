@@ -1,6 +1,6 @@
-import {IUser, SpotifyConfig, UserModel} from "../../models/user";
+import {CreateUserPayload, IUser, SpotifyConfig, UserModel} from "../../models/user";
 import {connectToDatabase} from "./database.service";
-import {Document, UpdateQuery} from "mongoose";
+import { UpdateQuery} from "mongoose";
 
 export class UserService {
     private static _instance: UserService;
@@ -52,7 +52,7 @@ export class UserService {
         return await UserModel.findOne({uuid}, {spotifyConfig: 1}).exec().then(user => user?.spotifyConfig);
     }
 
-    public async createUser(userData: Omit<IUser, keyof Document>): Promise<IUser> {
+    public async createUser(userData: CreateUserPayload): Promise<IUser> {
         try {
             const newUser = await UserModel.create(userData);
 
