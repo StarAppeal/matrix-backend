@@ -3,10 +3,11 @@ import {WebsocketEventType} from "./websocketEventType";
 import {SpotifyTokenService} from "../../../db/services/spotifyTokenService";
 import {getCurrentlyPlaying} from "../../../db/services/spotifyApiService";
 import {CustomWebsocketEventUserService} from "./customWebsocketEventUserService";
+import {NoData} from "./NoData";
 
 export const SpotifyAsyncUpdateEvent = "SPOTIFY_UPDATE";
 
-export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent {
+export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.GET_SPOTIFY_UPDATES;
 
@@ -26,7 +27,7 @@ export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent {
     }
 }
 
-export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService {
+export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService<NoData> {
 
     event = WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE;
 

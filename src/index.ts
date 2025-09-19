@@ -9,7 +9,7 @@ import {RestAuth} from "./rest/auth";
 import {config} from "./config";
 import cookieParser from 'cookie-parser';
 import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
-import {extractTokenFromCookie} from "./rest/middleware/extractTokenFromCookie ";
+import {extractTokenFromCookie} from "./rest/middleware/extractTokenFromCookie";
 import {UserService} from "./db/services/db/UserService";
 import {randomUUID} from "crypto";
 import {JwtAuthenticator} from "./utils/jwtAuthenticator";
@@ -22,6 +22,7 @@ export async function startServer(jwtSecret: string) {
     app.set("trust proxy", 1);
     app.use(cookieParser());
 
+    // test
     app.use(cors({
         origin: config.cors.origin,
         credentials: config.cors.credentials,

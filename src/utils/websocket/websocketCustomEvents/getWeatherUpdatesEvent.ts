@@ -1,10 +1,11 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
 import {getCurrentWeather} from "../../../db/services/owmApiService";
+import {NoData} from "./NoData";
 
 export const WeatherAsyncUpdateEvent = "WEATHER_UPDATE";
 
-export class GetWeatherUpdatesEvent extends CustomWebsocketEvent {
+export class GetWeatherUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.GET_WEATHER_UPDATES;
 
@@ -24,7 +25,7 @@ export class GetWeatherUpdatesEvent extends CustomWebsocketEvent {
     }
 }
 
-export class GetSingleWeatherUpdateEvent extends CustomWebsocketEvent {
+export class GetSingleWeatherUpdateEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.GET_SINGLE_WEATHER_UPDATE;
 

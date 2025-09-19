@@ -1,8 +1,9 @@
 import {WebsocketEventType} from "./websocketEventType";
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {UserAsyncUpdateEvent} from "./updateUserEvent";
+import {NoData} from "./NoData";
 
-export class StopUpdateUserEvent extends CustomWebsocketEvent {
+export class StopUpdateUserEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.STOP_UPDATE_USER;
 

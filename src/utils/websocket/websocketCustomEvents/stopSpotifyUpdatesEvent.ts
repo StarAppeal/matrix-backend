@@ -1,8 +1,9 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
 import {SpotifyAsyncUpdateEvent} from "./getSpotifyUpdatesEvent";
+import {NoData} from "./NoData";
 
-export class StopSpotifyUpdatesEvent extends CustomWebsocketEvent {
+export class StopSpotifyUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.STOP_SPOTIFY_UPDATES;
 

@@ -1,7 +1,8 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
+import {NoData} from "./NoData";
 
-export class GetStateEvent extends CustomWebsocketEvent {
+export class GetStateEvent extends CustomWebsocketEvent<NoData> {
     event = WebsocketEventType.GET_STATE;
 
     handler = async () => {
