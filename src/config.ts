@@ -1,5 +1,14 @@
 type NodeEnv = "development" | "test" | "production";
 
+interface BaseConfig {
+    env: NodeEnv;
+    port: number;
+    cors: {
+        origin: string;
+        credentials: boolean;
+    };
+}
+
 function required(name: string, value: string | undefined): string {
     if (!value || value.trim() === "") {
         throw new Error(`Missing required env var: ${name}`);
@@ -37,7 +46,7 @@ if (!isValidUrl(FRONTEND_URL)) {
     throw new Error("FRONTEND_URL must be a valid URL");
 }
 
-export const config = {
+export const config :BaseConfig = {
     env: NODE_ENV,
     port: PORT,
     cors: {
