@@ -15,15 +15,15 @@ import {randomUUID} from "crypto";
 import {JwtAuthenticator} from "./utils/jwtAuthenticator";
 import {authenticateJwt} from "./rest/middleware/authenticateJwt";
 import {disconnectFromDatabase} from "./db/services/db/database.service";
+import {SpotifyTokenService} from "./db/services/spotifyTokenService";
 
-export async function startServer(jwtSecret: string) {
+export async function startServer(jwtSecret: string, spotifyClientId: string, spotifyClientSecret: string) {
     const app = express();
     const port = config.port;
 
     app.set("trust proxy", 1);
     app.use(cookieParser());
 
-    // test
     app.use(cors({
         origin: config.cors.origin,
         credentials: config.cors.credentials,
@@ -47,18 +47,20 @@ export async function startServer(jwtSecret: string) {
     const userService = await UserService.create();
     console.log("UserService created successfully.");
 
+    const spotifyTokenService = new SpotifyTokenService(spotifyClientId, spotifyClientSecret);
+
     const _authenticateJwt = authenticateJwt(new JwtAuthenticator(jwtSecret));
 
     const server = app.listen(port, () => {
         console.log(`Server is running on port ${port}`);
     });
 
-    const webSocketServer = new ExtendedWebSocketServer(server, userService);
+    const webSocketServer = new ExtendedWebSocketServer(server, userService, spotifyTokenService);
     const restWebSocket = new RestWebSocket(webSocketServer);
     const restUser = new RestUser(userService);
     const auth = new RestAuth(userService);
     const jwtTokenPropertiesExtractor = new JwtTokenPropertiesExtractor();
-    const spotify = new SpotifyTokenGenerator();
+    const spotify = new SpotifyTokenGenerator(spotifyTokenService);
 
     app.use("/api/auth", authLimiter, auth.createRouter());
 
@@ -119,13 +121,25 @@ export async function startServer(jwtSecret: string) {
 
 if (process.env.NODE_ENV !== 'test') {
     const JWT_SECRET = process.env.SECRET_KEY;
+    const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
+    const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 
     if (!JWT_SECRET || JWT_SECRET.length < 32) {
         console.error("CRITICAL ERROR: SECRET_KEY environment variable is not set or too short. Aborting.");
         process.exit(1);
     }
 
-    startServer(JWT_SECRET).catch(error => {
+    if (!CLIENT_ID) {
+        console.error("CRITICAL ERROR: CLIENT_ID environment variable is not set. Aborting.");
+        process.exit(1);
+    }
+
+    if (!CLIENT_SECRET) {
+        console.error("CRITICAL ERROR: CLIENT_SECRET environment variable is not set. Aborting.");
+        process.exit(1);
+    }
+
+    startServer(JWT_SECRET, CLIENT_ID, CLIENT_SECRET).catch(error => {
         console.error("Fatal error during server startup:", error);
         process.exit(1);
     });

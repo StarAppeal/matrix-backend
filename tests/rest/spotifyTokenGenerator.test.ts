@@ -17,9 +17,7 @@ describe("SpotifyTokenGenerator", () => {
 
         mockTokenService = createMockSpotifyTokenService();
 
-        vi.mocked(SpotifyTokenService).mockImplementation(() => mockTokenService as any);
-
-        const spotifyGenerator = new SpotifyTokenGenerator();
+        const spotifyGenerator = new SpotifyTokenGenerator(mockTokenService as any);
         app = createTestApp(spotifyGenerator.createRouter(), "/spotify");
     });
 

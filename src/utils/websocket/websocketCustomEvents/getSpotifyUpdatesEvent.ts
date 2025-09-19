@@ -4,6 +4,8 @@ import {SpotifyTokenService} from "../../../db/services/spotifyTokenService";
 import {getCurrentlyPlaying} from "../../../db/services/spotifyApiService";
 import {CustomWebsocketEventUserService} from "./customWebsocketEventUserService";
 import {NoData} from "./NoData";
+import {UserService} from "../../../db/services/db/UserService";
+import {ExtendedWebSocket} from "../../../interfaces/extendedWebsocket";
 
 export const SpotifyAsyncUpdateEvent = "SPOTIFY_UPDATE";
 
@@ -29,7 +31,14 @@ export class GetSpotifyUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
 export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService<NoData> {
 
+    private readonly spotifyTokenService: SpotifyTokenService;
+
     event = WebsocketEventType.GET_SINGLE_SPOTIFY_UPDATE;
+
+    constructor(ws: ExtendedWebSocket, userService: UserService, spotifyTokenService: SpotifyTokenService) {
+        super(ws, userService);
+        this.spotifyTokenService = spotifyTokenService;
+    }
 
     handler = async () => {
         console.log("Getting single Spotify update event");
@@ -49,7 +58,7 @@ export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService
         if (Date.now() > spotifyConfig.expirationDate.getTime()) {
             console.log("Token expired");
 
-            const token = await new SpotifyTokenService().refreshToken(spotifyConfig.refreshToken);
+            const token = await this.spotifyTokenService.refreshToken(spotifyConfig.refreshToken);
             const newSpotifyConfig = {
                 // use old refresh token because you don't get a new one
                 refreshToken: user.spotifyConfig!.refreshToken,
@@ -58,9 +67,10 @@ export class GetSingleSpotifyUpdateEvent extends CustomWebsocketEventUserService
                 scope: token.scope,
             };
             await this.userService.updateUserById(user.id, {spotifyConfig: newSpotifyConfig});
+            this.ws.user.spotifyConfig = newSpotifyConfig;
             console.log("Token refreshed and database updated");
         }
-        const musicData = await getCurrentlyPlaying(user.spotifyConfig!.accessToken);
+        const musicData = await getCurrentlyPlaying(this.ws.user.spotifyConfig!.accessToken);
         if (!musicData) {
             console.log("No music data found, maybe error from spotify, skipping this update");
             return;

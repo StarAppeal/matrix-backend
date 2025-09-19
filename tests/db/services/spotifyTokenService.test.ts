@@ -17,11 +17,8 @@ describe("SpotifyTokenService - Successful Initialization", () => {
     let spotifyTokenService: SpotifyTokenServiceType;
 
     beforeEach(async () => {
-        vi.stubEnv("SPOTIFY_CLIENT_ID", "test-client-id");
-        vi.stubEnv("SPOTIFY_CLIENT_SECRET", "test-client-secret");
-
         const { SpotifyTokenService } = await import("../../../src/db/services/spotifyTokenService");
-        spotifyTokenService = new SpotifyTokenService();
+        spotifyTokenService = new SpotifyTokenService("test-client-id","test-client-secret");
     });
 
     const getExpectedAuthHeader = () => {

@@ -1,12 +1,13 @@
 import express from "express";
 import {SpotifyTokenService} from "../db/services/spotifyTokenService";
-import { asyncHandler } from "./middleware/asyncHandler";
-import { validateBody, v } from "./middleware/validate";
-import { ok, internalError } from "./utils/responses";
+import {asyncHandler} from "./middleware/asyncHandler";
+import {validateBody, v} from "./middleware/validate";
+import {ok, internalError} from "./utils/responses";
 
 export class SpotifyTokenGenerator {
 
-    private tokenService = new SpotifyTokenService();
+    constructor(private spotifyTokenService: SpotifyTokenService) {
+    }
 
     public createRouter() {
         const router = express.Router();
@@ -14,29 +15,29 @@ export class SpotifyTokenGenerator {
         router.post(
             "/token/refresh",
             validateBody({
-                refreshToken: { required: true, validator: v.isString({ nonEmpty: true }) },
+                refreshToken: {required: true, validator: v.isString({nonEmpty: true})},
             }),
             asyncHandler(async (req, res) => {
-                const { refreshToken } = req.body as { refreshToken: string };
+                const {refreshToken} = req.body as { refreshToken: string };
 
-                const token = await this.tokenService.refreshToken(refreshToken);
+                const token = await this.spotifyTokenService.refreshToken(refreshToken);
 
-                return ok(res, { token });
+                return ok(res, {token});
             })
         );
 
         router.post(
             "/token/generate",
             validateBody({
-                authCode: { required: true, validator: v.isString({ nonEmpty: true }) },
-                redirectUri: { required: true, validator: v.isUrl() },
+                authCode: {required: true, validator: v.isString({nonEmpty: true})},
+                redirectUri: {required: true, validator: v.isUrl()},
             }),
             asyncHandler(async (req, res) => {
-                const { authCode, redirectUri } = req.body as { authCode: string; redirectUri: string };
+                const {authCode, redirectUri} = req.body as { authCode: string; redirectUri: string };
 
-                const token = await this.tokenService.generateToken(authCode, redirectUri);
+                const token = await this.spotifyTokenService.generateToken(authCode, redirectUri);
 
-                return ok(res, { token });
+                return ok(res, {token});
             })
         );
 

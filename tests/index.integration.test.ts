@@ -58,7 +58,7 @@ let server: http.Server;
 beforeAll(async () => {
     const { startServer } = await import("../src/index");
 
-    const instances = await startServer("not-used");
+    const instances = await startServer("not-used", "not-used", "not-used");
     app = instances.app;
     server = instances.server;
 });

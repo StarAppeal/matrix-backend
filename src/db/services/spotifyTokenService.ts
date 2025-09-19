@@ -2,10 +2,11 @@ import axios from "axios";
 import {OAuthTokenResponse} from "../../interfaces/OAuthTokenResponse";
 
 const url = "https://accounts.spotify.com/api/token";
-const clientId = process.env.SPOTIFY_CLIENT_ID;
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
 export class SpotifyTokenService {
+    constructor(private readonly clientId: string, private readonly clientSecret: string) {
+    }
+
     public async refreshToken(refreshToken: string) {
         console.log("refreshToken")
         const response = await axios.post(
@@ -15,7 +16,7 @@ export class SpotifyTokenService {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     Authorization: `Basic ${Buffer.from(
-                        `${clientId}:${clientSecret}`,
+                        `${this.clientId}:${this.clientSecret}`,
                     ).toString("base64")}`,
                 },
             },
@@ -33,7 +34,7 @@ export class SpotifyTokenService {
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
                     Authorization: `Basic ${Buffer.from(
-                        `${clientId}:${clientSecret}`,
+                        `${this.clientId}:${this.clientSecret}`,
                     ).toString("base64")}`,
                 },
             },

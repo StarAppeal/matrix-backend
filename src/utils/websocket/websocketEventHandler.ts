@@ -2,9 +2,10 @@ import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
 import {CustomWebsocketEvent} from "./websocketCustomEvents/customWebsocketEvent";
 import {UserService} from "../../db/services/db/UserService";
 import {getEventListeners} from "./websocketCustomEvents/websocketEventUtils";
+import {SpotifyTokenService} from "../../db/services/spotifyTokenService";
 
 export class WebsocketEventHandler {
-    constructor(private webSocket: ExtendedWebSocket, private userService: UserService) {
+    constructor(private webSocket: ExtendedWebSocket, private userService: UserService, private spotifyTokenService: SpotifyTokenService) {
     }
 
     public enableErrorEvent() {
@@ -45,7 +46,7 @@ export class WebsocketEventHandler {
     }
 
     public registerCustomEvents() {
-        const events = getEventListeners(this.webSocket, this.userService);
+        const events = getEventListeners(this.webSocket, this.userService, this.spotifyTokenService);
         events.forEach(this.registerCustomEvent, this);
     }
 
