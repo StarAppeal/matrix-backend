@@ -1,6 +1,6 @@
 import express from "express";
 import {UserService} from "../db/services/db/UserService";
-import {IUser} from "../db/models/user";
+import {CreateUserPayload, IUser} from "../db/models/user";
 import {JwtAuthenticator} from "../utils/jwtAuthenticator";
 import crypto from "crypto";
 import {PasswordUtils} from "../utils/passwordUtils";
@@ -45,7 +45,7 @@ export class RestAuth {
                 }
 
                 const hashedPassword = await PasswordUtils.hashPassword(password);
-                const newUser: Omit<IUser, keyof Document> = {
+                const newUser: CreateUserPayload = {
                     name: username,
                     password: hashedPassword,
                     uuid: crypto.randomUUID(),

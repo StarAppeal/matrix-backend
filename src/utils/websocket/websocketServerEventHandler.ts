@@ -21,7 +21,8 @@ export class WebsocketServerEventHandler {
             async (ws: ExtendedWebSocket, request: ExtendedIncomingMessage) => {
                 const user = await this.userService.getUserByUUID(request.payload.uuid);
 
-                ws.user = user!;
+                if (!user) { ws.terminate(); return; }
+                ws.user = user;
 
                 // first: map the payload from the request to the ws object (is payloed needed anymore?)
                 ws.payload = request.payload;

@@ -13,6 +13,15 @@ export interface IUser extends Document {
     location: string;
 }
 
+export interface CreateUserPayload {
+    name: string,
+    password: string,
+    uuid: string,
+    config: UserConfig,
+    timezone: string;
+    location: string;
+}
+
 export interface UserConfig {
     isVisible: boolean;
     canBeModified: boolean;
