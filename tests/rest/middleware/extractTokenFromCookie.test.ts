@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { Request, Response, NextFunction } from "express";
-import {cookieJwtAuth} from "../../../src/rest/middleware/cookieAuth";
+import {extractTokenFromCookie} from "../../../src/rest/middleware/extractTokenFromCookie";
 
 describe("cookieJwtAuth Middleware", () => {
     it("should do nothing if Authorization header already exists", () => {
@@ -15,7 +15,7 @@ describe("cookieJwtAuth Middleware", () => {
         const res = {} as Response;
         const next = vi.fn() as NextFunction;
 
-        cookieJwtAuth(req, res, next);
+        extractTokenFromCookie(req, res, next);
 
         expect(req.headers.authorization).toBe("Bearer existing-token");
         expect(next).toHaveBeenCalledOnce();
@@ -31,7 +31,7 @@ describe("cookieJwtAuth Middleware", () => {
         const res = {} as Response;
         const next = vi.fn() as NextFunction;
 
-        cookieJwtAuth(req, res, next);
+        extractTokenFromCookie(req, res, next);
 
         expect(req.headers.authorization).toBe("Bearer my-secret-cookie-token");
         expect(next).toHaveBeenCalledOnce();
@@ -45,7 +45,7 @@ describe("cookieJwtAuth Middleware", () => {
         const res = {} as Response;
         const next = vi.fn() as NextFunction;
 
-        cookieJwtAuth(req, res, next);
+        extractTokenFromCookie(req, res, next);
 
         expect(req.headers.authorization).toBeUndefined();
         expect(next).toHaveBeenCalledOnce();

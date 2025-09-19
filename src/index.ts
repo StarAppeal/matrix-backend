@@ -9,7 +9,7 @@ import {RestAuth} from "./rest/auth";
 import {config} from "./config";
 import cookieParser from 'cookie-parser';
 import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
-import {cookieJwtAuth} from "./rest/middleware/cookieAuth";
+import {extractTokenFromCookie} from "./rest/middleware/extractTokenFromCookie ";
 import {UserService} from "./db/services/db/UserService";
 import {randomUUID} from "crypto";
 import {JwtAuthenticator} from "./utils/jwtAuthenticator";
@@ -60,7 +60,7 @@ export async function startServer(jwtSecret: string) {
 
     app.use("/api/auth", authLimiter, auth.createRouter());
 
-    app.use(cookieJwtAuth);
+    app.use(extractTokenFromCookie);
     app.use("/api/spotify", _authenticateJwt, spotifyLimiter, spotify.createRouter());
     app.use("/api/websocket", _authenticateJwt, restWebSocket.createRouter());
     app.use("/api/user", _authenticateJwt, restUser.createRouter());
