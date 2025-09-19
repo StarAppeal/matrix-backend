@@ -17,6 +17,7 @@ import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
 import { connectToDatabase, disconnectFromDatabase } from "./db/services/db/database.service";
 import { SpotifyTokenService } from "./db/services/spotifyTokenService";
+import {watchUserChanges} from "./db/models/userWatch";
 
 interface ServerConfig {
     port: number;
@@ -41,6 +42,8 @@ export class Server {
 
     public async start(): Promise<HttpServer> {
         await connectToDatabase();
+
+        watchUserChanges();
 
         this.userService = await UserService.create();
         const spotifyTokenService = new SpotifyTokenService(this.config.spotifyClientId, this.config.spotifyClientSecret);

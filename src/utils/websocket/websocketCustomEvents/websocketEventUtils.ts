@@ -6,9 +6,8 @@ import {GetStateEvent} from "./getStateEvent";
 import {GetSingleWeatherUpdateEvent, GetWeatherUpdatesEvent} from "./getWeatherUpdatesEvent";
 import {StopSpotifyUpdatesEvent} from "./stopSpotifyUpdatesEvent";
 import {StopWeatherUpdatesEvent} from "./stopWeatherUpdatesEvent";
-import {UpdateUserEvent, UpdateUserSingleEvent} from "./updateUserEvent";
+import { UpdateUserSingleEvent} from "./updateUserEvent";
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
-import {StopUpdateUserEvent} from "./stopUpdateUserEvent";
 import {UserService} from "../../../db/services/db/UserService";
 import {SpotifyTokenService} from "../../../db/services/spotifyTokenService";
 
@@ -22,9 +21,7 @@ export function getEventListeners(ws: ExtendedWebSocket, userService: UserServic
         new GetSingleWeatherUpdateEvent(ws),
         new GetWeatherUpdatesEvent(ws),
         new StopWeatherUpdatesEvent(ws),
-        new UpdateUserEvent(ws, userService),
         new UpdateUserSingleEvent(ws),
-        new StopUpdateUserEvent(ws),
         new ErrorEvent(ws)
     ];
 }
