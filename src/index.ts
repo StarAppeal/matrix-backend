@@ -14,6 +14,7 @@ import {UserService} from "./db/services/db/UserService";
 import {randomUUID} from "crypto";
 import {JwtAuthenticator} from "./utils/jwtAuthenticator";
 import {authenticateJwt} from "./rest/middleware/authenticateJwt";
+import {disconnectFromDatabase} from "./db/services/db/database.service";
 
 export async function startServer(jwtSecret: string) {
     const app = express();
@@ -101,13 +102,16 @@ export async function startServer(jwtSecret: string) {
         res.status(statusCode).send(errorResponse);
     });
 
-    process.on("SIGTERM", () => {
+    process.on("SIGTERM", async () => {
         console.log("SIGTERM signal received: closing HTTP server");
+        await disconnectFromDatabase();
         server.close(() => {
             console.log("HTTP server closed");
             process.exit(0);
         });
     });
+
+
 
     return {app, server};
 }
