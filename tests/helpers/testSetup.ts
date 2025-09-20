@@ -119,4 +119,9 @@ export const createMockSpotifyTokenService = () => ({
 
 export const createMockSpotifyApiService = () => ({
     getCurrentlyPlaying: vi.fn(),
-})
+});
+
+export const createMockSpotifyPollingService = () =>  ({
+    startPollingForUser: vi.fn(),
+    stopPollingForUser: vi.fn()
+});
