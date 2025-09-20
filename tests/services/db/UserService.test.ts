@@ -3,11 +3,11 @@ import {UserModel} from "../../../src/db/models/user";
 import {UserService} from "../../../src/services/db/UserService";
 import {connectToDatabase} from "../../../src/services/db/database.service";
 
-vi.mock("../../../../src/services/db/database.service", () => ({
+vi.mock("../../../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn(),
 }));
 
-vi.mock("../../../../src/db/models/user");
+vi.mock("../../../src/db/models/user");
 
 const mockedUserModel = vi.mocked(UserModel);
 const mockedConnectToDatabase = vi.mocked(connectToDatabase);

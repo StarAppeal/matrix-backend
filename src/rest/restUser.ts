@@ -48,7 +48,7 @@ export class RestUser {
                 };
 
                 await this.userService.updateUserByUUID(req.payload.uuid, {spotifyConfig: spotifyConfig});
-                return ok(res, {message: "Spotify Config erfolgreich geändert"});
+                return ok(res, {message: "Spotify config changed successfully."});
             })
         );
 
@@ -78,7 +78,7 @@ export class RestUser {
                 const newPassword = await PasswordUtils.hashPassword(password);
 
                 await this.userService.updateUserByUUID(req.payload.uuid, {password: newPassword});
-                return ok(res, {message: "Passwort erfolgreich geändert"});
+                return ok(res, {message: "Password changed successfully"});
             })
         );
 

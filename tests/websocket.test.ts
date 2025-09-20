@@ -8,9 +8,24 @@ import { getEventListeners } from "../src/utils/websocket/websocketCustomEvents/
 import { createMockUserService} from "./helpers/testSetup";
 import {UserService} from "../src/services/db/UserService";
 import {SpotifyPollingService} from "../src/services/spotifyPollingService";
+import { USER_UPDATED_EVENT, SPOTIFY_STATE_UPDATED_EVENT } from "../src/utils/eventBus";
+import { WebsocketEventType } from "../src/utils/websocket/websocketCustomEvents/websocketEventType";
 
 let mockWssInstance: Mocked<WebSocketServer>;
 let mockServerEventHandler: Mocked<WebsocketServerEventHandler>;
+
+const eventBusListeners = new Map<string, (...args: any[]) => void>();
+
+vi.mock("../src/utils/eventBus", () => ({
+    appEventBus: {
+        on: vi.fn((event, listener) => {
+            eventBusListeners.set(event, listener);
+        }),
+        emit: vi.fn(),
+    },
+    USER_UPDATED_EVENT: 'user:updated',
+    SPOTIFY_STATE_UPDATED_EVENT: 'spotify:state-updated',
+}));
 
 vi.mock("ws", () => ({
     Server: vi.fn().mockImplementation(() => mockWssInstance),
@@ -134,11 +149,65 @@ describe("ExtendedWebSocketServer", () => {
             expect(mockWsClient.emit).toHaveBeenCalledWith("GET_STATE", {});
             expect(mockWsClient.emit).toHaveBeenCalledWith("GET_SETTINGS", {});
         });
+    });
 
-        it("should emit GET_SPOTIFY_UPDATES if last state was 'music'", () => {
-            mockWsClient.user.lastState.global.mode = "music";
-            connectionHandler(mockWsClient, {});
-            expect(mockWsClient.emit).toHaveBeenCalledWith("GET_SPOTIFY_UPDATES", {});
+    describe("_listenForAppEvents", () => {
+        let mockClient: any;
+
+        beforeEach(() => {
+            mockClient = {
+                readyState: WebSocket.OPEN,
+                payload: { uuid: "user-123" },
+                send: vi.fn(),
+                emit: vi.fn(),
+            };
+            mockWssInstance.clients.add(mockClient);
+        });
+
+        it("should listen for USER_UPDATED_EVENT and emit to the correct client", () => {
+            const userUpdateListener = eventBusListeners.get(USER_UPDATED_EVENT);
+            expect(userUpdateListener).toBeDefined();
+
+            const updatedUserPayload = { uuid: "user-123", name: "Neuer Name" };
+
+            userUpdateListener!(updatedUserPayload);
+
+            expect(mockClient.emit).toHaveBeenCalledOnce();
+            expect(mockClient.emit).toHaveBeenCalledWith(
+                WebsocketEventType.UPDATE_USER_SINGLE,
+                updatedUserPayload
+            );
+        });
+
+        it("should listen for SPOTIFY_STATE_UPDATED_EVENT and send to the correct client", () => {
+            const spotifyStateListener = eventBusListeners.get(SPOTIFY_STATE_UPDATED_EVENT);
+            expect(spotifyStateListener).toBeDefined();
+
+            const spotifyUpdatePayload = { state: { item: { name: "Neuer Song" } } };
+            const eventPayload = { uuid: "user-123", ...spotifyUpdatePayload };
+
+            spotifyStateListener!(eventPayload);
+
+            expect(mockClient.send).toHaveBeenCalledOnce();
+            const expectedMessage = JSON.stringify({
+                type: "SPOTIFY_UPDATE",
+                payload: spotifyUpdatePayload.state,
+            });
+            expect(mockClient.send).toHaveBeenCalledWith(expectedMessage, { binary: false });
+        });
+
+        it("should not send a message if the target client is not connected", () => {
+            const userUpdateListener = eventBusListeners.get(USER_UPDATED_EVENT);
+            const spotifyStateListener = eventBusListeners.get(SPOTIFY_STATE_UPDATED_EVENT);
+
+            const eventPayload = { uuid: "user-unknown", name: "some data" };
+
+            userUpdateListener!(eventPayload);
+
+            spotifyStateListener!(eventPayload);
+
+            expect(mockClient.send).not.toHaveBeenCalled();
+            expect(mockClient.emit).not.toHaveBeenCalled();
         });
     });
 });
