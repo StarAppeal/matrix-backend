@@ -22,8 +22,8 @@ describe("RestUser", () => {
     let testEnv: TestEnvironment;
 
     const requestingUserUUID = "test-user-uuid";
-    const adminUser = { uuid: requestingUserUUID, config: { isAdmin: true } };
-    const nonAdminUser = { uuid: requestingUserUUID, config: { isAdmin: false } };
+    const adminUser = {uuid: requestingUserUUID, config: {isAdmin: true}};
+    const nonAdminUser = {uuid: requestingUserUUID, config: {isAdmin: false}};
     const mockedUserService = createMockUserService();
 
     beforeEach(() => {
@@ -72,36 +72,23 @@ describe("RestUser", () => {
                 spotifyConfig: null
             };
 
-            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
-            mockedUserService.updateUserById.mockResolvedValue(mockUser);
+            mockedUserService.updateUserByUUID.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
                 .put("/user/me/spotify")
                 .send(validSpotifyData)
                 .expect(200);
 
-            expect(response.body.data.message).toBe("Spotify Config erfolgreich geändert");
-            expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
-            expect(mockedUserService.updateUserById).toHaveBeenCalledWith(
-                mockUser.id, {
-                spotifyConfig: {
-                    accessToken: "access-token-123",
-                    refreshToken: "refresh-token-123",
-                    scope: "user-read-playback-state",
-                    expirationDate: new Date("2024-12-31T23:59:59.000Z")
-                }
-            });
-        });
-
-        it("should return bad request when user not found", async () => {
-            mockedUserService.getUserByUUID.mockResolvedValue(null);
-
-            const response = await request(testEnv.app)
-                .put("/user/me/spotify")
-                .send(validSpotifyData)
-                .expect(400);
-
-            expect(response.body.data.message).toBe("User not found");
+            expect(response.body.data.message).toBe("Spotify config changed successfully.");
+            expect(mockedUserService.updateUserByUUID).toHaveBeenCalledWith(
+                mockUser.uuid, {
+                    spotifyConfig: {
+                        accessToken: "access-token-123",
+                        refreshToken: "refresh-token-123",
+                        scope: "user-read-playback-state",
+                        expirationDate: new Date("2024-12-31T23:59:59.000Z")
+                    }
+                });
         });
 
         it("should return bad request for missing accessToken", async () => {
@@ -177,7 +164,6 @@ describe("RestUser", () => {
                 spotifyConfig: null
             };
 
-            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
             mockedUserService.clearSpotifyConfigByUUID.mockResolvedValue(updatedUser);
 
             const response = await request(testEnv.app)
@@ -185,255 +171,232 @@ describe("RestUser", () => {
                 .expect(200);
 
             expect(response.body.data.user).toEqual(updatedUser);
-            expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith("test-user-uuid");
             expect(mockedUserService.clearSpotifyConfigByUUID).toHaveBeenCalledWith("test-user-uuid");
         });
 
-        it("should return bad request when user not found", async () => {
-            mockedUserService.getUserByUUID.mockResolvedValue(null);
-
-            const response = await request(testEnv.app)
-                .delete("/user/me/spotify")
-                .expect(400);
-
-            expect(response.body.data.message).toBe("User not found");
-        });
-    });
-
-    describe("PUT /me/password", () => {
-        const validPasswordData = {
-            password: "newpassword123",
-            passwordConfirmation: "newpassword123"
-        };
-
-        it("should update password successfully", async () => {
-            const {PasswordUtils} = await import("../../src/utils/passwordUtils");
-
-            const mockUser = {
-                id: "test-user-id",
-                name: "testuser",
-                uuid: "test-user-uuid",
-                password: "old-hashed-password"
-            };
-
-            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
-            vi.mocked(PasswordUtils.validatePassword).mockReturnValue({valid: true});
-            vi.mocked(PasswordUtils.hashPassword).mockResolvedValue("new-hashed-password");
-            mockedUserService.updateUserById.mockResolvedValue(mockUser);
-
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(validPasswordData)
-                .expect(200);
-
-            expect(response.body.data.message).toBe("Passwort erfolgreich geändert");
-            expect(PasswordUtils.validatePassword).toHaveBeenCalledWith("newpassword123");
-            expect(PasswordUtils.hashPassword).toHaveBeenCalledWith("newpassword123");
-            expect(mockedUserService.updateUserById).toHaveBeenCalledWith(
-                mockUser.id, {
-                password: "new-hashed-password"
-            });
-        });
-
-        it("should return bad request when user not found", async () => {
-            mockedUserService.getUserByUUID.mockResolvedValue(null);
-
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(validPasswordData)
-                .expect(400);
-
-            expect(response.body.data.message).toBe("User not found");
-        });
-
-        it("should return bad request when passwords don't match", async () => {
-            const mockUser = {
-                id: "test-user-id",
-                name: "testuser",
-                uuid: "test-user-uuid"
-            };
-
-            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
-
-            const invalidData = {
+        describe("PUT /me/password", () => {
+            const validPasswordData = {
                 password: "newpassword123",
-                passwordConfirmation: "differentpassword"
+                passwordConfirmation: "newpassword123"
             };
 
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(invalidData)
-                .expect(400);
+            it("should update password successfully", async () => {
+                const {PasswordUtils} = await import("../../src/utils/passwordUtils");
 
-            expect(response.body.data.message).toBe("Passwörter stimmen nicht überein");
-        });
+                const mockUser = {
+                    id: "test-user-id",
+                    name: "testuser",
+                    uuid: "test-user-uuid",
+                    password: "old-hashed-password"
+                };
 
-        it("should return bad request for invalid password", async () => {
-            const {PasswordUtils} = await import("../../src/utils/passwordUtils");
-
-            const mockUser = {
-                id: "test-user-id",
-                name: "testuser",
-                uuid: "test-user-uuid"
-            };
-
-            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
-            vi.mocked(PasswordUtils.validatePassword).mockReturnValue({
-                valid: false,
-                message: "Password too weak"
-            });
-
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(validPasswordData)
-                .expect(400);
-
-            expect(response.body.data.message).toBe("Password too weak");
-        });
-
-        it("should return bad request for missing password", async () => {
-            const invalidData = {passwordConfirmation: "newpassword123"};
-
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(invalidData)
-                .expect(400);
-
-            expect(response.body.data.details[0]).toContain("password");
-        });
-
-        it("should return bad request for missing passwordConfirmation", async () => {
-            const invalidData = {password: "newpassword123"};
-
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(invalidData)
-                .expect(400);
-
-            expect(response.body.data.details[0]).toContain("passwordConfirmation");
-        });
-
-        it("should return bad request for short password", async () => {
-            const invalidData = {
-                password: "short",
-                passwordConfirmation: "short"
-            };
-
-            const response = await request(testEnv.app)
-                .put("/user/me/password")
-                .send(invalidData)
-                .expect(400);
-
-            expect(response.body.data.details[0]).toContain("password");
-        });
-    });
-
-    describe("GET / (Admin only)", () => {
-
-        describe("when user is an admin", () => {
-            beforeEach(() => {
-                mockedUserService.getUserByUUID.mockResolvedValue(adminUser);
-            });
-
-            it("should return all users", async () => {
-                const mockUsers = [
-                    {id: "1", name: "user1", uuid: "uuid1"},
-                    {id: "2", name: "user2", uuid: "uuid2"}
-                ];
-                mockedUserService.getAllUsers.mockResolvedValue(mockUsers);
+                vi.mocked(PasswordUtils.validatePassword).mockReturnValue({valid: true});
+                vi.mocked(PasswordUtils.hashPassword).mockResolvedValue("new-hashed-password");
+                mockedUserService.updateUserByUUID.mockResolvedValue(mockUser);
 
                 const response = await request(testEnv.app)
-                    .get("/user/")
+                    .put("/user/me/password")
+                    .send(validPasswordData)
                     .expect(200);
 
-                expect(response.body.data.users).toEqual(mockUsers);
-                expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
-                expect(mockedUserService.getAllUsers).toHaveBeenCalled();
+                expect(response.body.data.message).toBe("Password changed successfully");
+                expect(PasswordUtils.validatePassword).toHaveBeenCalledWith("newpassword123");
+                expect(PasswordUtils.hashPassword).toHaveBeenCalledWith("newpassword123");
+                expect(mockedUserService.updateUserByUUID).toHaveBeenCalledWith(
+                    mockUser.uuid, {
+                        password: "new-hashed-password"
+                    });
             });
 
-            it("should handle empty user list", async () => {
-                mockedUserService.getAllUsers.mockResolvedValue([]);
+            it("should return bad request when passwords don't match", async () => {
+                const mockUser = {
+                    id: "test-user-id",
+                    name: "testuser",
+                    uuid: "test-user-uuid"
+                };
+
+                mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
+
+                const invalidData = {
+                    password: "newpassword123",
+                    passwordConfirmation: "differentpassword"
+                };
 
                 const response = await request(testEnv.app)
-                    .get("/user/")
-                    .expect(200);
-
-                expect(response.body.data.users).toEqual([]);
-            });
-        });
-
-        describe("when user is not an admin", () => {
-            it("should return 404 Not Found if user is not an admin", async () => {
-                mockedUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
-
-                await request(testEnv.app)
-                    .get("/user/")
-                    .expect(404);
-            });
-
-            it("should return 404 Not Found if user does not exist", async () => {
-                mockedUserService.getUserByUUID.mockResolvedValue(null);
-
-                await request(testEnv.app)
-                    .get("/user/")
-                    .expect(404);
-            });
-        });
-    });
-
-    describe("GET /:id (Admin only)", () => {
-        const specificUserId = "specific-user-id";
-        const mockUser = {
-            id: specificUserId,
-            name: "specificuser",
-            uuid: "specific-uuid"
-        };
-
-        describe("when user is an admin", () => {
-            beforeEach(() => {
-                mockedUserService.getUserByUUID.mockResolvedValue(adminUser);
-            });
-
-            it("should return user by id", async () => {
-                mockedUserService.getUserById.mockResolvedValue(mockUser);
-
-                const response = await request(testEnv.app)
-                    .get(`/user/${specificUserId}`)
-                    .expect(200);
-
-                expect(response.body.data).toEqual(mockUser);
-                expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
-                expect(mockedUserService.getUserById).toHaveBeenCalledWith(specificUserId);
-            });
-
-            it("should return bad request when target user is not found", async () => {
-                mockedUserService.getUserById.mockResolvedValue(null);
-
-                const response = await request(testEnv.app)
-                    .get(`/user/nonexistent-id`)
+                    .put("/user/me/password")
+                    .send(invalidData)
                     .expect(400);
 
-                expect(response.body.data.message).toBe("Unable to find matching document with id: nonexistent-id");
+                expect(response.body.data.message).toBe("Passwörter stimmen nicht überein");
+            });
+
+            it("should return bad request for invalid password", async () => {
+                const {PasswordUtils} = await import("../../src/utils/passwordUtils");
+
+                const mockUser = {
+                    id: "test-user-id",
+                    name: "testuser",
+                    uuid: "test-user-uuid"
+                };
+
+                mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
+                vi.mocked(PasswordUtils.validatePassword).mockReturnValue({
+                    valid: false,
+                    message: "Password too weak"
+                });
+
+                const response = await request(testEnv.app)
+                    .put("/user/me/password")
+                    .send(validPasswordData)
+                    .expect(400);
+
+                expect(response.body.data.message).toBe("Password too weak");
+            });
+
+            it("should return bad request for missing password", async () => {
+                const invalidData = {passwordConfirmation: "newpassword123"};
+
+                const response = await request(testEnv.app)
+                    .put("/user/me/password")
+                    .send(invalidData)
+                    .expect(400);
+
+                expect(response.body.data.details[0]).toContain("password");
+            });
+
+            it("should return bad request for missing passwordConfirmation", async () => {
+                const invalidData = {password: "newpassword123"};
+
+                const response = await request(testEnv.app)
+                    .put("/user/me/password")
+                    .send(invalidData)
+                    .expect(400);
+
+                expect(response.body.data.details[0]).toContain("passwordConfirmation");
+            });
+
+            it("should return bad request for short password", async () => {
+                const invalidData = {
+                    password: "short",
+                    passwordConfirmation: "short"
+                };
+
+                const response = await request(testEnv.app)
+                    .put("/user/me/password")
+                    .send(invalidData)
+                    .expect(400);
+
+                expect(response.body.data.details[0]).toContain("password");
             });
         });
 
-        describe("when user is not an admin", () => {
-            it("should return 404 Not Found if user is not an admin", async () => {
-                mockedUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
+        describe("GET / (Admin only)", () => {
 
-                await request(testEnv.app)
-                    .get(`/user/${specificUserId}`)
-                    .expect(404);
+            describe("when user is an admin", () => {
+                beforeEach(() => {
+                    mockedUserService.getUserByUUID.mockResolvedValue(adminUser);
+                });
+
+                it("should return all users", async () => {
+                    const mockUsers = [
+                        {id: "1", name: "user1", uuid: "uuid1"},
+                        {id: "2", name: "user2", uuid: "uuid2"}
+                    ];
+                    mockedUserService.getAllUsers.mockResolvedValue(mockUsers);
+
+                    const response = await request(testEnv.app)
+                        .get("/user/")
+                        .expect(200);
+
+                    expect(response.body.data.users).toEqual(mockUsers);
+                    expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
+                    expect(mockedUserService.getAllUsers).toHaveBeenCalled();
+                });
+
+                it("should handle empty user list", async () => {
+                    mockedUserService.getAllUsers.mockResolvedValue([]);
+
+                    const response = await request(testEnv.app)
+                        .get("/user/")
+                        .expect(200);
+
+                    expect(response.body.data.users).toEqual([]);
+                });
             });
 
-            it("should return 404 Not Found if user does not exist", async () => {
-                mockedUserService.getUserByUUID.mockResolvedValue(null);
+            describe("when user is not an admin", () => {
+                it("should return 404 Not Found if user is not an admin", async () => {
+                    mockedUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
 
-                await request(testEnv.app)
-                    .get(`/user/${specificUserId}`)
-                    .expect(404);
+                    await request(testEnv.app)
+                        .get("/user/")
+                        .expect(404);
+                });
+
+                it("should return 404 Not Found if user does not exist", async () => {
+                    mockedUserService.getUserByUUID.mockResolvedValue(null);
+
+                    await request(testEnv.app)
+                        .get("/user/")
+                        .expect(404);
+                });
             });
         });
+
+        describe("GET /:id (Admin only)", () => {
+            const specificUserId = "specific-user-id";
+            const mockUser = {
+                id: specificUserId,
+                name: "specificuser",
+                uuid: "specific-uuid"
+            };
+
+            describe("when user is an admin", () => {
+                beforeEach(() => {
+                    mockedUserService.getUserByUUID.mockResolvedValue(adminUser);
+                });
+
+                it("should return user by id", async () => {
+                    mockedUserService.getUserById.mockResolvedValue(mockUser);
+
+                    const response = await request(testEnv.app)
+                        .get(`/user/${specificUserId}`)
+                        .expect(200);
+
+                    expect(response.body.data).toEqual(mockUser);
+                    expect(mockedUserService.getUserByUUID).toHaveBeenCalledWith(requestingUserUUID);
+                    expect(mockedUserService.getUserById).toHaveBeenCalledWith(specificUserId);
+                });
+
+                it("should return bad request when target user is not found", async () => {
+                    mockedUserService.getUserById.mockResolvedValue(null);
+
+                    const response = await request(testEnv.app)
+                        .get(`/user/nonexistent-id`)
+                        .expect(400);
+
+                    expect(response.body.data.message).toBe("Unable to find matching document with id: nonexistent-id");
+                });
+            });
+
+            describe("when user is not an admin", () => {
+                it("should return 404 Not Found if user is not an admin", async () => {
+                    mockedUserService.getUserByUUID.mockResolvedValue(nonAdminUser);
+
+                    await request(testEnv.app)
+                        .get(`/user/${specificUserId}`)
+                        .expect(404);
+                });
+
+                it("should return 404 Not Found if user does not exist", async () => {
+                    mockedUserService.getUserByUUID.mockResolvedValue(null);
+
+                    await request(testEnv.app)
+                        .get(`/user/${specificUserId}`)
+                        .expect(404);
+                });
+            });
+        });
+
     });
-
 });
