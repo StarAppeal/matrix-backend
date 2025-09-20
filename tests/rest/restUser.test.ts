@@ -4,7 +4,7 @@ import request from "supertest";
 import {RestUser} from "../../src/rest/restUser";
 import {createMockUserService, setupTestEnvironment, type TestEnvironment} from "../helpers/testSetup";
 
-vi.mock("../../src/db/services/db/UserService", () => ({
+vi.mock("../../src/services/db/UserService", () => ({
     UserService: {
         create: vi.fn()
     }

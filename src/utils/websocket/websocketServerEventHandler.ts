@@ -2,7 +2,7 @@ import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
 import {ExtendedIncomingMessage} from "../../interfaces/extendedIncomingMessage";
 import {Server as WebSocketServer} from "ws";
 import {heartbeat} from "./websocketServerHeartbeatInterval";
-import {UserService} from "../../db/services/db/UserService";
+import {UserService} from "../../services/db/UserService";
 
 export class WebsocketServerEventHandler {
     private readonly heartbeat: () => void;

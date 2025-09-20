@@ -1,6 +1,6 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import OpenWeatherAPI from "openweather-api-node";
-import {getCurrentWeather} from "../../../src/db/services/owmApiService";
+import {getCurrentWeather} from "../../src/services/owmApiService";
 
 vi.mock("openweather-api-node", () => {
     return {

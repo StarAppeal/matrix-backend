@@ -1,19 +1,30 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
-import {SpotifyAsyncUpdateEvent} from "./getSpotifyUpdatesEvent";
 import {NoData} from "./NoData";
+import {SpotifyPollingService} from "../../../services/spotifyPollingService";
+import {ExtendedWebSocket} from "../../../interfaces/extendedWebsocket";
 
 export class StopSpotifyUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.STOP_SPOTIFY_UPDATES;
 
-    handler = async () => {
-        if (this.ws.asyncUpdates.has(SpotifyAsyncUpdateEvent)) {
-            clearInterval(this.ws.asyncUpdates.get(SpotifyAsyncUpdateEvent));
-            this.ws.asyncUpdates.delete(SpotifyAsyncUpdateEvent);
-            console.log("Spotify updates stopped");
-        }
+    private readonly spotifyPollingService: SpotifyPollingService;
+
+    constructor(ws: ExtendedWebSocket, spotifyPollingService: SpotifyPollingService) {
+        super(ws);
+        this.spotifyPollingService = spotifyPollingService;
     }
 
+    handler = async () => {
+        console.log("Client requests to stop Spotify updates. Stopping polling.");
+
+        const uuid = this.ws.payload?.uuid;
+
+        if (uuid) {
+            this.spotifyPollingService.stopPollingForUser(uuid);
+        } else {
+            console.warn("Could not stop Spotify polling: No UUID found on WebSocket payload.");
+        }
+    }
 
 }

@@ -1,6 +1,6 @@
-import {CreateUserPayload, IUser, SpotifyConfig, UserModel} from "../../models/user";
 import {connectToDatabase} from "./database.service";
 import { UpdateQuery} from "mongoose";
+import {CreateUserPayload, IUser, SpotifyConfig, UserModel} from "../../db/models/user";
 
 export class UserService {
     private static _instance: UserService;
@@ -20,6 +20,14 @@ export class UserService {
         return await UserModel.findByIdAndUpdate(id, user, {
             new: true,
         }).exec();
+    }
+
+    public async updateUserByUUID(uuid: string, updates: Partial<IUser>): Promise<IUser | null> {
+        return await UserModel.findOneAndUpdate(
+            { uuid: uuid },
+            { $set: updates },
+            { new: true }
+        ).exec();
     }
 
     public async getAllUsers(): Promise<IUser[]> {

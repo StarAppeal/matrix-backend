@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import axios from "axios";
-import type { SpotifyTokenService as SpotifyTokenServiceType } from "../../../src/db/services/spotifyTokenService";
-import type { OAuthTokenResponse } from "../../../src/interfaces/OAuthTokenResponse";
+import type { OAuthTokenResponse } from "../../src/interfaces/OAuthTokenResponse";
+import {SpotifyTokenService} from "../../src/services/spotifyTokenService";
 
 vi.mock("axios");
 const mockedAxiosPost = vi.mocked(axios.post);
@@ -14,10 +14,10 @@ afterEach(() => {
 });
 
 describe("SpotifyTokenService - Successful Initialization", () => {
-    let spotifyTokenService: SpotifyTokenServiceType;
+    let spotifyTokenService: SpotifyTokenService;
 
     beforeEach(async () => {
-        const { SpotifyTokenService } = await import("../../../src/db/services/spotifyTokenService");
+        const { SpotifyTokenService } = await import("../../src/services/spotifyTokenService");
         spotifyTokenService = new SpotifyTokenService("test-client-id","test-client-secret");
     });
 

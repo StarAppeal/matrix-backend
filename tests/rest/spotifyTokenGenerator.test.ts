@@ -3,7 +3,6 @@ import request from "supertest";
 import express from "express";
 
 import { SpotifyTokenGenerator } from "../../src/rest/spotifyTokenGenerator";
-import { SpotifyTokenService } from "../../src/db/services/spotifyTokenService";
 import { createTestApp, createMockSpotifyTokenService } from "../helpers/testSetup";
 
 vi.mock("../../src/db/services/spotifyTokenService");

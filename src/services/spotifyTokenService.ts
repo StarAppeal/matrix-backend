@@ -1,5 +1,5 @@
 import axios from "axios";
-import {OAuthTokenResponse} from "../../interfaces/OAuthTokenResponse";
+import {OAuthTokenResponse} from "../interfaces/OAuthTokenResponse";
 
 const url = "https://accounts.spotify.com/api/token";
 

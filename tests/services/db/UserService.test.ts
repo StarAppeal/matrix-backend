@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { UserService } from "../../../../src/db/services/db/UserService";
-import {UserModel} from "../../../../src/db/models/user";
-import { connectToDatabase } from "../../../../src/db/services/db/database.service";
+import {UserModel} from "../../../src/db/models/user";
+import {UserService} from "../../../src/services/db/UserService";
+import {connectToDatabase} from "../../../src/services/db/database.service";
 
-vi.mock("../../../../src/db/services/db/database.service", () => ({
+vi.mock("../../../../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn(),
 }));
 

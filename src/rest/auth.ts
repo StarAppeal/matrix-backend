@@ -1,13 +1,12 @@
 import express from "express";
-import {UserService} from "../db/services/db/UserService";
-import {CreateUserPayload, IUser} from "../db/models/user";
+import {CreateUserPayload} from "../db/models/user";
 import {JwtAuthenticator} from "../utils/jwtAuthenticator";
 import crypto from "crypto";
 import {PasswordUtils} from "../utils/passwordUtils";
 import {asyncHandler} from "./middleware/asyncHandler";
 import {validateBody, v} from "./middleware/validate";
 import {ok, badRequest, unauthorized, created, conflict, notFound} from "./utils/responses";
-import {Document} from "mongoose";
+import {UserService} from "../services/db/UserService";
 
 export class RestAuth {
     private readonly userService: UserService;

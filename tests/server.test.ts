@@ -5,14 +5,14 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import type { Express } from "express";
 import { authLimiter } from "../src/rest/middleware/rateLimit";
 
-vi.mock("../src/db/services/db/database.service", () => ({
+vi.mock("../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn().mockResolvedValue(undefined),
     disconnectFromDatabase: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../src/db/services/db/UserService", () => ({
+vi.mock("../src/services/db/UserService", () => ({
     UserService: { create: vi.fn().mockResolvedValue({}) },
 }));
-vi.mock("../src/db/services/spotifyTokenService", () => ({ SpotifyTokenService: vi.fn() }));
+vi.mock("../src/services/spotifyTokenService", () => ({ SpotifyTokenService: vi.fn() }));
 
 vi.mock("../src/websocket", () => ({
     ExtendedWebSocketServer: vi.fn().mockImplementation(() => {
