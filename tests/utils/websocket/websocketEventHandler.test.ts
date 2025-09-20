@@ -77,7 +77,6 @@ describe("WebsocketEventHandler", () => {
 
         it("should handle disconnect with no async updates", () => {
             const mockCallback = vi.fn();
-            mockWebSocket.asyncUpdates = new Map();
             const clearIntervalSpy = vi.spyOn(global, "clearInterval");
 
             websocketEventHandler.enableDisconnectEvent(mockCallback);

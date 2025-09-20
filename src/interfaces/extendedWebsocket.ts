@@ -6,5 +6,4 @@ export interface ExtendedWebSocket extends WebSocket {
     payload: DecodedToken;
     isAlive: boolean;
     user: IUser;
-    asyncUpdates: Map<string, NodeJS.Timeout>
 }
