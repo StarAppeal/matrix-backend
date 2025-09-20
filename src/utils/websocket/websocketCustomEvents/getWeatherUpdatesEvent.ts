@@ -1,49 +1,24 @@
 import {CustomWebsocketEvent} from "./customWebsocketEvent";
 import {WebsocketEventType} from "./websocketEventType";
 import {NoData} from "./NoData";
-import {getCurrentWeather} from "../../../services/owmApiService";
-
-export const WeatherAsyncUpdateEvent = "WEATHER_UPDATE";
+import {WeatherPollingService} from "../../../services/weatherPollingService";
+import {ExtendedWebSocket} from "../../../interfaces/extendedWebsocket";
 
 export class GetWeatherUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     event = WebsocketEventType.GET_WEATHER_UPDATES;
+    private readonly weatherPollingService: WeatherPollingService;
 
-    handler = async () => {
-        console.log("Starting weather updates");
-        this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
-
-        if (this.ws.asyncUpdates.has(WeatherAsyncUpdateEvent)) {
-            console.log("Weather updates already running");
-            return;
-        }
-
-        this.ws.asyncUpdates.set(WeatherAsyncUpdateEvent, setInterval(() => {
-            this.ws.emit(WebsocketEventType.GET_SINGLE_WEATHER_UPDATE);
-        }, 1000 * 60));
-
-    }
-}
-
-export class GetSingleWeatherUpdateEvent extends CustomWebsocketEvent<NoData> {
-
-    event = WebsocketEventType.GET_SINGLE_WEATHER_UPDATE;
-
-    handler = async () => {
-        console.log("Getting single weather update event");
-        await this.weatherUpdates();
+    constructor(ws: ExtendedWebSocket, weatherPollingService:WeatherPollingService) {
+        super(ws);
+        this.weatherPollingService = weatherPollingService;
     }
 
-    private async weatherUpdates() {
-        console.log("Checking weather")
+    handler = async () => {
         const user = this.ws.user;
-        const weather = await getCurrentWeather(user.location);
-        console.log(weather);
-
-        this.ws.send(JSON.stringify({
-            type: "WEATHER_UPDATE",
-            payload: weather,
-        }), {binary: false});
+        if (user?.location && user.uuid) {
+            this.weatherPollingService.subscribeUser(user.uuid, user.location);
+        }
     }
-
 }
+

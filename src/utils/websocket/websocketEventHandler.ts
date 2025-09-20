@@ -2,9 +2,10 @@ import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
 import {CustomWebsocketEvent} from "./websocketCustomEvents/customWebsocketEvent";
 import {getEventListeners} from "./websocketCustomEvents/websocketEventUtils";
 import {SpotifyPollingService} from "../../services/spotifyPollingService";
+import {WeatherPollingService} from "../../services/weatherPollingService";
 
 export class WebsocketEventHandler {
-    constructor(private webSocket: ExtendedWebSocket, private spotifyPollingService: SpotifyPollingService) {
+    constructor(private webSocket: ExtendedWebSocket, private spotifyPollingService: SpotifyPollingService, private readonly weatherPollingService: WeatherPollingService) {
     }
 
     public enableErrorEvent() {
@@ -45,7 +46,7 @@ export class WebsocketEventHandler {
     }
 
     public registerCustomEvents() {
-        const events = getEventListeners(this.webSocket, this.spotifyPollingService);
+        const events = getEventListeners(this.webSocket, this.spotifyPollingService, this.weatherPollingService);
         events.forEach(this.registerCustomEvent, this);
     }
 

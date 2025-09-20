@@ -5,19 +5,27 @@ import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
 import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
 import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
 import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
-import {appEventBus, SPOTIFY_STATE_UPDATED_EVENT, USER_UPDATED_EVENT} from "./utils/eventBus";
+import {
+    appEventBus,
+    SPOTIFY_STATE_UPDATED_EVENT,
+    USER_UPDATED_EVENT,
+    WEATHER_STATE_UPDATED_EVENT
+} from "./utils/eventBus";
 import {IUser} from "./db/models/user";
 import {SpotifyPollingService} from "./services/spotifyPollingService";
 import {UserService} from "./services/db/UserService";
+import {WeatherPollingService} from "./services/weatherPollingService";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
     private readonly userService: UserService;
     private readonly spotifyPollingService: SpotifyPollingService;
+    private readonly weatherPollingService: WeatherPollingService;
 
-    constructor(server: Server, userService: UserService, spotifyPollingService: SpotifyPollingService) {
+    constructor(server: Server, userService: UserService, spotifyPollingService: SpotifyPollingService, weatherPollingService: WeatherPollingService) {
         this.userService = userService;
         this.spotifyPollingService = spotifyPollingService;
+        this.weatherPollingService = weatherPollingService;
 
         this._wss = new WebSocketServer({
             server,
@@ -63,7 +71,7 @@ export class ExtendedWebSocketServer {
     private _onNewClientReady(ws: ExtendedWebSocket): void {
         console.log("WebSocket client connected and authenticated");
 
-        const socketEventHandler = new WebsocketEventHandler(ws, this.spotifyPollingService);
+        const socketEventHandler = new WebsocketEventHandler(ws, this.spotifyPollingService, this.weatherPollingService);
 
         socketEventHandler.enableErrorEvent();
         socketEventHandler.enablePongEvent();
@@ -96,6 +104,18 @@ export class ExtendedWebSocketServer {
                     type: "SPOTIFY_UPDATE",
                     payload: state,
                 }), {binary: false});
+            }
+        });
+
+        appEventBus.on(WEATHER_STATE_UPDATED_EVENT, ({weatherData, subscribers}) => {
+            for (const uuid of subscribers) {
+                const client = this._findClientByUUID(uuid);
+                if (client) {
+                    client.send(JSON.stringify({
+                        type: "WEATHER_UPDATE",
+                        payload: weatherData,
+                    }), {binary: false});
+                }
             }
         });
 
