@@ -3,11 +3,13 @@ import { WebsocketEventHandler } from "../../../src/utils/websocket/websocketEve
 import { ExtendedWebSocket } from "../../../src/interfaces/extendedWebsocket";
 import { CustomWebsocketEvent } from "../../../src/utils/websocket/websocketCustomEvents/customWebsocketEvent";
 import {SpotifyPollingService} from "../../../src/services/spotifyPollingService";
+import {WeatherPollingService} from "../../../src/services/weatherPollingService";
 
 describe("WebsocketEventHandler", () => {
     let mockWebSocket: Mocked<ExtendedWebSocket>;
     let websocketEventHandler: WebsocketEventHandler;
     let mockSpotifyPollingService: Mocked<SpotifyPollingService>
+    let mockWeatherPollingService: Mocked<WeatherPollingService>
     let registeredHandlers: Map<string, (...args: any[]) => void>;
 
     beforeEach(() => {
@@ -31,8 +33,9 @@ describe("WebsocketEventHandler", () => {
 
         // not used in this test
         mockSpotifyPollingService = {} as Mocked<SpotifyPollingService>;
+        mockWeatherPollingService = {} as Mocked<WeatherPollingService>;
 
-        websocketEventHandler = new WebsocketEventHandler(mockWebSocket, mockSpotifyPollingService);
+        websocketEventHandler = new WebsocketEventHandler(mockWebSocket, mockSpotifyPollingService, mockWeatherPollingService);
     });
 
     afterEach(() => {

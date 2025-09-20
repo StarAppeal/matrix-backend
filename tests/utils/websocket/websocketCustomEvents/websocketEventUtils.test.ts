@@ -6,14 +6,12 @@ import {GetSpotifyUpdatesEvent} from "../../../../src/utils/websocket/websocketC
 import {SpotifyPollingService} from "../../../../src/services/spotifyPollingService";
 import {createMockSpotifyPollingService,} from "../../../helpers/testSetup";
 import {StopSpotifyUpdatesEvent} from "../../../../src/utils/websocket/websocketCustomEvents/stopSpotifyUpdatesEvent";
-import {
-    GetSingleWeatherUpdateEvent,
-    GetWeatherUpdatesEvent
+import {GetWeatherUpdatesEvent
 } from "../../../../src/utils/websocket/websocketCustomEvents/getWeatherUpdatesEvent";
 import {ErrorEvent} from "../../../../src/utils/websocket/websocketCustomEvents/errorEvent";
 import {UpdateUserSingleEvent} from "../../../../src/utils/websocket/websocketCustomEvents/updateUserEvent";
 import {StopWeatherUpdatesEvent} from "../../../../src/utils/websocket/websocketCustomEvents/stopWeatherUpdatesEvent";
-import {getCurrentWeather} from "../../../../src/services/owmApiService";
+import {WeatherPollingService} from "../../../../src/services/weatherPollingService";
 
 const createMockWebSocket = (userPayload: any = {}): ExtendedWebSocket => {
     return {
@@ -33,15 +31,18 @@ vi.mock("../../../../src/services/owmApiService", () => ({
     getCurrentWeather: vi.fn(),
 }));
 
+vi.mock("../../../../src/services/weatherPollingService");
+
 describe("WebSocket Custom Event Handlers", () => {
 
     let mockSpotifyPollingService: Mocked<SpotifyPollingService>;
-    const mockedGetCurrentWeather = vi.mocked(getCurrentWeather);
+    let mockWeatherPollingService: Mocked<WeatherPollingService>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
         mockSpotifyPollingService = createMockSpotifyPollingService() as any;
+        mockWeatherPollingService = new WeatherPollingService() as Mocked<WeatherPollingService>;
     })
 
     afterEach(() => {
@@ -106,85 +107,54 @@ describe("WebSocket Custom Event Handlers", () => {
     });
 
     describe("GetWeatherUpdatesEvent", () => {
-        it("should emit a single weather update immediately", async () => {
-            const mockWs = createMockWebSocket();
-            const event = new GetWeatherUpdatesEvent(mockWs);
+        it("should subscribe the user to the WeatherPollingService using their location", async () => {
+            const mockWs = createMockWebSocket({
+                uuid: "user-uuid-weather",
+                location: "London"
+            });
 
+            const event = new GetWeatherUpdatesEvent(mockWs, mockWeatherPollingService);
             await event.handler();
 
-            expect(mockWs.emit).toHaveBeenCalledWith("GET_SINGLE_WEATHER_UPDATE");
+            expect(mockWeatherPollingService.subscribeUser).toHaveBeenCalledOnce();
+            expect(mockWeatherPollingService.subscribeUser).toHaveBeenCalledWith("user-uuid-weather", "London");
         });
 
-        it("should set up an interval to emit weather updates periodically", async () => {
-            const mockWs = createMockWebSocket();
-            const event = new GetWeatherUpdatesEvent(mockWs);
+        it("should do nothing if the user has no location", async () => {
+            const mockWs = createMockWebSocket({ location: undefined });
 
+            const event = new GetWeatherUpdatesEvent(mockWs, mockWeatherPollingService);
             await event.handler();
 
-            expect(mockWs.emit).toHaveBeenCalledTimes(1);
-
-            await vi.advanceTimersByTimeAsync(60 * 1000);
-            expect(mockWs.emit).toHaveBeenCalledTimes(2);
-
-            await vi.advanceTimersByTimeAsync(60 * 1000);
-            expect(mockWs.emit).toHaveBeenCalledTimes(3);
-        });
-
-        it("should not set up a new interval if one is already running", async () => {
-            const mockWs = createMockWebSocket();
-            const intervalId = setInterval(() => {}, 1000); // Simuliere einen laufenden Timer
-            mockWs.asyncUpdates.set("WEATHER_UPDATE", intervalId);
-            const event = new GetWeatherUpdatesEvent(mockWs);
-
-            await event.handler();
-
-            expect(mockWs.asyncUpdates.get("WEATHER_UPDATE")).toBe(intervalId);
-            expect(mockWs.emit).toHaveBeenCalledOnce();
-        });
-
-    });
-
-    describe("GetSingleWeatherUpdateEvent", () => {
-        it("should fetch weather and send an update to the client", async () => {
-            const mockWs = createMockWebSocket({ location: "London" });
-            const weatherData = { temp: 15, city: "London" };
-            mockedGetCurrentWeather.mockResolvedValue(weatherData as any);
-
-            const event = new GetSingleWeatherUpdateEvent(mockWs);
-            await event.handler();
-
-            expect(mockedGetCurrentWeather).toHaveBeenCalledOnce();
-            expect(mockedGetCurrentWeather).toHaveBeenCalledWith("London");
-
-            expect(mockWs.send).toHaveBeenCalledOnce();
-            const expectedMessage = JSON.stringify({ type: "WEATHER_UPDATE", payload: weatherData });
-            expect(mockWs.send).toHaveBeenCalledWith(expectedMessage, { binary: false });
+            expect(mockWeatherPollingService.subscribeUser).not.toHaveBeenCalled();
         });
     });
+
 
     describe("StopWeatherUpdatesEvent", () => {
-        it("should clear the weather update interval if it exists", async () => {
-            
-            const mockWs = createMockWebSocket();
-            const intervalId = setInterval(() => {}, 1000);
-            mockWs.asyncUpdates.set("WEATHER_UPDATE", intervalId);
+        it("should unsubscribe the user from the WeatherPollingService using their location", async () => {
+            const mockWs = createMockWebSocket({
+                uuid: "user-uuid-weather",
+                location: "Paris"
+            });
 
-            const event = new StopWeatherUpdatesEvent(mockWs);
+            const event = new StopWeatherUpdatesEvent(mockWs, mockWeatherPollingService);
             await event.handler();
 
-            expect(mockWs.asyncUpdates.has("WEATHER_UPDATE")).toBe(false);
-            expect(vi.getTimerCount()).toBe(0);
+            expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledOnce();
+            expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledWith("user-uuid-weather", "Paris");
         });
 
-        it("should do nothing if no weather update interval is running", async () => {
-            const mockWs = createMockWebSocket();
+        it("should do nothing if the user has no location", async () => {
+            const mockWs = createMockWebSocket({ location: undefined });
 
-            const event = new StopWeatherUpdatesEvent(mockWs);
+            const event = new StopWeatherUpdatesEvent(mockWs, mockWeatherPollingService);
             await event.handler();
 
-            expect(mockWs.asyncUpdates.size).toBe(0);
+            expect(mockWeatherPollingService.unsubscribeUser).not.toHaveBeenCalled();
         });
     });
+
 
     describe("UpdateUserSingleEvent", () => {
         it("should update the user property on the websocket object", async () => {

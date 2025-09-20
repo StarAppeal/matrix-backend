@@ -20,6 +20,7 @@ import {SpotifyApiService} from "./services/spotifyApiService";
 import {UserService} from "./services/db/UserService";
 import {connectToDatabase, disconnectFromDatabase} from "./services/db/database.service";
 import {SpotifyTokenService} from "./services/spotifyTokenService";
+import {WeatherPollingService} from "./services/weatherPollingService";
 
 interface ServerConfig {
     port: number;
@@ -50,7 +51,9 @@ export class Server {
         this.userService = await UserService.create();
         const spotifyTokenService = new SpotifyTokenService(this.config.spotifyClientId, this.config.spotifyClientSecret);
         const spotifyApiService = new SpotifyApiService();
+
         const spotifyPollingService = new SpotifyPollingService(this.userService, spotifyApiService, spotifyTokenService);
+        const weatherPollingService = new WeatherPollingService();
 
         this._setupMiddleware();
         this._setupRoutes(this.userService, spotifyTokenService);
@@ -60,7 +63,7 @@ export class Server {
             console.log(`Server is running on port ${this.config.port}`);
         });
 
-        this.webSocketServer = new ExtendedWebSocketServer(this.httpServer, this.userService, spotifyPollingService);
+        this.webSocketServer = new ExtendedWebSocketServer(this.httpServer, this.userService, spotifyPollingService, weatherPollingService);
 
         this._setupGracefulShutdown();
 
