@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vitest";
 import { WebsocketServerEventHandler } from "../../../src/utils/websocket/websocketServerEventHandler";
-import type { UserService } from "../../../src/db/services/db/UserService";
+import {UserService} from "../../../src/services/db/UserService";
 
 const heartbeatSpy = vi.fn();
 vi.mock("../../../src/utils/websocket/websocketServerHeartbeatInterval", () => ({

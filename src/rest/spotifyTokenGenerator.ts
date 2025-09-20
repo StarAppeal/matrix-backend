@@ -1,8 +1,8 @@
 import express from "express";
-import {SpotifyTokenService} from "../db/services/spotifyTokenService";
 import {asyncHandler} from "./middleware/asyncHandler";
 import {validateBody, v} from "./middleware/validate";
 import {ok, internalError} from "./utils/responses";
+import {SpotifyTokenService} from "../services/spotifyTokenService";
 
 export class SpotifyTokenGenerator {
 

@@ -1,23 +1,23 @@
-import { Server } from "http";
-import { Server as WebSocketServer, WebSocket } from "ws";
-import { verifyClient } from "./utils/verifyClient";
-import { ExtendedWebSocket } from "./interfaces/extendedWebsocket";
-import { WebsocketServerEventHandler } from "./utils/websocket/websocketServerEventHandler";
-import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
-import { WebsocketEventType } from "./utils/websocket/websocketCustomEvents/websocketEventType";
-import { UserService } from "./db/services/db/UserService";
-import { SpotifyTokenService } from "./db/services/spotifyTokenService";
-import { appEventBus, USER_UPDATED_EVENT } from "./utils/eventBus";
-import { IUser } from "./db/models/user";
+import {Server} from "http";
+import {Server as WebSocketServer, WebSocket} from "ws";
+import {verifyClient} from "./utils/verifyClient";
+import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
+import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
+import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
+import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
+import {appEventBus, SPOTIFY_STATE_UPDATED_EVENT, USER_UPDATED_EVENT} from "./utils/eventBus";
+import {IUser} from "./db/models/user";
+import {SpotifyPollingService} from "./services/spotifyPollingService";
+import {UserService} from "./services/db/UserService";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
     private readonly userService: UserService;
-    private readonly spotifyTokenService: SpotifyTokenService;
+    private readonly spotifyPollingService: SpotifyPollingService;
 
-    constructor(server: Server, userService: UserService, spotifyTokenService: SpotifyTokenService) {
+    constructor(server: Server, userService: UserService, spotifyPollingService: SpotifyPollingService) {
         this.userService = userService;
-        this.spotifyTokenService = spotifyTokenService;
+        this.spotifyPollingService = spotifyPollingService;
 
         this._wss = new WebSocketServer({
             server,
@@ -31,7 +31,7 @@ export class ExtendedWebSocketServer {
     public broadcast(message: string): void {
         this.getConnectedClients().forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(message, { binary: false });
+                client.send(message, {binary: false});
             }
         });
     }
@@ -39,7 +39,7 @@ export class ExtendedWebSocketServer {
     public sendMessageToUser(uuid: string, message: string): void {
         const client = this._findClientByUUID(uuid);
         if (client && client.readyState === WebSocket.OPEN) {
-            client.send(message, { binary: false });
+            client.send(message, {binary: false});
         }
     }
 
@@ -63,7 +63,7 @@ export class ExtendedWebSocketServer {
     private _onNewClientReady(ws: ExtendedWebSocket): void {
         console.log("WebSocket client connected and authenticated");
 
-        const socketEventHandler = new WebsocketEventHandler(ws, this.userService, this.spotifyTokenService);
+        const socketEventHandler = new WebsocketEventHandler(ws, this.spotifyPollingService);
 
         socketEventHandler.enableErrorEvent();
         socketEventHandler.enablePongEvent();
@@ -76,14 +76,6 @@ export class ExtendedWebSocketServer {
         // send initial state and settings
         ws.emit(WebsocketEventType.GET_SETTINGS, {});
         ws.emit(WebsocketEventType.GET_STATE, {});
-
-        const mode = ws.user.lastState?.global.mode;
-        if (mode === "clock") {
-            ws.emit(WebsocketEventType.GET_WEATHER_UPDATES, {});
-        }
-        if (mode === "music") {
-            ws.emit(WebsocketEventType.GET_SPOTIFY_UPDATES, {});
-        }
     }
 
     private _listenForAppEvents(): void {
@@ -95,6 +87,18 @@ export class ExtendedWebSocketServer {
                 client.emit(WebsocketEventType.UPDATE_USER_SINGLE, user);
             }
         });
+
+        appEventBus.on(SPOTIFY_STATE_UPDATED_EVENT, ({uuid, state}) => {
+            const client = this._findClientByUUID(uuid);
+            console.log(`Received update for user ${uuid}`);
+            if (client) {
+                client.send(JSON.stringify({
+                    type: "SPOTIFY_UPDATE",
+                    payload: state,
+                }), {binary: false});
+            }
+        });
+
     }
 
     private _findClientByUUID(uuid: string): ExtendedWebSocket | undefined {

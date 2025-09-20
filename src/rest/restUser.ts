@@ -1,10 +1,10 @@
 import express from "express";
-import {UserService} from "../db/services/db/UserService";
 import {PasswordUtils} from "../utils/passwordUtils";
 import {asyncHandler} from "./middleware/asyncHandler";
 import {v, validateBody, validateParams} from "./middleware/validate";
 import {badRequest, ok} from "./utils/responses";
 import {isAdmin} from "./middleware/isAdmin";
+import {UserService} from "../services/db/UserService";
 
 export class RestUser {
 

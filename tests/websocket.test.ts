@@ -5,9 +5,9 @@ import { ExtendedWebSocketServer } from "../src/websocket";
 import { WebsocketServerEventHandler } from "../src/utils/websocket/websocketServerEventHandler";
 import { WebsocketEventHandler } from "../src/utils/websocket/websocketEventHandler";
 import { getEventListeners } from "../src/utils/websocket/websocketCustomEvents/websocketEventUtils";
-import {UserService} from "../src/db/services/db/UserService";
-import {createMockSpotifyTokenService, createMockUserService} from "./helpers/testSetup";
-import {SpotifyTokenService} from "../src/db/services/spotifyTokenService";
+import { createMockUserService} from "./helpers/testSetup";
+import {UserService} from "../src/services/db/UserService";
+import {SpotifyPollingService} from "../src/services/spotifyPollingService";
 
 let mockWssInstance: Mocked<WebSocketServer>;
 let mockServerEventHandler: Mocked<WebsocketServerEventHandler>;
@@ -28,7 +28,7 @@ describe("ExtendedWebSocketServer", () => {
     let mockHttpServer: Mocked<Server>;
     let extendedWss: ExtendedWebSocketServer;
     let mockUserService: Mocked<UserService>;
-    let mockSpotifyService : Mocked<SpotifyTokenService>;
+    let mockSpotifyPollingService: Mocked<SpotifyPollingService>
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -47,11 +47,11 @@ describe("ExtendedWebSocketServer", () => {
             close: vi.fn(),
         } as unknown as Mocked<WebSocketServer>;
 
+        mockSpotifyPollingService = {} as any;
+
         mockUserService = createMockUserService();
-        mockSpotifyService = createMockSpotifyTokenService() as any;
 
-
-        extendedWss = new ExtendedWebSocketServer(mockHttpServer, mockUserService, mockSpotifyService);
+        extendedWss = new ExtendedWebSocketServer(mockHttpServer, mockUserService, mockSpotifyPollingService);
     });
 
     describe("Constructor and Setup", () => {
@@ -121,7 +121,7 @@ describe("ExtendedWebSocketServer", () => {
 
         it("should create and configure a WebsocketEventHandler for new clients", () => {
             connectionHandler(mockWsClient, {});
-            expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(mockWsClient, mockUserService, mockSpotifyService);
+            expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(mockWsClient, mockSpotifyPollingService);
             expect(mockClientEventHandler.enableErrorEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enablePongEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enableMessageEvent).toHaveBeenCalled();

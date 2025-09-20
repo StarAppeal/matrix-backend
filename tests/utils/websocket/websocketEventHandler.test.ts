@@ -2,14 +2,12 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vi
 import { WebsocketEventHandler } from "../../../src/utils/websocket/websocketEventHandler";
 import { ExtendedWebSocket } from "../../../src/interfaces/extendedWebsocket";
 import { CustomWebsocketEvent } from "../../../src/utils/websocket/websocketCustomEvents/customWebsocketEvent";
-import {UserService} from "../../../src/db/services/db/UserService";
-import {SpotifyTokenService} from "../../../src/db/services/spotifyTokenService";
+import {SpotifyPollingService} from "../../../src/services/spotifyPollingService";
 
 describe("WebsocketEventHandler", () => {
     let mockWebSocket: Mocked<ExtendedWebSocket>;
     let websocketEventHandler: WebsocketEventHandler;
-    let mockUserService: Mocked<UserService>;
-    let mockSpotifyTokenService: Mocked<SpotifyTokenService>
+    let mockSpotifyPollingService: Mocked<SpotifyPollingService>
     let registeredHandlers: Map<string, (...args: any[]) => void>;
 
     beforeEach(() => {
@@ -32,11 +30,9 @@ describe("WebsocketEventHandler", () => {
         } as unknown as Mocked<ExtendedWebSocket>;
 
         // not used in this test
-        mockUserService = {} as Mocked<UserService>;
-        mockSpotifyTokenService = {} as Mocked<SpotifyTokenService>;
+        mockSpotifyPollingService = {} as Mocked<SpotifyPollingService>;
 
-
-        websocketEventHandler = new WebsocketEventHandler(mockWebSocket, mockUserService, mockSpotifyTokenService);
+        websocketEventHandler = new WebsocketEventHandler(mockWebSocket, mockSpotifyPollingService);
     });
 
     afterEach(() => {

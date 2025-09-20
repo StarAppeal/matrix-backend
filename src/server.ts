@@ -12,12 +12,14 @@ import { SpotifyTokenGenerator } from "./rest/spotifyTokenGenerator";
 import { RestAuth } from "./rest/auth";
 import { authLimiter, spotifyLimiter } from "./rest/middleware/rateLimit";
 import { extractTokenFromCookie } from "./rest/middleware/extractTokenFromCookie";
-import { UserService } from "./db/services/db/UserService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
-import { connectToDatabase, disconnectFromDatabase } from "./db/services/db/database.service";
-import { SpotifyTokenService } from "./db/services/spotifyTokenService";
 import {watchUserChanges} from "./db/models/userWatch";
+import {SpotifyPollingService} from "./services/spotifyPollingService";
+import {SpotifyApiService} from "./services/spotifyApiService";
+import {UserService} from "./services/db/UserService";
+import {connectToDatabase, disconnectFromDatabase} from "./services/db/database.service";
+import {SpotifyTokenService} from "./services/spotifyTokenService";
 
 interface ServerConfig {
     port: number;
@@ -47,6 +49,8 @@ export class Server {
 
         this.userService = await UserService.create();
         const spotifyTokenService = new SpotifyTokenService(this.config.spotifyClientId, this.config.spotifyClientSecret);
+        const spotifyApiService = new SpotifyApiService();
+        const spotifyPollingService = new SpotifyPollingService(this.userService, spotifyApiService, spotifyTokenService);
 
         this._setupMiddleware();
         this._setupRoutes(this.userService, spotifyTokenService);
@@ -56,7 +60,7 @@ export class Server {
             console.log(`Server is running on port ${this.config.port}`);
         });
 
-        this.webSocketServer = new ExtendedWebSocketServer(this.httpServer, this.userService, spotifyTokenService);
+        this.webSocketServer = new ExtendedWebSocketServer(this.httpServer, this.userService, spotifyPollingService);
 
         this._setupGracefulShutdown();
 

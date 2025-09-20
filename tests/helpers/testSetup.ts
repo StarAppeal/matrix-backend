@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import { vi, type Mocked } from "vitest";
-import { UserService } from "../../src/db/services/db/UserService";
+import { UserService } from "../../src/services/db/UserService";
 import { PasswordUtils } from "../../src/utils/passwordUtils";
 
 export const defaultMockPayload = {
@@ -56,6 +56,7 @@ export const createMockUserService = () => ({
     existsUserByName: vi.fn(),
     createUser: vi.fn(),
     getUserAuthByName: vi.fn(),
+    updateUserByUUID: vi.fn(),
 });
 
 /**
@@ -115,3 +116,7 @@ export const createMockSpotifyTokenService = () => ({
     refreshToken: vi.fn(),
     generateToken: vi.fn(),
 });
+
+export const createMockSpotifyApiService = () => ({
+    getCurrentlyPlaying: vi.fn(),
+})

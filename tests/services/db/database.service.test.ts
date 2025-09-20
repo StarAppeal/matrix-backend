@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import mongoose from "mongoose";
 
-const MODULE_PATH = "../../../../src/db/services/db/database.service";
+const MODULE_PATH = "../../../../src/services/db/database.service";
 
 type SpyInstance<T extends (...args: any) => any> = ReturnType<typeof vi.spyOn<any, Parameters<T>[0]>>;
 
