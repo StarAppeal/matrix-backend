@@ -36,11 +36,6 @@ export class RestUser {
                 expirationDate: {required: true, validator: v.isString({nonEmpty: true})},
             }),
             asyncHandler(async (req, res) => {
-                const user = await this.userService.getUserByUUID(req.payload.uuid);
-                if (!user) {
-                    return badRequest(res, "User not found");
-                }
-
                 const {accessToken, refreshToken, scope, expirationDate} = req.body as {
                     accessToken: string; refreshToken: string; scope: string; expirationDate: string;
                 };
@@ -52,17 +47,12 @@ export class RestUser {
                     expirationDate: new Date(expirationDate),
                 };
 
-                await this.userService.updateUserById(user.id, {spotifyConfig: spotifyConfig});
+                await this.userService.updateUserByUUID(req.payload.uuid, {spotifyConfig: spotifyConfig});
                 return ok(res, {message: "Spotify Config erfolgreich geändert"});
             })
         );
 
         router.delete("/me/spotify", asyncHandler(async (req, res) => {
-            const user = await this.userService.getUserByUUID(req.payload.uuid);
-            if (!user) {
-                return badRequest(res, "User not found");
-            }
-
             const updated = await this.userService.clearSpotifyConfigByUUID(req.payload.uuid);
             return ok(res, {user: updated});
         }));
@@ -74,11 +64,6 @@ export class RestUser {
                 passwordConfirmation: {required: true, validator: v.isString({nonEmpty: true, min: 8})},
             }),
             asyncHandler(async (req, res) => {
-                const user = await this.userService.getUserByUUID(req.payload.uuid);
-                if (!user) {
-                    return badRequest(res, "User not found");
-                }
-
                 const {password, passwordConfirmation} = req.body as { password: string; passwordConfirmation: string };
 
                 if (password !== passwordConfirmation) {
@@ -92,7 +77,7 @@ export class RestUser {
 
                 const newPassword = await PasswordUtils.hashPassword(password);
 
-                await this.userService.updateUserById(user.id, {password: newPassword});
+                await this.userService.updateUserByUUID(req.payload.uuid, {password: newPassword});
                 return ok(res, {message: "Passwort erfolgreich geändert"});
             })
         );
