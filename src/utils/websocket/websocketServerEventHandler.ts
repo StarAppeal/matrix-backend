@@ -29,7 +29,6 @@ export class WebsocketServerEventHandler {
                 // second: set the isAlive flag to true
                 ws.isAlive = true;
 
-                ws.asyncUpdates = new Map<string, NodeJS.Timeout>();
 
                 // last: call the callback function
                 callback(ws, request);
