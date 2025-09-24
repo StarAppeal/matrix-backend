@@ -28,7 +28,6 @@ describe("WebsocketEventHandler", () => {
             emit: vi.fn(),
             isAlive: false,
             payload: { username: "testuser", uuid: "test-uuid", id: "test-id" },
-            asyncUpdates: new Map([["update1", 123], ["update2", 456]]),
         } as unknown as Mocked<ExtendedWebSocket>;
 
         // not used in this test
@@ -60,9 +59,8 @@ describe("WebsocketEventHandler", () => {
     });
 
     describe("enableDisconnectEvent", () => {
-        it("should set onclose handler, clear async updates, and call the callback", () => {
+        it("should set onclose handler and call the callback", () => {
             const mockCallback = vi.fn();
-            const clearIntervalSpy = vi.spyOn(global, "clearInterval");
 
             websocketEventHandler.enableDisconnectEvent(mockCallback);
             expect(mockWebSocket.onclose).toBeInstanceOf(Function);
@@ -70,12 +68,10 @@ describe("WebsocketEventHandler", () => {
             mockWebSocket.onclose!({ code: 1000, reason: "Normal" } as any);
 
             expect(console.log).toHaveBeenCalledWith("User: testuser disconnected");
-            expect(clearIntervalSpy).toHaveBeenCalledWith(123);
-            expect(clearIntervalSpy).toHaveBeenCalledWith(456);
             expect(mockCallback).toHaveBeenCalledOnce();
         });
 
-        it("should handle disconnect with no async updates", () => {
+        it("should handle disconnect with", () => {
             const mockCallback = vi.fn();
             const clearIntervalSpy = vi.spyOn(global, "clearInterval");
 

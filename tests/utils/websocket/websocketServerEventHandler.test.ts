@@ -61,7 +61,6 @@ describe("WebsocketServerEventHandler", () => {
         expect(ws.user).toEqual(userObj);
         expect(ws.payload).toEqual(req.payload);
         expect(ws.isAlive).toBe(true);
-        expect(ws.asyncUpdates).toBeInstanceOf(Map);
         expect(cb).toHaveBeenCalledWith(ws, req);
     });
 
