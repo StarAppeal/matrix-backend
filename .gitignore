@@ -133,3 +133,5 @@ dist
 
 
 tests//*.js/*.js.map
+
+minio-data

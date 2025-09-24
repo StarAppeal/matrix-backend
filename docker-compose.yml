@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: ledmatrix-backend
+    build: .
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - minio
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: ledmatrix-storage
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
