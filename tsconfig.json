@@ -5,16 +5,14 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "lib": ["ES2022"],
     "skipLibCheck": true,
     "outDir": "./dist",
+    "rootDir": "./src",
     "typeRoots": [
       "./node_modules/@types",
       "./types"
     ]
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "tests"]
 }

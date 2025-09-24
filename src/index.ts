@@ -15,7 +15,6 @@ async function bootstrap() {
         throw new Error("CRITICAL ERROR: SPOTIFY_CLIENT_SECRET environment variable is not set.");
     }
 
-    // Server-Instanz mit Konfiguration erstellen
     const server = new Server({
         port: baseConfig.port,
         jwtSecret: SECRET_KEY,
