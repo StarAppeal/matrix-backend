@@ -4,7 +4,7 @@ const loadConfigWithEnv = async (envVars: Record<string, string | undefined>) =>
     for (const key in envVars) {
         vi.stubEnv(key, envVars[key] as string);
     }
-    const { config } = await import("../src/config");
+    const { config } = await import("../src/config/config");
     return config;
 };
 

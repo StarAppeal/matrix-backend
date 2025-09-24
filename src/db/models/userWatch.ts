@@ -4,7 +4,7 @@ import {appEventBus, USER_UPDATED_EVENT} from "../../utils/eventBus";
 export function watchUserChanges() {
     const changeStream = UserModel.watch([], { fullDocument: 'updateLookup' });
 
-    changeStream.on('change', (change) => {
+    changeStream.on('change', (change: any) => {
         if (change.operationType === 'update' && change.fullDocument) {
             const updatedUser = change.fullDocument;
 

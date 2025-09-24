@@ -15,6 +15,7 @@ import {IUser} from "./db/models/user";
 import {SpotifyPollingService} from "./services/spotifyPollingService";
 import {UserService} from "./services/db/UserService";
 import {WeatherPollingService} from "./services/weatherPollingService";
+import {JwtAuthenticator} from "./utils/jwtAuthenticator";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
@@ -22,14 +23,15 @@ export class ExtendedWebSocketServer {
     private readonly spotifyPollingService: SpotifyPollingService;
     private readonly weatherPollingService: WeatherPollingService;
 
-    constructor(server: Server, userService: UserService, spotifyPollingService: SpotifyPollingService, weatherPollingService: WeatherPollingService) {
+    constructor(server: Server, userService: UserService, spotifyPollingService: SpotifyPollingService,
+                weatherPollingService: WeatherPollingService, jwtAuthenticator: JwtAuthenticator) {
         this.userService = userService;
         this.spotifyPollingService = spotifyPollingService;
         this.weatherPollingService = weatherPollingService;
 
         this._wss = new WebSocketServer({
             server,
-            verifyClient: (info, callback) => verifyClient(info.req, callback),
+            verifyClient: (info, callback) => verifyClient(info.req, jwtAuthenticator, callback),
         });
 
         this._setupConnectionHandling();
