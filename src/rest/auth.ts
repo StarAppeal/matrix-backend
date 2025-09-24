@@ -10,9 +10,11 @@ import {UserService} from "../services/db/UserService";
 
 export class RestAuth {
     private readonly userService: UserService;
+    private readonly jwtAuthenticator: JwtAuthenticator;
 
-    constructor(userService: UserService) {
+    constructor(userService: UserService, jwtAuthenticator: JwtAuthenticator) {
         this.userService = userService;
+        this.jwtAuthenticator = jwtAuthenticator;
     }
 
     public createRouter() {
@@ -81,8 +83,7 @@ export class RestAuth {
                     return unauthorized(res, "Invalid password", {field: "password", code: "INVALID_PASSWORD"});
                 }
 
-                const jwtToken = new JwtAuthenticator(process.env.SECRET_KEY!)
-                    .generateToken({
+                const jwtToken = this.jwtAuthenticator.generateToken({
                         username: user.name,
                         id: user.id,
                         uuid: user.uuid

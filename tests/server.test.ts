@@ -4,15 +4,33 @@ import { Server } from "../src/server";
 import { Router, type Request, type Response, type NextFunction } from "express"; // Import Express types
 import type { Express } from "express";
 import { authLimiter } from "../src/rest/middleware/rateLimit";
+import {
+    createMockJwtAuthenticator,
+    createMockSpotifyPollingService,
+    createMockSpotifyTokenService,
+    createMockUserService
+} from "./helpers/testSetup";
+
+
+const mockS3Service = {
+    ensureBucketExists: vi.fn().mockResolvedValue(undefined),
+    uploadFile: vi.fn(),
+    getSignedDownloadUrl: vi.fn(),
+} as any;
+
+const mockUserService = createMockUserService() as any;
+const mockSpotifyTokenService = createMockSpotifyTokenService() as any;
+const mockSpotifyPollingService = createMockSpotifyPollingService() as any;
+const mockWeatherPollingService = {
+    subscribeUser: vi.fn(),
+    unsubscribeUser: vi.fn()
+} as any;
+const mockJwtAuthenticator = createMockJwtAuthenticator() as any;
 
 vi.mock("../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn().mockResolvedValue(undefined),
     disconnectFromDatabase: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock("../src/services/db/UserService", () => ({
-    UserService: { create: vi.fn().mockResolvedValue({}) },
-}));
-vi.mock("../src/services/spotifyTokenService", () => ({ SpotifyTokenService: vi.fn() }));
 
 vi.mock("../src/websocket", () => ({
     ExtendedWebSocketServer: vi.fn().mockImplementation(() => {
@@ -28,12 +46,6 @@ vi.mock("../src/rest/middleware/rateLimit", async (importOriginal) => {
         spotifyLimiter: vi.fn((req: Request, res: Response, next: NextFunction) => next()),
     };
 });
-
-vi.mock("../src/rest/middleware/authenticateJwt", () => ({
-    authenticateJwt: vi.fn(() => (req: Request, res: Response, next: NextFunction) => {
-        res.status(401).json({ error: "Unauthorized" });
-    }),
-}));
 
 vi.mock("../src/rest/auth", () => {
     const MockRestAuth = vi.fn().mockImplementation(() => {
@@ -59,8 +71,6 @@ vi.mock("../src/rest/auth", () => {
 const mockServerConfig = {
     port: 8888,
     jwtSecret: "a-very-secure-test-secret-that-is-at-least-32-chars-long",
-    spotifyClientId: "test-id",
-    spotifyClientSecret: "test-secret",
     cors: {
         origin: "http://test-origin.com",
         credentials: true,
@@ -73,13 +83,27 @@ describe("Server Class Integration Tests", () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        server = new Server(mockServerConfig);
+        server = new Server(mockServerConfig,  {
+            s3Service: mockS3Service,
+            userService: mockUserService,
+            spotifyTokenService: mockSpotifyTokenService,
+            spotifyPollingService: mockSpotifyPollingService,
+            weatherPollingService: mockWeatherPollingService,
+            jwtAuthenticator: mockJwtAuthenticator,
+        });
         await server.start();
         app = server.app;
     });
 
     afterEach(async () => {
         await server.stop();
+    });
+
+    describe('Server Startup', () => {
+        it('should call ensureBucketExists on S3Service during startup', () => {
+            expect(mockS3Service.ensureBucketExists).toHaveBeenCalledOnce();
+        });
+
     });
 
     describe("Server Setup and Middleware", () => {

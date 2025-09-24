@@ -4,17 +4,7 @@ import mongoose, { ConnectOptions } from "mongoose";
 let isConnected: boolean = false;
 let connectionPromise: Promise<void> | null = null;
 
-const connectWithRetry = async (): Promise<void> => {
-    const dbConnString: string | undefined = process.env.DB_CONN_STRING;
-    const dbName: string | undefined = process.env.DB_NAME;
-
-    if (!dbConnString) {
-        throw new Error("Missing environment variable: DB_CONN_STRING is required for database connection.");
-    }
-    if (!dbName) {
-        throw new Error("Missing environment variable: DB_NAME is required for database connection.");
-    }
-
+const connectWithRetry = async (dbName: string, dbConnString: string): Promise<void> => {
     const options: ConnectOptions = {
         dbName: dbName,
         serverSelectionTimeoutMS: 5000,
@@ -29,11 +19,11 @@ const connectWithRetry = async (): Promise<void> => {
     } catch (error) {
         console.error("Failed to connect to MongoDB. Retrying in 5 seconds...", error);
         await new Promise<void>(resolve => setTimeout(resolve, 5000));
-        return connectWithRetry();
+        return connectWithRetry(dbName, dbConnString);
     }
 };
 
-export async function connectToDatabase(): Promise<void> {
+export async function connectToDatabase(dbName: string, dbConnString: string): Promise<void> {
     if (connectionPromise) {
         return connectionPromise;
     }
@@ -59,7 +49,7 @@ export async function connectToDatabase(): Promise<void> {
             console.error('Mongoose connection error:', err);
         });
 
-        await connectWithRetry();
+        await connectWithRetry(dbName, dbConnString);
     })();
 
     return connectionPromise;

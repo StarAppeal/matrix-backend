@@ -35,6 +35,7 @@ describe("RestAuth", () => {
     let mockJwtAuthenticator: any;
     let mockCrypto: any;
 
+
     beforeEach(() => {
         vi.clearAllMocks();
 
@@ -46,7 +47,7 @@ describe("RestAuth", () => {
         mockJwtAuthenticator = createMockJwtAuthenticator();
         vi.mocked(JwtAuthenticator).mockImplementation(() => mockJwtAuthenticator);
 
-        const restAuth = new RestAuth(mockUserService);
+        const restAuth = new RestAuth(mockUserService, mockJwtAuthenticator);
         app = createPublicTestApp(restAuth.createRouter(), "/auth");
 
         process.env.SECRET_KEY = "test-secret-key";
