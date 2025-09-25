@@ -1,4 +1,4 @@
-import {ExtendedWebSocket} from "../../../interfaces/extendedWebsocket";
+import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
 
 export abstract class CustomWebsocketEvent<T = any> {
     abstract event: string;
@@ -8,5 +8,4 @@ export abstract class CustomWebsocketEvent<T = any> {
     public constructor(ws: ExtendedWebSocket) {
         this.ws = ws;
     }
-
 }

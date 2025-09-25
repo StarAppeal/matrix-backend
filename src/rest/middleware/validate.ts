@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import {badRequest} from "../utils/responses";
+import { badRequest } from "../utils/responses";
 
 /**
  * A type definition for a validation function.
@@ -39,51 +39,52 @@ type Validator = (value: any) => true | string;
  * Validates whether a value is a valid URL. The value must be a string and conform to standard URL formatting rules.
  */
 export const v = {
-  isString: (opts?: { nonEmpty?: boolean; max?: number; min?: number }): Validator => {
-    return (value: any) => {
-      if (typeof value !== "string") return "must be a string";
-      if (opts?.nonEmpty && value.trim().length === 0) return "must be a non-empty string";
-      if (opts?.max !== undefined && value.length > opts.max) return `must be at most ${opts.max} chars`;
-      if (opts?.min !== undefined && value.length < opts.min) return `must be at least ${opts.min} chars`;
-      return true;
-    };
-  },
-  isNumber: (opts?: { min?: number; max?: number; integer?: boolean }): Validator => {
-    return (value: any) => {
-      if (typeof value !== "number" || Number.isNaN(value)) return "must be a number";
-      if (opts?.integer && !Number.isInteger(value)) return "must be an integer";
-      if (opts?.min !== undefined && value < opts.min) return `must be >= ${opts.min}`;
-      if (opts?.max !== undefined && value > opts.max) return `must be <= ${opts.max}`;
-      return true;
-    };
-  },
-  isBoolean: (): Validator => {
-    return (value: any) => (typeof value === "boolean" ? true : "must be a boolean");
-  },
-  isEnum: <T extends readonly string[]>(values: T): Validator => {
-    return (value: any) => (values.includes(value) ? true : `must be one of: ${values.join(", ")}`);
-  },
-  isArrayLength: (len: number): Validator => {
-    return (value: any) => (Array.isArray(value) && value.length === len ? true : `must be an array of length ${len}`);
-  },
-  isObject: (opts?: { nonEmpty?: boolean }): Validator => {
-    return (value: any) => {
-      if (typeof value !== "object" || value === null) return "must be an object";
-      if (opts?.nonEmpty && Object.keys(value).length === 0) return "must be a non-empty object";
-      return true;
-    };
-  },
-  isUrl: (): Validator => {
-    return (value: any) => {
-      if (typeof value !== "string") return "must be a string URL";
-      try {
-        new URL(value);
-        return true;
-      } catch {
-        return "must be a valid URL";
-      }
-    };
-  },
+    isString: (opts?: { nonEmpty?: boolean; max?: number; min?: number }): Validator => {
+        return (value: any) => {
+            if (typeof value !== "string") return "must be a string";
+            if (opts?.nonEmpty && value.trim().length === 0) return "must be a non-empty string";
+            if (opts?.max !== undefined && value.length > opts.max) return `must be at most ${opts.max} chars`;
+            if (opts?.min !== undefined && value.length < opts.min) return `must be at least ${opts.min} chars`;
+            return true;
+        };
+    },
+    isNumber: (opts?: { min?: number; max?: number; integer?: boolean }): Validator => {
+        return (value: any) => {
+            if (typeof value !== "number" || Number.isNaN(value)) return "must be a number";
+            if (opts?.integer && !Number.isInteger(value)) return "must be an integer";
+            if (opts?.min !== undefined && value < opts.min) return `must be >= ${opts.min}`;
+            if (opts?.max !== undefined && value > opts.max) return `must be <= ${opts.max}`;
+            return true;
+        };
+    },
+    isBoolean: (): Validator => {
+        return (value: any) => (typeof value === "boolean" ? true : "must be a boolean");
+    },
+    isEnum: <T extends readonly string[]>(values: T): Validator => {
+        return (value: any) => (values.includes(value) ? true : `must be one of: ${values.join(", ")}`);
+    },
+    isArrayLength: (len: number): Validator => {
+        return (value: any) =>
+            Array.isArray(value) && value.length === len ? true : `must be an array of length ${len}`;
+    },
+    isObject: (opts?: { nonEmpty?: boolean }): Validator => {
+        return (value: any) => {
+            if (typeof value !== "object" || value === null) return "must be an object";
+            if (opts?.nonEmpty && Object.keys(value).length === 0) return "must be a non-empty object";
+            return true;
+        };
+    },
+    isUrl: (): Validator => {
+        return (value: any) => {
+            if (typeof value !== "string") return "must be a string URL";
+            try {
+                new URL(value);
+                return true;
+            } catch {
+                return "must be a valid URL";
+            }
+        };
+    },
 };
 
 /**
@@ -106,17 +107,17 @@ type Schema = Record<string, { required?: boolean; validator: Validator }>;
  * @return {string[]} An array of error messages. If there are no validation errors, the array will be empty.
  */
 function validate(source: any, schema: Schema): string[] {
-  const errors: string[] = [];
-  for (const [key, rule] of Object.entries(schema)) {
-    const value = source?.[key];
-    if (value === undefined || value === null) {
-      if (rule.required) errors.push(`${key} is required`);
-      continue;
+    const errors: string[] = [];
+    for (const [key, rule] of Object.entries(schema)) {
+        const value = source?.[key];
+        if (value === undefined || value === null) {
+            if (rule.required) errors.push(`${key} is required`);
+            continue;
+        }
+        const res = rule.validator(value);
+        if (res !== true) errors.push(`${key} ${res}`);
     }
-    const res = rule.validator(value);
-    if (res !== true) errors.push(`${key} ${res}`);
-  }
-  return errors;
+    return errors;
 }
 
 /**
@@ -126,11 +127,11 @@ function validate(source: any, schema: Schema): string[] {
  * @return {Function} Express middleware function that validates the request body and invokes the next middleware if valid; otherwise, it responds with a 400 status and validation errors.
  */
 export function validateBody(schema: Schema) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errs = validate(req.body, schema);
-    if (errs.length) return badRequest(res, "Validation failed", errs);
-    next();
-  };
+    return (req: Request, res: Response, next: NextFunction) => {
+        const errs = validate(req.body, schema);
+        if (errs.length) return badRequest(res, "Validation failed", errs);
+        next();
+    };
 }
 
 /**
@@ -140,11 +141,11 @@ export function validateBody(schema: Schema) {
  * @return {(req: Request, res: Response, next: NextFunction) => void} A middleware function that validates the request parameters.
  */
 export function validateParams(schema: Schema) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errs = validate(req.params, schema);
-    if (errs.length) return res.status(400).send({ error: "Validation failed", details: errs });
-    next();
-  };
+    return (req: Request, res: Response, next: NextFunction) => {
+        const errs = validate(req.params, schema);
+        if (errs.length) return res.status(400).send({ error: "Validation failed", details: errs });
+        next();
+    };
 }
 
 /**
@@ -154,9 +155,9 @@ export function validateParams(schema: Schema) {
  * @return {Function} Middleware function that validates the query parameters and either sends a 400 response with validation errors or proceeds to the next middleware.
  */
 export function validateQuery(schema: Schema) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const errs = validate(req.query, schema);
-    if (errs.length) return res.status(400).send({ error: "Validation failed", details: errs });
-    next();
-  };
+    return (req: Request, res: Response, next: NextFunction) => {
+        const errs = validate(req.query, schema);
+        if (errs.length) return res.status(400).send({ error: "Validation failed", details: errs });
+        next();
+    };
 }

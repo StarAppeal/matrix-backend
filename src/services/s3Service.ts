@@ -2,10 +2,12 @@ import {
     S3Client,
     CreateBucketCommand,
     PutObjectCommand,
-    GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand
+    GetObjectCommand,
+    ListObjectsV2Command,
+    DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { randomUUID } from 'crypto';
+import { randomUUID } from "crypto";
 
 export interface S3ClientConfig {
     endpoint: string;
@@ -51,7 +53,7 @@ export class S3Service {
             await this.client.send(new CreateBucketCommand({ Bucket: this.bucketName }));
             console.log(`Bucket "${this.bucketName}" created successfully or already existed.`);
         } catch (err: any) {
-            if (err.name === 'BucketAlreadyOwnedByYou' || err.name === 'BucketAlreadyExists') {
+            if (err.name === "BucketAlreadyOwnedByYou" || err.name === "BucketAlreadyExists") {
                 console.log(`Bucket "${this.bucketName}" already exists.`);
             } else {
                 throw err;
@@ -60,7 +62,7 @@ export class S3Service {
     }
 
     async uploadFile(file: Express.Multer.File, userId: string): Promise<string> {
-        const fileExtension = file.originalname.split('.').pop();
+        const fileExtension = file.originalname.split(".").pop();
         const objectKey = `user-${userId}/${randomUUID()}.${fileExtension}`;
 
         const command = new PutObjectCommand({
@@ -74,7 +76,7 @@ export class S3Service {
         return objectKey;
     }
 
-    async listFilesForUser(userId: string): Promise<{ key: string, lastModified: Date }[]> {
+    async listFilesForUser(userId: string): Promise<{ key: string; lastModified: Date }[]> {
         const command = new ListObjectsV2Command({
             Bucket: this.bucketName,
             Prefix: `user-${userId}/`,
@@ -82,10 +84,12 @@ export class S3Service {
 
         const response = await this.client.send(command);
 
-        return response.Contents?.map(item => ({
-            key: item.Key!,
-            lastModified: item.LastModified!,
-        })) || [];
+        return (
+            response.Contents?.map((item) => ({
+                key: item.Key!,
+                lastModified: item.LastModified!,
+            })) || []
+        );
     }
 
     async deleteFile(objectKey: string): Promise<void> {

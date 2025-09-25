@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { notFound } from "../utils/responses";
-import {UserService} from "../../services/db/UserService";
+import { UserService } from "../../services/db/UserService";
 
 export function isAdmin(userService: UserService) {
     return async (req: Request, res: Response, next: NextFunction) => {

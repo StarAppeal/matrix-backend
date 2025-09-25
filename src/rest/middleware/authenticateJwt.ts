@@ -9,10 +9,7 @@ export function authenticateJwt(jwtAuthenticator: JwtAuthenticator) {
         const authHeader = req.headers["authorization"];
 
         if (!authHeader) {
-            return unauthorized(
-                res,
-                "Unauthorized: No Authorization header provided"
-            );
+            return unauthorized(res, "Unauthorized: No Authorization header provided");
         }
 
         if (!authHeader.startsWith(BEARER_PREFIX)) {

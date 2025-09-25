@@ -1,21 +1,21 @@
-import {Server} from "http";
-import {Server as WebSocketServer, WebSocket} from "ws";
-import {verifyClient} from "./utils/verifyClient";
-import {ExtendedWebSocket} from "./interfaces/extendedWebsocket";
-import {WebsocketServerEventHandler} from "./utils/websocket/websocketServerEventHandler";
-import {WebsocketEventHandler} from "./utils/websocket/websocketEventHandler";
-import {WebsocketEventType} from "./utils/websocket/websocketCustomEvents/websocketEventType";
+import { Server } from "http";
+import { Server as WebSocketServer, WebSocket } from "ws";
+import { verifyClient } from "./utils/verifyClient";
+import { ExtendedWebSocket } from "./interfaces/extendedWebsocket";
+import { WebsocketServerEventHandler } from "./utils/websocket/websocketServerEventHandler";
+import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
+import { WebsocketEventType } from "./utils/websocket/websocketCustomEvents/websocketEventType";
 import {
     appEventBus,
     SPOTIFY_STATE_UPDATED_EVENT,
     USER_UPDATED_EVENT,
-    WEATHER_STATE_UPDATED_EVENT
+    WEATHER_STATE_UPDATED_EVENT,
 } from "./utils/eventBus";
-import {IUser} from "./db/models/user";
-import {SpotifyPollingService} from "./services/spotifyPollingService";
-import {UserService} from "./services/db/UserService";
-import {WeatherPollingService} from "./services/weatherPollingService";
-import {JwtAuthenticator} from "./utils/jwtAuthenticator";
+import { IUser } from "./db/models/user";
+import { SpotifyPollingService } from "./services/spotifyPollingService";
+import { UserService } from "./services/db/UserService";
+import { WeatherPollingService } from "./services/weatherPollingService";
+import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
@@ -23,8 +23,13 @@ export class ExtendedWebSocketServer {
     private readonly spotifyPollingService: SpotifyPollingService;
     private readonly weatherPollingService: WeatherPollingService;
 
-    constructor(server: Server, userService: UserService, spotifyPollingService: SpotifyPollingService,
-                weatherPollingService: WeatherPollingService, jwtAuthenticator: JwtAuthenticator) {
+    constructor(
+        server: Server,
+        userService: UserService,
+        spotifyPollingService: SpotifyPollingService,
+        weatherPollingService: WeatherPollingService,
+        jwtAuthenticator: JwtAuthenticator
+    ) {
         this.userService = userService;
         this.spotifyPollingService = spotifyPollingService;
         this.weatherPollingService = weatherPollingService;
@@ -41,7 +46,7 @@ export class ExtendedWebSocketServer {
     public broadcast(message: string): void {
         this.getConnectedClients().forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(message, {binary: false});
+                client.send(message, { binary: false });
             }
         });
     }
@@ -49,7 +54,7 @@ export class ExtendedWebSocketServer {
     public sendMessageToUser(uuid: string, message: string): void {
         const client = this._findClientByUUID(uuid);
         if (client && client.readyState === WebSocket.OPEN) {
-            client.send(message, {binary: false});
+            client.send(message, { binary: false });
         }
     }
 
@@ -73,7 +78,11 @@ export class ExtendedWebSocketServer {
     private _onNewClientReady(ws: ExtendedWebSocket): void {
         console.log("WebSocket client connected and authenticated");
 
-        const socketEventHandler = new WebsocketEventHandler(ws, this.spotifyPollingService, this.weatherPollingService);
+        const socketEventHandler = new WebsocketEventHandler(
+            ws,
+            this.spotifyPollingService,
+            this.weatherPollingService
+        );
 
         socketEventHandler.enableErrorEvent();
         socketEventHandler.enablePongEvent();
@@ -98,29 +107,34 @@ export class ExtendedWebSocketServer {
             }
         });
 
-        appEventBus.on(SPOTIFY_STATE_UPDATED_EVENT, ({uuid, state}) => {
+        appEventBus.on(SPOTIFY_STATE_UPDATED_EVENT, ({ uuid, state }) => {
             const client = this._findClientByUUID(uuid);
             console.log(`Received update for user ${uuid}`);
             if (client) {
-                client.send(JSON.stringify({
-                    type: "SPOTIFY_UPDATE",
-                    payload: state,
-                }), {binary: false});
+                client.send(
+                    JSON.stringify({
+                        type: "SPOTIFY_UPDATE",
+                        payload: state,
+                    }),
+                    { binary: false }
+                );
             }
         });
 
-        appEventBus.on(WEATHER_STATE_UPDATED_EVENT, ({weatherData, subscribers}) => {
+        appEventBus.on(WEATHER_STATE_UPDATED_EVENT, ({ weatherData, subscribers }) => {
             for (const uuid of subscribers) {
                 const client = this._findClientByUUID(uuid);
                 if (client) {
-                    client.send(JSON.stringify({
-                        type: "WEATHER_UPDATE",
-                        payload: weatherData,
-                    }), {binary: false});
+                    client.send(
+                        JSON.stringify({
+                            type: "WEATHER_UPDATE",
+                            payload: weatherData,
+                        }),
+                        { binary: false }
+                    );
                 }
             }
         });
-
     }
 
     private _findClientByUUID(uuid: string): ExtendedWebSocket | undefined {

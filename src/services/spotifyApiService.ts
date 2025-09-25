@@ -1,5 +1,5 @@
 import axios from "axios";
-import {CurrentlyPlaying} from "../interfaces/CurrentlyPlaying";
+import { CurrentlyPlaying } from "../interfaces/CurrentlyPlaying";
 
 export class SpotifyApiService {
     private readonly apiUrl = "https://api.spotify.com/v1";
@@ -8,11 +8,11 @@ export class SpotifyApiService {
         try {
             const response = await axios.get<CurrentlyPlaying>(`${this.apiUrl}/me/player/currently-playing`, {
                 headers: {
-                    Authorization: `Bearer ${accessToken}`
+                    Authorization: `Bearer ${accessToken}`,
                 },
                 params: {
-                    additional_types: "episode"
-                }
+                    additional_types: "episode",
+                },
             });
 
             if (response.status === 204) {

@@ -18,7 +18,7 @@ const connectWithRetry = async (dbName: string, dbConnString: string): Promise<v
         await mongoose.connect(dbConnString, options);
     } catch (error) {
         console.error("Failed to connect to MongoDB. Retrying in 5 seconds...", error);
-        await new Promise<void>(resolve => setTimeout(resolve, 5000));
+        await new Promise<void>((resolve) => setTimeout(resolve, 5000));
         return connectWithRetry(dbName, dbConnString);
     }
 };
@@ -34,19 +34,19 @@ export async function connectToDatabase(dbName: string, dbConnString: string): P
             return;
         }
 
-        mongoose.connection.on('connected', () => {
+        mongoose.connection.on("connected", () => {
             isConnected = true;
-            console.log('Mongoose connected to DB.');
+            console.log("Mongoose connected to DB.");
         });
 
-        mongoose.connection.on('disconnected', () => {
+        mongoose.connection.on("disconnected", () => {
             isConnected = false;
-            console.warn('Mongoose disconnected from DB. Attempting to reconnect...');
+            console.warn("Mongoose disconnected from DB. Attempting to reconnect...");
         });
 
-        mongoose.connection.on('error', (err: Error) => {
+        mongoose.connection.on("error", (err: Error) => {
             isConnected = false;
-            console.error('Mongoose connection error:', err);
+            console.error("Mongoose connection error:", err);
         });
 
         await connectWithRetry(dbName, dbConnString);

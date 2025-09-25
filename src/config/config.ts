@@ -38,7 +38,7 @@ function isValidUrl(u: string): boolean {
     }
 }
 
-const NODE_ENV = (optionalString("NODE_ENV", process.env.NODE_ENV, "development") as NodeEnv);
+const NODE_ENV = optionalString("NODE_ENV", process.env.NODE_ENV, "development") as NodeEnv;
 const PORT = optionalNumber("PORT", process.env.PORT, 3000);
 
 const FRONTEND_URL = required("FRONTEND_URL", process.env.FRONTEND_URL);
@@ -46,7 +46,7 @@ if (!isValidUrl(FRONTEND_URL)) {
     throw new Error("FRONTEND_URL must be a valid URL");
 }
 
-export const config :BaseConfig = {
+export const config: BaseConfig = {
     env: NODE_ENV,
     port: PORT,
     cors: {

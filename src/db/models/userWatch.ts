@@ -1,11 +1,11 @@
-import { UserModel } from './user';
-import {appEventBus, USER_UPDATED_EVENT} from "../../utils/eventBus";
+import { UserModel } from "./user";
+import { appEventBus, USER_UPDATED_EVENT } from "../../utils/eventBus";
 
 export function watchUserChanges() {
-    const changeStream = UserModel.watch([], { fullDocument: 'updateLookup' });
+    const changeStream = UserModel.watch([], { fullDocument: "updateLookup" });
 
-    changeStream.on('change', (change: any) => {
-        if (change.operationType === 'update' && change.fullDocument) {
+    changeStream.on("change", (change: any) => {
+        if (change.operationType === "update" && change.fullDocument) {
             const updatedUser = change.fullDocument;
 
             appEventBus.emit(USER_UPDATED_EVENT, updatedUser);

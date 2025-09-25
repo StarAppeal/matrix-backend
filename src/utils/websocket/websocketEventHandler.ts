@@ -1,12 +1,15 @@
-import {ExtendedWebSocket} from "../../interfaces/extendedWebsocket";
-import {CustomWebsocketEvent} from "./websocketCustomEvents/customWebsocketEvent";
-import {getEventListeners} from "./websocketCustomEvents/websocketEventUtils";
-import {SpotifyPollingService} from "../../services/spotifyPollingService";
-import {WeatherPollingService} from "../../services/weatherPollingService";
+import { ExtendedWebSocket } from "../../interfaces/extendedWebsocket";
+import { CustomWebsocketEvent } from "./websocketCustomEvents/customWebsocketEvent";
+import { getEventListeners } from "./websocketCustomEvents/websocketEventUtils";
+import { SpotifyPollingService } from "../../services/spotifyPollingService";
+import { WeatherPollingService } from "../../services/weatherPollingService";
 
 export class WebsocketEventHandler {
-    constructor(private webSocket: ExtendedWebSocket, private spotifyPollingService: SpotifyPollingService, private readonly weatherPollingService: WeatherPollingService) {
-    }
+    constructor(
+        private webSocket: ExtendedWebSocket,
+        private spotifyPollingService: SpotifyPollingService,
+        private readonly weatherPollingService: WeatherPollingService
+    ) {}
 
     public enableErrorEvent() {
         this.webSocket.on("error", console.error);
@@ -31,15 +34,14 @@ export class WebsocketEventHandler {
 
     public enableMessageEvent() {
         this.webSocket.on("message", (data) => {
-                const message = data.toString();
-                const messageJson = JSON.parse(message);
-                const {type} = messageJson;
-                console.log("Received message:", message);
+            const message = data.toString();
+            const messageJson = JSON.parse(message);
+            const { type } = messageJson;
+            console.log("Received message:", message);
 
-                // emit event to the custom event handler
-                this.webSocket.emit(type, messageJson);
-            }
-        );
+            // emit event to the custom event handler
+            this.webSocket.emit(type, messageJson);
+        });
     }
 
     public registerCustomEvents() {
@@ -50,5 +52,4 @@ export class WebsocketEventHandler {
     private registerCustomEvent(customWebsocketEvent: CustomWebsocketEvent) {
         this.webSocket.on(customWebsocketEvent.event, customWebsocketEvent.handler.bind(customWebsocketEvent));
     }
-
 }
