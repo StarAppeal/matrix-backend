@@ -4,6 +4,7 @@ import express from "express";
 import {RestAuth} from "../../src/rest/auth";
 import {JwtAuthenticator} from "../../src/utils/jwtAuthenticator";
 import {PasswordUtils} from "../../src/utils/passwordUtils";
+// @ts-ignore
 import {createMockJwtAuthenticator, createMockUserService, createPublicTestApp} from "../helpers/testSetup";
 import crypto from "crypto";
 

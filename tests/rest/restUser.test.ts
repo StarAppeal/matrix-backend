@@ -2,6 +2,7 @@ import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import request from "supertest";
 
 import {RestUser} from "../../src/rest/restUser";
+// @ts-ignore
 import {createMockUserService, setupTestEnvironment, type TestEnvironment} from "../helpers/testSetup";
 
 vi.mock("../../src/services/db/UserService", () => ({
