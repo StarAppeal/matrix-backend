@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vi
 import { Request, Response, NextFunction } from "express";
 
 import { authenticateJwt } from "../../../src/rest/middleware/authenticateJwt";
+// @ts-ignore
 import { createMockJwtAuthenticator } from "../../helpers/testSetup";
 
 vi.mock("../../../src/utils/jwtAuthenticator");
@@ -43,6 +44,7 @@ describe("authenticateJwt middleware", () => {
             _authenticateJwt(req, res, next);
 
             expect(mockJwtInstance.verifyToken).toHaveBeenCalledWith("valid-jwt-token");
+            // @ts-ignore
             expect(req.payload).toEqual(mockPayload);
             expect(next).toHaveBeenCalledOnce();
             expect(res.status).not.toHaveBeenCalled();

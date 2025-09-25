@@ -4,6 +4,7 @@ import {GetStateEvent} from "../../../../src/utils/websocket/websocketCustomEven
 import {GetSettingsEvent} from "../../../../src/utils/websocket/websocketCustomEvents/getSettingsEvent";
 import {GetSpotifyUpdatesEvent} from "../../../../src/utils/websocket/websocketCustomEvents/getSpotifyUpdatesEvent";
 import {SpotifyPollingService} from "../../../../src/services/spotifyPollingService";
+// @ts-ignore
 import {createMockSpotifyPollingService,} from "../../../helpers/testSetup";
 import {StopSpotifyUpdatesEvent} from "../../../../src/utils/websocket/websocketCustomEvents/stopSpotifyUpdatesEvent";
 import {GetWeatherUpdatesEvent

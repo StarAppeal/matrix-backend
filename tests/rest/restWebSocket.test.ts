@@ -3,6 +3,7 @@ import request from "supertest";
 import express from "express";
 import { RestWebSocket } from "../../src/rest/restWebSocket";
 
+// @ts-ignore
 import { createTestApp, createMockWebSocketServer } from "../helpers/testSetup";
 
 vi.mock("../../src/websocket", () => ({

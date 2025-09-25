@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vitest";
 import { Request, Response, NextFunction } from "express";
 import { isAdmin } from "../../../src/rest/middleware/isAdmin";
+// @ts-ignore
 import { createMockUserService } from "../../helpers/testSetup";
 import { notFound } from "../../../src/rest/utils/responses";
 
@@ -28,6 +29,7 @@ describe("isAdmin middleware", () => {
         mockedUserService = createMockUserService();
 
         req = {
+            // @ts-ignore
             payload: { uuid, username: "username", id: ""}
         };
 

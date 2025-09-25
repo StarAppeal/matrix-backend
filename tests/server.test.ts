@@ -4,11 +4,13 @@ import { Server } from "../src/server";
 import { Router, type Request, type Response, type NextFunction } from "express"; // Import Express types
 import type { Express } from "express";
 import { authLimiter } from "../src/rest/middleware/rateLimit";
+
 import {
     createMockJwtAuthenticator,
     createMockSpotifyPollingService,
     createMockSpotifyTokenService,
     createMockUserService
+    // @ts-ignore
 } from "./helpers/testSetup";
 
 
