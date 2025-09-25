@@ -21,6 +21,7 @@ import {disconnectFromDatabase} from "./services/db/database.service";
 import {SpotifyTokenService} from "./services/spotifyTokenService";
 import {WeatherPollingService} from "./services/weatherPollingService";
 import {S3Service} from "./services/s3Service";
+import {RestStorage} from "./rest/restStorage";
 
 interface ServerDependencies {
     userService: UserService;
@@ -65,7 +66,7 @@ export class Server {
         watchUserChanges();
 
         this._setupMiddleware();
-        this._setupRoutes(userService, spotifyTokenService, jwtAuthenticator);
+        this._setupRoutes(userService, spotifyTokenService, jwtAuthenticator, s3Service);
         this._setupErrorHandling();
 
         this.httpServer = this.app.listen(this.config.port, () => {
@@ -100,13 +101,14 @@ export class Server {
         this.app.use(express.json({limit: "2mb"}));
     }
 
-    private _setupRoutes(userService: UserService, spotifyTokenService: SpotifyTokenService, jwtAuthenticator: JwtAuthenticator): void {
+    private _setupRoutes(userService: UserService, spotifyTokenService: SpotifyTokenService, jwtAuthenticator: JwtAuthenticator, s3Service: S3Service): void {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
         const restAuth = new RestAuth(userService, jwtAuthenticator);
         const restUser = new RestUser(userService);
         const spotifyTokenGenerator = new SpotifyTokenGenerator(spotifyTokenService);
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
+        const storage = new RestStorage(s3Service);
 
         this.app.get("/api/healthz", (_req, res) => res.status(200).send({status: "ok"}));
 
@@ -116,6 +118,7 @@ export class Server {
         this.app.use("/api/spotify", _authenticateJwt, spotifyLimiter, spotifyTokenGenerator.createRouter());
         this.app.use("/api/user", _authenticateJwt, restUser.createRouter());
         this.app.use("/api/jwt", _authenticateJwt, jwtTokenExtractor.createRouter());
+        this.app.use("/api/storage", _authenticateJwt, storage.createRouter());
 
         this.app.use("/api/websocket", _authenticateJwt, (req, res, next) => {
             if (this.webSocketServer) {

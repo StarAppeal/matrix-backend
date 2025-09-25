@@ -2,7 +2,7 @@ import {
     S3Client,
     CreateBucketCommand,
     PutObjectCommand,
-    GetObjectCommand
+    GetObjectCommand, ListObjectsV2Command, DeleteObjectCommand
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from 'crypto';
@@ -72,6 +72,30 @@ export class S3Service {
 
         await this.client.send(command);
         return objectKey;
+    }
+
+    async listFilesForUser(userId: string): Promise<{ key: string, lastModified: Date }[]> {
+        const command = new ListObjectsV2Command({
+            Bucket: this.bucketName,
+            Prefix: `user-${userId}/`,
+        });
+
+        const response = await this.client.send(command);
+
+        return response.Contents?.map(item => ({
+            key: item.Key!,
+            lastModified: item.LastModified!,
+        })) || [];
+    }
+
+    async deleteFile(objectKey: string): Promise<void> {
+        const command = new DeleteObjectCommand({
+            Bucket: this.bucketName,
+            Key: objectKey,
+        });
+
+        await this.client.send(command);
+        console.log(`File deleted: ${objectKey}`);
     }
 
     async getSignedDownloadUrl(objectKey: string, expiresIn: number = 60): Promise<string> {
