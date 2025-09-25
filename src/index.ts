@@ -1,6 +1,6 @@
 import { Server } from "./server";
 import { config as baseConfig } from "./config/config";
-import { S3Service } from "./services/s3Service";
+import { S3ClientConfig, S3Service } from "./services/s3Service";
 import { UserService } from "./services/db/UserService";
 import { SpotifyTokenService } from "./services/spotifyTokenService";
 import { connectToDatabase } from "./services/db/database.service";
@@ -21,6 +21,7 @@ async function bootstrap() {
         MINIO_ROOT_PASSWORD,
         DB_NAME,
         DB_CONN_STRING,
+        MINIO_SERVER_URL,
     } = process.env;
 
     if (!SECRET_KEY || SECRET_KEY.length < 32) {
@@ -45,11 +46,16 @@ async function bootstrap() {
         throw new Error("MINIO_BUCKET_NAME environment variable is not set.");
     }
 
+    if (!MINIO_SERVER_URL) {
+        throw new Error("MINIO_SERVER_URL environment variable is not set.");
+    }
+
     if (!DB_NAME || !DB_CONN_STRING) {
         throw new Error("DB_NAME and/or DB_CONN_STRING environment variable is not set.");
     }
 
-    const s3ClientConfig = {
+    const s3ClientConfig: S3ClientConfig = {
+        publicUrl: MINIO_SERVER_URL,
         endpoint: MINIO_ENDPOINT,
         port: parseInt(MINIO_PORT),
         accessKey: MINIO_ROOT_USER,
