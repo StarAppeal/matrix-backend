@@ -27,6 +27,7 @@ const testConfig: S3ClientConfig = {
     accessKey: "test-key",
     secretAccessKey: "test-secret",
     bucket: "test-bucket",
+    publicUrl: "http://test-publicUrl",
 };
 
 const MockS3Client = vi.mocked(S3Client);
@@ -45,6 +46,9 @@ describe("S3Service", () => {
                     send: mockSend,
                 }) as never
         );
+
+        // @ts-ignore
+        S3Service.instance = undefined;
 
         s3Service = S3Service.getInstance(testConfig);
     });
@@ -174,10 +178,11 @@ describe("S3Service", () => {
         });
     });
 
+    // ignore test for now.
     describe("getSignedDownloadUrl", () => {
         it("should generate a signed URL for a given object key", async () => {
             const objectKey = "user-123/image.png";
-            const fakeSignedUrl = "http://test-minio:9000/test-bucket/user-123/image.png?signed=true";
+            const fakeSignedUrl = "http://test-publicUrl/test-bucket/user-123/image.png?signed=true";
 
             mockGetSignedUrl.mockResolvedValue(fakeSignedUrl);
 

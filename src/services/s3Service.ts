@@ -16,6 +16,7 @@ export interface S3ClientConfig {
     secretAccessKey: string;
     bucket: string;
     region?: string;
+    publicUrl: string;
 }
 
 export class S3Service {
@@ -23,6 +24,7 @@ export class S3Service {
 
     private readonly client: S3Client;
     private readonly bucketName: string;
+    private readonly publicUrl: string;
 
     private constructor(clientConfig: S3ClientConfig) {
         this.client = new S3Client({
@@ -36,6 +38,7 @@ export class S3Service {
         });
 
         this.bucketName = clientConfig.bucket;
+        this.publicUrl = clientConfig.publicUrl;
     }
 
     public static getInstance(config?: S3ClientConfig): S3Service {
@@ -103,11 +106,19 @@ export class S3Service {
     }
 
     async getSignedDownloadUrl(objectKey: string, expiresIn: number = 60): Promise<string> {
+        // temporary client for public url
+        const signingClient = new S3Client({
+            endpoint: this.publicUrl,
+            forcePathStyle: true,
+            region: this.client.config.region,
+            credentials: this.client.config.credentials,
+        });
+
         const command = new GetObjectCommand({
             Bucket: this.bucketName,
             Key: objectKey,
         });
 
-        return await getSignedUrl(this.client, command, { expiresIn });
+        return await getSignedUrl(signingClient, command, { expiresIn });
     }
 }

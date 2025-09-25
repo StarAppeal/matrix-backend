@@ -46,12 +46,10 @@ export class RestStorage {
                 const userId = req.payload.uuid;
                 const objectKey = req.params[0];
 
-                console.log(userId);
-                console.log(objectKey);
-
                 if (!objectKey || !objectKey.startsWith(`user-${userId}`)) {
                     return forbidden(res);
                 }
+
                 try {
                     const expiresInSeconds = 60;
                     const downloadUrl = await this.s3Service.getSignedDownloadUrl(objectKey, expiresInSeconds);
