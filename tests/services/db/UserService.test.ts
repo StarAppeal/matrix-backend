@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {UserModel} from "../../../src/db/models/user";
-import {UserService} from "../../../src/services/db/UserService";
-import {connectToDatabase} from "../../../src/services/db/database.service";
+import { UserModel } from "../../../src/db/models/user";
+import { UserService } from "../../../src/services/db/UserService";
+import { connectToDatabase } from "../../../src/services/db/database.service";
 
 vi.mock("../../../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn(),
@@ -37,14 +37,6 @@ describe("UserService", () => {
 
             expect(instance1).toBe(instance2);
         });
-
-        it("should connect to database only on first creation", async () => {
-
-            await UserService.create();
-            await UserService.create();
-
-            expect(mockedConnectToDatabase).toHaveBeenCalledTimes(1);
-        });
     });
 
     describe("updateUserById", () => {
@@ -57,11 +49,7 @@ describe("UserService", () => {
 
             const result = await userService.updateUserById(userId, updateData);
 
-            expect(mockedUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-                userId,
-                updateData,
-                { new: true }
-            );
+            expect(mockedUserModel.findByIdAndUpdate).toHaveBeenCalledWith(userId, updateData, { new: true });
             expect(result).toEqual(updatedUser);
         });
 
@@ -177,7 +165,7 @@ describe("UserService", () => {
             };
             mockedUserModel.create.mockResolvedValue(createdUserDocument as any);
 
-            const result = await userService.createUser(userData as any)
+            const result = await userService.createUser(userData as any);
 
             expect(mockedUserModel.create).toHaveBeenCalledWith(userData);
             expect(result).not.toHaveProperty("password");

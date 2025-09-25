@@ -1,4 +1,3 @@
-import { connectToDatabase } from "./database.service";
 import { UpdateQuery } from "mongoose";
 import { CreateUserPayload, IUser, SpotifyConfig, UserModel } from "../../db/models/user";
 
@@ -9,7 +8,6 @@ export class UserService {
 
     public static async create(): Promise<UserService> {
         if (!this._instance) {
-            await connectToDatabase();
             this._instance = new UserService();
         }
         return this._instance;
