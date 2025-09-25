@@ -3,13 +3,6 @@ import multer from "multer";
 import express from "express";
 import { asyncHandler } from "./middleware/asyncHandler";
 import { badRequest, created, forbidden, notFound, ok } from "./utils/responses";
-import { vi } from "vitest";
-
-vi.mock("../../src/services/db/UserService", () => ({
-    UserService: {
-        create: vi.fn(),
-    },
-}));
 
 export class RestStorage {
     constructor(private readonly s3Service: S3Service) {}
@@ -77,7 +70,6 @@ export class RestStorage {
         router.delete(
             /\/files\/(.*)/,
             asyncHandler(async (req, res) => {
-                // <-- ÄNDERUNG HIER
                 const userId = req.payload.uuid;
                 const objectKey = req.params[0];
 

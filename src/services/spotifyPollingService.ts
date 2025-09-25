@@ -20,7 +20,7 @@ export class SpotifyPollingService {
         if (activePolls.has(uuid)) return;
 
         console.log(`[SpotifyPolling] Starting polling for user ${uuid}`);
-        const intervalId = setInterval(() => this._pollUser(uuid), 3000); // Sicherer 3-Sekunden-Intervall
+        const intervalId = setInterval(() => this._pollUser(uuid), 3000);
         activePolls.set(uuid, intervalId);
 
         this._pollUser(uuid);
