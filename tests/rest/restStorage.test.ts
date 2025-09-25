@@ -1,11 +1,11 @@
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import express from "express";
-import {RestStorage} from "../../src/rest/restStorage";
-import {S3Service} from "../../src/services/s3Service";
+import { RestStorage } from "../../src/rest/restStorage";
+import { S3Service } from "../../src/services/s3Service";
 
 // @ts-ignore
-import {createMockS3Service, createTestApp} from "../helpers/testSetup";
+import { createMockS3Service, createTestApp } from "../helpers/testSetup";
 
 vi.mock("../../src/services/s3Service");
 
@@ -25,9 +25,8 @@ describe("RestStorage", () => {
         app = createTestApp(restStorage.createRouter(), "/storage", {
             uuid: requestingUserUUID,
             name: "name",
-            id: "1234"
+            id: "1234",
         });
-
     });
 
     afterEach(() => {
@@ -39,9 +38,9 @@ describe("RestStorage", () => {
             const objectKey = `user-${requestingUserUUID}/generated-uuid.jpg`;
             mockS3Service.uploadFile.mockResolvedValue(objectKey);
 
-            const response = await request(app) // Verwende die 'app' aus dem beforeEach
+            const response = await request(app)
                 .post("/storage/upload")
-                .attach('image', Buffer.from("fake image data"), "test.jpg")
+                .attach("image", Buffer.from("fake image data"), "test.jpg")
                 .expect(201);
 
             expect(response.body.data).toEqual({
@@ -52,16 +51,14 @@ describe("RestStorage", () => {
             expect(mockS3Service.uploadFile).toHaveBeenCalledOnce();
             expect(mockS3Service.uploadFile).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    originalname: 'test.jpg'
+                    originalname: "test.jpg",
                 }),
                 requestingUserUUID
             );
         });
 
         it("should return a 400 Bad Request if no file is provided", async () => {
-            const response = await request(app)
-                .post("/storage/upload")
-                .expect(400);
+            const response = await request(app).post("/storage/upload").expect(400);
 
             expect(response.body.data.message).toBe("No file provided.");
             expect(mockS3Service.uploadFile).not.toHaveBeenCalled();
@@ -71,14 +68,12 @@ describe("RestStorage", () => {
     describe("GET /files", () => {
         it("should return a list of files for the current user", async () => {
             const mockFiles = [
-                {key: `user-${requestingUserUUID}/file1.txt`, lastModified: new Date()},
-                {key: `user-${requestingUserUUID}/image.png`, lastModified: new Date()},
+                { key: `user-${requestingUserUUID}/file1.txt`, lastModified: new Date() },
+                { key: `user-${requestingUserUUID}/image.png`, lastModified: new Date() },
             ];
             mockS3Service.listFilesForUser.mockResolvedValue(mockFiles);
 
-            const response = await request(app)
-                .get("/storage/files")
-                .expect(200);
+            const response = await request(app).get("/storage/files").expect(200);
 
             const responseData = JSON.parse(JSON.stringify(mockFiles));
             expect(response.body.data).toEqual(responseData);
@@ -87,7 +82,7 @@ describe("RestStorage", () => {
         });
     });
 
-    describe("GET /files/:key/url", () => { // Beschreibung an die Logik angepasst
+    describe("GET /files/:key/url", () => {
         it("should return a signed URL for a file owned by the user", async () => {
             const objectKey = `user-${requestingUserUUID}/my-photo.jpg`;
             const signedUrl = "http://s3.com/signed-url";
@@ -97,7 +92,7 @@ describe("RestStorage", () => {
                 .get(`/storage/files/${encodeURIComponent(objectKey)}/url`)
                 .expect(200);
 
-            expect(response.body.data).toEqual({url: signedUrl});
+            expect(response.body.data).toEqual({ url: signedUrl });
             expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledOnce();
             expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledWith(objectKey, 60);
         });
@@ -114,7 +109,7 @@ describe("RestStorage", () => {
 
         it("should return 404 Not Found if the file does not exist", async () => {
             const objectKey = `user-${requestingUserUUID}/non-existent.jpg`;
-            mockS3Service.getSignedDownloadUrl.mockRejectedValue({name: "NoSuchKey"});
+            mockS3Service.getSignedDownloadUrl.mockRejectedValue({ name: "NoSuchKey" });
 
             const response = await request(app)
                 .get(`/storage/files/${encodeURIComponent(objectKey)}/url`)
@@ -124,7 +119,7 @@ describe("RestStorage", () => {
         });
     });
 
-    describe("DELETE /files/:key", () => { // Beschreibung an die Logik angepasst
+    describe("DELETE /files/:key", () => {
         it("should delete a file owned by the user", async () => {
             const objectKey = `user-${requestingUserUUID}/file-to-delete.pdf`;
             mockS3Service.deleteFile.mockResolvedValue(undefined);
