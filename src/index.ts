@@ -1,13 +1,13 @@
-import {Server} from "./server";
-import {config as baseConfig} from "./config/config";
-import {S3Service} from "./services/s3Service";
-import {UserService} from "./services/db/UserService";
-import {SpotifyTokenService} from "./services/spotifyTokenService";
-import {connectToDatabase} from "./services/db/database.service";
-import {SpotifyApiService} from "./services/spotifyApiService";
-import {SpotifyPollingService} from "./services/spotifyPollingService";
-import {WeatherPollingService} from "./services/weatherPollingService";
-import {JwtAuthenticator} from "./utils/jwtAuthenticator";
+import { Server } from "./server";
+import { config as baseConfig } from "./config/config";
+import { S3Service } from "./services/s3Service";
+import { UserService } from "./services/db/UserService";
+import { SpotifyTokenService } from "./services/spotifyTokenService";
+import { connectToDatabase } from "./services/db/database.service";
+import { SpotifyApiService } from "./services/spotifyApiService";
+import { SpotifyPollingService } from "./services/spotifyPollingService";
+import { WeatherPollingService } from "./services/weatherPollingService";
+import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 
 async function bootstrap() {
     const {
@@ -20,7 +20,7 @@ async function bootstrap() {
         MINIO_ROOT_USER,
         MINIO_ROOT_PASSWORD,
         DB_NAME,
-        DB_CONN_STRING
+        DB_CONN_STRING,
     } = process.env;
 
     if (!SECRET_KEY || SECRET_KEY.length < 32) {
@@ -54,22 +54,19 @@ async function bootstrap() {
         port: parseInt(MINIO_PORT),
         accessKey: MINIO_ROOT_USER,
         secretAccessKey: MINIO_ROOT_PASSWORD,
-        bucket: MINIO_BUCKET_NAME
+        bucket: MINIO_BUCKET_NAME,
     };
 
     const dbConfig = {
         dbName: DB_NAME,
-        dbConnString: DB_CONN_STRING
-    }
+        dbConnString: DB_CONN_STRING,
+    };
 
     await connectToDatabase(dbConfig.dbName, dbConfig.dbConnString);
 
     const s3Service = S3Service.getInstance(s3ClientConfig);
     const userService = await UserService.create();
-    const spotifyTokenService = new SpotifyTokenService(
-        SPOTIFY_CLIENT_ID!,
-        SPOTIFY_CLIENT_SECRET!
-    );
+    const spotifyTokenService = new SpotifyTokenService(SPOTIFY_CLIENT_ID!, SPOTIFY_CLIENT_SECRET!);
 
     const spotifyApiService = new SpotifyApiService();
     const spotifyPollingService = new SpotifyPollingService(userService, spotifyApiService, spotifyTokenService);
@@ -77,24 +74,27 @@ async function bootstrap() {
 
     const jwtAuthenticator = new JwtAuthenticator(SECRET_KEY);
 
-    const server = new Server({
-        port: baseConfig.port,
-        jwtSecret: SECRET_KEY,
-        cors: baseConfig.cors,
-    }, {
-        s3Service,
-        userService,
-        spotifyTokenService,
-        spotifyPollingService,
-        weatherPollingService,
-        jwtAuthenticator
-    });
+    const server = new Server(
+        {
+            port: baseConfig.port,
+            jwtSecret: SECRET_KEY,
+            cors: baseConfig.cors,
+        },
+        {
+            s3Service,
+            userService,
+            spotifyTokenService,
+            spotifyPollingService,
+            weatherPollingService,
+            jwtAuthenticator,
+        }
+    );
 
     await server.start();
 }
 
-if (process.env.NODE_ENV !== 'test') {
-    bootstrap().catch(error => {
+if (process.env.NODE_ENV !== "test") {
+    bootstrap().catch((error) => {
         console.error("Fatal error during server startup:", error.message);
         process.exit(1);
     });

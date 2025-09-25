@@ -1,27 +1,27 @@
-import express, {Express, Request, Response, NextFunction} from "express";
-import {Server as HttpServer} from "http";
+import express, { Express, Request, Response, NextFunction } from "express";
+import { Server as HttpServer } from "http";
 import cors from "cors";
-import cookieParser from 'cookie-parser';
-import {randomUUID} from "crypto";
+import cookieParser from "cookie-parser";
+import { randomUUID } from "crypto";
 
-import {ExtendedWebSocketServer} from "./websocket";
-import {RestWebSocket} from "./rest/restWebSocket";
-import {RestUser} from "./rest/restUser";
-import {JwtTokenPropertiesExtractor} from "./rest/jwtTokenPropertiesExtractor";
-import {SpotifyTokenGenerator} from "./rest/spotifyTokenGenerator";
-import {RestAuth} from "./rest/auth";
-import {authLimiter, spotifyLimiter} from "./rest/middleware/rateLimit";
-import {extractTokenFromCookie} from "./rest/middleware/extractTokenFromCookie";
-import {JwtAuthenticator} from "./utils/jwtAuthenticator";
-import {authenticateJwt} from "./rest/middleware/authenticateJwt";
-import {watchUserChanges} from "./db/models/userWatch";
-import {SpotifyPollingService} from "./services/spotifyPollingService";
-import {UserService} from "./services/db/UserService";
-import {disconnectFromDatabase} from "./services/db/database.service";
-import {SpotifyTokenService} from "./services/spotifyTokenService";
-import {WeatherPollingService} from "./services/weatherPollingService";
-import {S3Service} from "./services/s3Service";
-import {RestStorage} from "./rest/restStorage";
+import { ExtendedWebSocketServer } from "./websocket";
+import { RestWebSocket } from "./rest/restWebSocket";
+import { RestUser } from "./rest/restUser";
+import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
+import { SpotifyTokenGenerator } from "./rest/spotifyTokenGenerator";
+import { RestAuth } from "./rest/auth";
+import { authLimiter, spotifyLimiter } from "./rest/middleware/rateLimit";
+import { extractTokenFromCookie } from "./rest/middleware/extractTokenFromCookie";
+import { JwtAuthenticator } from "./utils/jwtAuthenticator";
+import { authenticateJwt } from "./rest/middleware/authenticateJwt";
+import { watchUserChanges } from "./db/models/userWatch";
+import { SpotifyPollingService } from "./services/spotifyPollingService";
+import { UserService } from "./services/db/UserService";
+import { disconnectFromDatabase } from "./services/db/database.service";
+import { SpotifyTokenService } from "./services/spotifyTokenService";
+import { WeatherPollingService } from "./services/weatherPollingService";
+import { S3Service } from "./services/s3Service";
+import { RestStorage } from "./rest/restStorage";
 
 interface ServerDependencies {
     userService: UserService;
@@ -46,8 +46,10 @@ export class Server {
     private httpServer: HttpServer | null = null;
     private webSocketServer: ExtendedWebSocketServer | null = null;
 
-    constructor(private readonly config: ServerConfig,
-                private readonly dependencies: ServerDependencies) {
+    constructor(
+        private readonly config: ServerConfig,
+        private readonly dependencies: ServerDependencies
+    ) {
         this.app = express();
     }
 
@@ -58,10 +60,10 @@ export class Server {
             spotifyTokenService,
             spotifyPollingService,
             weatherPollingService,
-            jwtAuthenticator
+            jwtAuthenticator,
         } = this.dependencies;
 
-        await s3Service.ensureBucketExists()
+        await s3Service.ensureBucketExists();
 
         watchUserChanges();
 
@@ -73,7 +75,13 @@ export class Server {
             console.log(`Server is running on port ${this.config.port}`);
         });
 
-        this.webSocketServer = new ExtendedWebSocketServer(this.httpServer, userService, spotifyPollingService, weatherPollingService, jwtAuthenticator);
+        this.webSocketServer = new ExtendedWebSocketServer(
+            this.httpServer,
+            userService,
+            spotifyPollingService,
+            weatherPollingService,
+            jwtAuthenticator
+        );
 
         this._setupGracefulShutdown();
 
@@ -93,15 +101,22 @@ export class Server {
     private _setupMiddleware(): void {
         this.app.set("trust proxy", 1);
         this.app.use(cookieParser());
-        this.app.use(cors({
-            origin: this.config.cors.origin,
-            credentials: this.config.cors.credentials,
-        }));
+        this.app.use(
+            cors({
+                origin: this.config.cors.origin,
+                credentials: this.config.cors.credentials,
+            })
+        );
         this.app.use(this._securityHeaders);
-        this.app.use(express.json({limit: "2mb"}));
+        this.app.use(express.json({ limit: "2mb" }));
     }
 
-    private _setupRoutes(userService: UserService, spotifyTokenService: SpotifyTokenService, jwtAuthenticator: JwtAuthenticator, s3Service: S3Service): void {
+    private _setupRoutes(
+        userService: UserService,
+        spotifyTokenService: SpotifyTokenService,
+        jwtAuthenticator: JwtAuthenticator,
+        s3Service: S3Service
+    ): void {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
         const restAuth = new RestAuth(userService, jwtAuthenticator);
@@ -110,7 +125,7 @@ export class Server {
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
 
-        this.app.get("/api/healthz", (_req, res) => res.status(200).send({status: "ok"}));
+        this.app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
 
         this.app.use("/api/auth", authLimiter, restAuth.createRouter());
 
@@ -160,7 +175,7 @@ export class Server {
                 ok: false,
                 data: {
                     error: errorMessage,
-                    ...(statusCode >= 500 && {errorId: errorId}),
+                    ...(statusCode >= 500 && { errorId: errorId }),
                 },
             });
         });

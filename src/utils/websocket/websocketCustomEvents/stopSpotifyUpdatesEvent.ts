@@ -1,11 +1,10 @@
-import {CustomWebsocketEvent} from "./customWebsocketEvent";
-import {WebsocketEventType} from "./websocketEventType";
-import {NoData} from "./NoData";
-import {SpotifyPollingService} from "../../../services/spotifyPollingService";
-import {ExtendedWebSocket} from "../../../interfaces/extendedWebsocket";
+import { CustomWebsocketEvent } from "./customWebsocketEvent";
+import { WebsocketEventType } from "./websocketEventType";
+import { NoData } from "./NoData";
+import { SpotifyPollingService } from "../../../services/spotifyPollingService";
+import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
 
 export class StopSpotifyUpdatesEvent extends CustomWebsocketEvent<NoData> {
-
     event = WebsocketEventType.STOP_SPOTIFY_UPDATES;
 
     private readonly spotifyPollingService: SpotifyPollingService;
@@ -25,6 +24,5 @@ export class StopSpotifyUpdatesEvent extends CustomWebsocketEvent<NoData> {
         } else {
             console.warn("Could not stop Spotify polling: No UUID found on WebSocket payload.");
         }
-    }
-
+    };
 }

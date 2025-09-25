@@ -2,8 +2,8 @@ import { appEventBus, SPOTIFY_STATE_UPDATED_EVENT } from "../utils/eventBus";
 import { SpotifyApiService } from "./spotifyApiService";
 import { IUser } from "../db/models/user";
 import { AxiosError } from "axios";
-import {UserService} from "./db/UserService";
-import {SpotifyTokenService} from "./spotifyTokenService";
+import { UserService } from "./db/UserService";
+import { SpotifyTokenService } from "./spotifyTokenService";
 
 const userStateCache = new Map<string, any>();
 const activePolls = new Map<string, NodeJS.Timeout>();
@@ -12,7 +12,7 @@ export class SpotifyPollingService {
     constructor(
         private readonly userService: UserService,
         private readonly spotifyApiService: SpotifyApiService,
-        private readonly spotifyTokenService: SpotifyTokenService,
+        private readonly spotifyTokenService: SpotifyTokenService
     ) {}
 
     public startPollingForUser(user: IUser): void {
@@ -65,11 +65,10 @@ export class SpotifyPollingService {
                 userStateCache.set(uuid, currentState);
                 appEventBus.emit(SPOTIFY_STATE_UPDATED_EVENT, { uuid, state: currentState });
             }
-
         } catch (error) {
             if (error instanceof AxiosError && error.response) {
                 if (error.response.status === 429) {
-                    const retryAfter = Number(error.response.headers['retry-after'] || 5);
+                    const retryAfter = Number(error.response.headers["retry-after"] || 5);
                     console.warn(`[SpotifyPolling] Rate limit for ${uuid}. Pausing for ${retryAfter}s.`);
                     this._pausePolling(uuid, retryAfter * 1000);
                 } else if (error.response.status === 401) {
@@ -86,8 +85,7 @@ export class SpotifyPollingService {
         if (!currentState && !lastState) return false;
         if (!currentState || !lastState) return true;
 
-        return lastState.item?.id !== currentState.item?.id ||
-            lastState.is_playing !== currentState.is_playing;
+        return lastState.item?.id !== currentState.item?.id || lastState.is_playing !== currentState.is_playing;
     }
 
     private _pausePolling(uuid: string, durationMs: number): void {
@@ -96,7 +94,7 @@ export class SpotifyPollingService {
             activePolls.delete(uuid);
             setTimeout(() => {
                 console.log(`[SpotifyPolling] Resuming polling for ${uuid}.`);
-                this.userService.getUserByUUID(uuid).then(user => {
+                this.userService.getUserByUUID(uuid).then((user) => {
                     if (user) this.startPollingForUser(user);
                 });
             }, durationMs);

@@ -1,10 +1,8 @@
-import {appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT} from "../utils/eventBus";
+import { appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../utils/eventBus";
 import { getCurrentWeather } from "./owmApiService";
-import {IUser} from "../db/models/user";
-
+import { IUser } from "../db/models/user";
 
 export class WeatherPollingService {
-
     private readonly activeLocationPolls: Map<string, NodeJS.Timeout>;
     private readonly locationSubscriptions: Map<string, Set<string>>;
     private readonly weatherCache: Map<string, any>;
@@ -53,7 +51,7 @@ export class WeatherPollingService {
                 this.weatherCache.delete(location);
             }
         }
-        this.userLocationCache.delete(uuid)
+        this.userLocationCache.delete(uuid);
     }
 
     private _startPollingForLocation(location: string): void {

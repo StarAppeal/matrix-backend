@@ -6,9 +6,7 @@ export type ValidationResult = {
 };
 
 export class PasswordUtils {
-
-    private constructor() {
-    }
+    private constructor() {}
 
     public static async hashPassword(password: string): Promise<string> {
         return bcrypt.hash(password, 10);
@@ -26,26 +24,25 @@ export class PasswordUtils {
         const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
         if (password.length < minLength) {
-            return {valid: false, message: `Passwort muss mindestens ${minLength} Zeichen lang sein.`};
+            return { valid: false, message: `Passwort muss mindestens ${minLength} Zeichen lang sein.` };
         }
 
         if (!hasUpperCase) {
-            return {valid: false, message: "Passwort muss mindestens einen Großbuchstaben enthalten."};
+            return { valid: false, message: "Passwort muss mindestens einen Großbuchstaben enthalten." };
         }
 
         if (!hasLowerCase) {
-            return {valid: false, message: "Passwort muss mindestens einen Kleinbuchstaben enthalten."};
+            return { valid: false, message: "Passwort muss mindestens einen Kleinbuchstaben enthalten." };
         }
 
         if (!hasNumber) {
-            return {valid: false, message: "Passwort muss mindestens eine Zahl enthalten."};
+            return { valid: false, message: "Passwort muss mindestens eine Zahl enthalten." };
         }
 
         if (!hasSpecialChar) {
-            return {valid: false, message: "Passwort muss mindestens ein Sonderzeichen enthalten."};
+            return { valid: false, message: "Passwort muss mindestens ein Sonderzeichen enthalten." };
         }
 
-        return {valid: true, message: "Passwort ist gültig."};
+        return { valid: true, message: "Passwort ist gültig." };
     }
-
 }

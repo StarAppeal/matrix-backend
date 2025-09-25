@@ -1,4 +1,4 @@
-import {DecodedToken} from "../interfaces/decodedToken";
+import { DecodedToken } from "../interfaces/decodedToken";
 
 declare global {
     declare namespace Express {

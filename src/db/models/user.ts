@@ -1,6 +1,6 @@
 import "dotenv/config";
-import mongoose, {Schema, Document} from "mongoose";
-import {PasswordUtils} from "../../utils/passwordUtils";
+import mongoose, { Schema, Document } from "mongoose";
+import { PasswordUtils } from "../../utils/passwordUtils";
 
 export interface IUser extends Document {
     name: string;
@@ -14,10 +14,10 @@ export interface IUser extends Document {
 }
 
 export interface CreateUserPayload {
-    name: string,
-    password: string,
-    uuid: string,
-    config: UserConfig,
+    name: string;
+    password: string;
+    uuid: string;
+    config: UserConfig;
     timezone: string;
     location: string;
 }
@@ -30,12 +30,12 @@ export interface UserConfig {
 
 export interface MatrixState {
     global: {
-        mode: 'image' | 'text' | "idle" | "music" | "clock";
+        mode: "image" | "text" | "idle" | "music" | "clock";
         brightness: number;
     };
     text: {
         text: string;
-        align: 'left' | 'center' | 'right';
+        align: "left" | "center" | "right";
         speed: number;
         size: number;
         color: [number, number, number];
@@ -58,71 +58,83 @@ export interface SpotifyConfig {
     scope: string;
 }
 
-const matrixStateSchema = new Schema({
-    global: {
-        mode: {type: String, enum: ['image', 'text', 'idle', 'music', 'clock'], default: 'idle'},
-        brightness: {type: Number, min: 0, max: 100, default: 50},
-    },
-    text: {
-        text: {type: String, default: ""},
-        align: {type: String, enum: ['left', 'center', 'right'], default: 'center'},
-        speed: {type: Number, min: 0, max: 10, default: 3},
-        size: {type: Number, min: 1, max: 64, default: 12},
-        color: {
-            type: [Number],
-            validate: {
-                validator: (v: number[]) =>
-                    Array.isArray(v) && v.length === 3 && v.every(n => Number.isInteger(n) && n >= 0 && n <= 255),
-                message: "color must be an array of three integers between 0 and 255",
+const matrixStateSchema = new Schema(
+    {
+        global: {
+            mode: { type: String, enum: ["image", "text", "idle", "music", "clock"], default: "idle" },
+            brightness: { type: Number, min: 0, max: 100, default: 50 },
+        },
+        text: {
+            text: { type: String, default: "" },
+            align: { type: String, enum: ["left", "center", "right"], default: "center" },
+            speed: { type: Number, min: 0, max: 10, default: 3 },
+            size: { type: Number, min: 1, max: 64, default: 12 },
+            color: {
+                type: [Number],
+                validate: {
+                    validator: (v: number[]) =>
+                        Array.isArray(v) && v.length === 3 && v.every((n) => Number.isInteger(n) && n >= 0 && n <= 255),
+                    message: "color must be an array of three integers between 0 and 255",
+                },
+                default: [255, 255, 255],
             },
-            default: [255, 255, 255],
+        },
+        image: {
+            image: { type: String, default: "" },
+        },
+        clock: {
+            color: {
+                type: [Number],
+                validate: {
+                    validator: (v: number[]) =>
+                        Array.isArray(v) && v.length === 3 && v.every((n) => Number.isInteger(n) && n >= 0 && n <= 255),
+                    message: "color must be an array of three integers between 0 and 255",
+                },
+                default: [255, 255, 255],
+            },
+        },
+        music: {
+            fullscreen: { type: Boolean, default: false },
         },
     },
-    image: {
-        image: {type: String, default: ""},
-    },
-    clock: {
-        color: {
-            type: [Number],
-            validate: {
-                validator: (v: number[]) =>
-                    Array.isArray(v) && v.length === 3 && v.every(n => Number.isInteger(n) && n >= 0 && n <= 255),
-                message: "color must be an array of three integers between 0 and 255",
-            },
-            default: [255, 255, 255],
-        },
-    },
-    music: {
-        fullscreen: {type: Boolean, default: false},
-    },
-}, {_id: false});
+    { _id: false }
+);
 
-const spotifyConfigSchema = new Schema({
-    accessToken: {type: String},
-    refreshToken: {type: String},
-    expirationDate: {type: Date},
-    scope: {type: String},
-}, {_id: false});
+const spotifyConfigSchema = new Schema(
+    {
+        accessToken: { type: String },
+        refreshToken: { type: String },
+        expirationDate: { type: Date },
+        scope: { type: String },
+    },
+    { _id: false }
+);
 
-const userConfigSchema = new Schema({
-    isVisible: {type: Boolean, required: true},
-    canBeModified: {type: Boolean, required: true},
-    isAdmin: {type: Boolean, required: true},
-}, {_id: false});
+const userConfigSchema = new Schema(
+    {
+        isVisible: { type: Boolean, required: true },
+        canBeModified: { type: Boolean, required: true },
+        isAdmin: { type: Boolean, required: true },
+    },
+    { _id: false }
+);
 
-const userSchema = new Schema({
-    name: {type: String, required: true, index: true},
-    password: {type: String, required: true, select: false},
-    uuid: {type: String, required: true, unique: true, index: true},
-    config: {type: userConfigSchema, required: true},
-    lastState: {type: matrixStateSchema},
-    spotifyConfig: {type: spotifyConfigSchema},
-    timezone: {type: String, required: true},
-    location: {type: String, required: true},
-}, {
-    optimisticConcurrency: true,
-    timestamps: true,
-});
+const userSchema = new Schema(
+    {
+        name: { type: String, required: true, index: true },
+        password: { type: String, required: true, select: false },
+        uuid: { type: String, required: true, unique: true, index: true },
+        config: { type: userConfigSchema, required: true },
+        lastState: { type: matrixStateSchema },
+        spotifyConfig: { type: spotifyConfigSchema },
+        timezone: { type: String, required: true },
+        location: { type: String, required: true },
+    },
+    {
+        optimisticConcurrency: true,
+        timestamps: true,
+    }
+);
 
 userSchema.virtual("id").get(function (this: any) {
     return this._id?.toHexString?.() ?? this._id;
@@ -136,7 +148,7 @@ async function hashIfNeeded(next: Function, user: any) {
     if (!user.isModified?.("password")) return next();
     if (isBcryptHash(user.password)) return next();
     try {
-        user.password = await PasswordUtils.hashPassword(user.password)
+        user.password = await PasswordUtils.hashPassword(user.password);
         return next();
     } catch (e) {
         return next(e);
@@ -165,4 +177,4 @@ userSchema.pre("findOneAndUpdate", async function (next) {
     }
 });
 
-export const UserModel = mongoose.model<IUser>('User', userSchema);
+export const UserModel = mongoose.model<IUser>("User", userSchema);

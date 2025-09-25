@@ -1,9 +1,9 @@
 import express, { Router, Request, Response } from "express";
 import { ExtendedWebSocketServer } from "../websocket";
 import { asyncHandler } from "./middleware/asyncHandler";
-import {v, validateBody} from "./middleware/validate";
+import { v, validateBody } from "./middleware/validate";
 import { ok } from "./utils/responses";
-import {ExtendedWebSocket} from "../interfaces/extendedWebsocket";
+import { ExtendedWebSocket } from "../interfaces/extendedWebsocket";
 
 export class RestWebSocket {
     constructor(private webSocketServer: ExtendedWebSocketServer) {}
@@ -36,7 +36,9 @@ export class RestWebSocket {
                 users: {
                     required: true,
                     validator: (value: any) =>
-                        Array.isArray(value) && value.length > 0 && value.every((s) => typeof s === "string" && s.trim().length > 0)
+                        Array.isArray(value) &&
+                        value.length > 0 &&
+                        value.every((s) => typeof s === "string" && s.trim().length > 0)
                             ? true
                             : "must be a non-empty array of strings",
                 },
@@ -51,12 +53,14 @@ export class RestWebSocket {
             })
         );
 
-        router.get("/all-clients", asyncHandler(async (_req: Request, res: Response) => {
-            const connectedClients = this.webSocketServer.getConnectedClients();
-            const result = Array.from(connectedClients).map((client: ExtendedWebSocket) => client.payload);
-            return ok(res, { result });
-        }));
-
+        router.get(
+            "/all-clients",
+            asyncHandler(async (_req: Request, res: Response) => {
+                const connectedClients = this.webSocketServer.getConnectedClients();
+                const result = Array.from(connectedClients).map((client: ExtendedWebSocket) => client.payload);
+                return ok(res, { result });
+            })
+        );
 
         return router;
     }
