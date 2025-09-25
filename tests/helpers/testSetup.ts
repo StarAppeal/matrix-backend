@@ -125,3 +125,11 @@ export const createMockSpotifyPollingService = () =>  ({
     startPollingForUser: vi.fn(),
     stopPollingForUser: vi.fn()
 });
+
+export const createMockS3Service = () => ({
+    ensureBucketExists: vi.fn(),
+    uploadFile: vi.fn(),
+    listFilesForUser: vi.fn(),
+    deleteFile: vi.fn(),
+    getSignedDownloadUrl: vi.fn(),
+});
