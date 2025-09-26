@@ -6,7 +6,7 @@ import { PasswordUtils } from "../../src/utils/passwordUtils";
 export const defaultMockPayload = {
     uuid: "test-user-uuid",
     username: "testuser",
-    id: "test-user-id"
+    id: "test-user-id",
 };
 
 /**
@@ -121,9 +121,9 @@ export const createMockSpotifyApiService = () => ({
     getCurrentlyPlaying: vi.fn(),
 });
 
-export const createMockSpotifyPollingService = () =>  ({
+export const createMockSpotifyPollingService = () => ({
     startPollingForUser: vi.fn(),
-    stopPollingForUser: vi.fn()
+    stopPollingForUser: vi.fn(),
 });
 
 export const createMockS3Service = () => ({
@@ -132,4 +132,5 @@ export const createMockS3Service = () => ({
     listFilesForUser: vi.fn(),
     deleteFile: vi.fn(),
     getSignedDownloadUrl: vi.fn(),
+    isFileDuplicate: vi.fn(),
 });

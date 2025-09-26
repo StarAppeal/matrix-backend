@@ -35,6 +35,8 @@ describe("RestStorage", () => {
 
     describe("POST /upload", () => {
         it("should upload a file and return a 201 Created response", async () => {
+            mockS3Service.isFileDuplicate.mockResolvedValue(false);
+
             const objectKey = `user-${requestingUserUUID}/generated-uuid.jpg`;
             mockS3Service.uploadFile.mockResolvedValue(objectKey);
 
@@ -47,6 +49,14 @@ describe("RestStorage", () => {
                 message: "File uploaded successfully",
                 objectKey: objectKey,
             });
+
+            expect(mockS3Service.isFileDuplicate).toHaveBeenCalledOnce();
+            expect(mockS3Service.isFileDuplicate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    originalname: "test.jpg",
+                }),
+                requestingUserUUID
+            );
 
             expect(mockS3Service.uploadFile).toHaveBeenCalledOnce();
             expect(mockS3Service.uploadFile).toHaveBeenCalledWith(
@@ -61,6 +71,19 @@ describe("RestStorage", () => {
             const response = await request(app).post("/storage/upload").expect(400);
 
             expect(response.body.data.message).toBe("No file provided.");
+            expect(mockS3Service.uploadFile).not.toHaveBeenCalled();
+        });
+
+        it("should return a 400 Bad Request if the file is a duplicate", async () => {
+            mockS3Service.isFileDuplicate.mockResolvedValue(true);
+
+            const response = await request(app)
+                .post("/storage/upload")
+                .attach("image", Buffer.from("duplicate image data"), "duplicate.jpg")
+                .expect(400);
+
+            expect(response.body.data.message).toBe("File was already uploaded.");
+            expect(mockS3Service.isFileDuplicate).toHaveBeenCalledOnce();
             expect(mockS3Service.uploadFile).not.toHaveBeenCalled();
         });
     });

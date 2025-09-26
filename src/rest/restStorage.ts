@@ -24,6 +24,12 @@ export class RestStorage {
                 }
 
                 const userId = req.payload.uuid;
+
+                const isDuplicate = await this.s3Service.isFileDuplicate(req.file, userId);
+                if (isDuplicate) {
+                    return badRequest(res, "File was already uploaded.");
+                }
+
                 const objectKey = await this.s3Service.uploadFile(req.file, userId);
 
                 return created(res, { message: "File uploaded successfully", objectKey });
