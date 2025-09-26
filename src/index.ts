@@ -8,6 +8,7 @@ import { SpotifyApiService } from "./services/spotifyApiService";
 import { SpotifyPollingService } from "./services/spotifyPollingService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
+import { FileService } from "./services/db/fileService";
 
 async function bootstrap() {
     const {
@@ -70,7 +71,8 @@ async function bootstrap() {
 
     await connectToDatabase(dbConfig.dbName, dbConfig.dbConnString);
 
-    const s3Service = S3Service.getInstance(s3ClientConfig);
+    const fileService = FileService.getInstance();
+    const s3Service = S3Service.getInstance(s3ClientConfig, fileService);
     const userService = await UserService.create();
     const spotifyTokenService = new SpotifyTokenService(SPOTIFY_CLIENT_ID!, SPOTIFY_CLIENT_SECRET!);
 
