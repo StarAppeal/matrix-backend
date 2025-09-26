@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import { FileModel, File } from "../../db/models/file";
 
 export class FileService {
@@ -21,7 +20,7 @@ export class FileService {
         size: number
     ): Promise<File> {
         const fileRecord = new FileModel({
-            userId: new mongoose.Types.ObjectId(userId),
+            userId,
             objectKey,
             originalName,
             mimeType,
@@ -33,9 +32,7 @@ export class FileService {
     }
 
     async getFilesByUserId(userId: string): Promise<File[]> {
-        return FileModel.find({ userId: new mongoose.Types.ObjectId(userId) })
-            .sort({ uploadedAt: -1 })
-            .exec();
+        return FileModel.find({ userId }).sort({ uploadedAt: -1 }).exec();
     }
 
     async getFileByObjectKey(objectKey: string): Promise<File | null> {
@@ -48,12 +45,17 @@ export class FileService {
     }
 
     async isFileDuplicate(originalName: string, userId: string): Promise<boolean> {
-        const count = await FileModel.countDocuments({
-            userId: new mongoose.Types.ObjectId(userId),
-            originalName: originalName,
-        });
+        try {
+            const count = await FileModel.countDocuments({
+                userId,
+                originalName: originalName,
+            });
 
-        return count > 0;
+            return count > 0;
+        } catch (error) {
+            console.error(`Error in isFileDuplicate: ${error}`);
+            return false;
+        }
     }
 
     async updateObjectKey(fileId: string, objectKey: string): Promise<File | null> {

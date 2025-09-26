@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 export interface File {
     _id: mongoose.Types.ObjectId;
-    userId: mongoose.Types.ObjectId;
+    userId: string; // UUID des Benutzers statt MongoDB ObjectId
     objectKey: string;
     originalName: string;
     mimeType: string;
@@ -13,8 +13,7 @@ export interface File {
 const fileSchema = new mongoose.Schema<File>(
     {
         userId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "User",
+            type: String,
             required: true,
             index: true,
         },
