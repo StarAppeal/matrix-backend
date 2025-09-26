@@ -77,7 +77,6 @@ export class RestStorage {
                 const userId = req.payload.uuid;
                 const objectKey = req.params[0];
 
-                console.log(objectKey);
                 if (!objectKey.startsWith(`user-${userId}/`)) {
                     return forbidden(res);
                 }
