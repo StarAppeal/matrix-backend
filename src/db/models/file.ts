@@ -15,7 +15,6 @@ const fileSchema = new mongoose.Schema<File>(
         userId: {
             type: String,
             required: true,
-            index: true,
         },
         objectKey: {
             type: String,

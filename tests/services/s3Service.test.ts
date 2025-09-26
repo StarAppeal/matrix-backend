@@ -10,15 +10,17 @@ vi.mock("@aws-sdk/client-s3", async (importOriginal) => {
     };
 });
 
+vi.mock("../../src/services/db/fileService", () => ({
+    FileService: {
+        getInstance: vi.fn(),
+    },
+}));
+
 import { S3Service, S3ClientConfig } from "../../src/services/s3Service";
-import {
-    S3Client,
-    CreateBucketCommand,
-    PutObjectCommand,
-    ListObjectsV2Command,
-    DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+import { S3Client, CreateBucketCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { FileService } from "../../src/services/db/fileService";
+import { File } from "../../src/db/models/file";
 
 const testConfig: S3ClientConfig = {
     endpoint: "http://test-minio",
@@ -32,6 +34,13 @@ const testConfig: S3ClientConfig = {
 const MockS3Client = vi.mocked(S3Client);
 const mockSend = vi.fn();
 const mockGetSignedUrl = vi.mocked(getSignedUrl);
+const mockFileService = {
+    createFileRecord: vi.fn(),
+    getFilesByUserId: vi.fn(),
+    isFileDuplicate: vi.fn(),
+    deleteFileRecord: vi.fn(),
+    updateObjectKey: vi.fn(),
+};
 
 describe("S3Service", () => {
     let s3Service: S3Service;
@@ -53,10 +62,12 @@ describe("S3Service", () => {
                 }) as never
         );
 
+        vi.mocked(FileService.getInstance).mockReturnValue(mockFileService as any);
+
         // @ts-ignore
         S3Service.instance = undefined;
 
-        s3Service = S3Service.getInstance(testConfig);
+        s3Service = S3Service.getInstance(testConfig, mockFileService as any);
     });
 
     describe("Initialization and Bucket Creation", () => {
@@ -90,9 +101,12 @@ describe("S3Service", () => {
                 originalname: "test-image.jpg",
                 buffer: Buffer.from("test-data"),
                 mimetype: "image/jpeg",
+                size: 1024,
             };
 
             const userId = "user-123";
+            mockSend.mockResolvedValue({});
+            mockFileService.createFileRecord.mockResolvedValue({});
 
             const objectKey = await s3Service.uploadFile(mockFile as never, userId);
 
@@ -106,6 +120,14 @@ describe("S3Service", () => {
             expect(sentCommand.Bucket).toBe("test-bucket");
             expect(sentCommand.Key).toBe(objectKey);
             expect(sentCommand.Body).toBe(mockFile.buffer);
+
+            expect(mockFileService.createFileRecord).toHaveBeenCalledWith(
+                userId,
+                objectKey,
+                mockFile.originalname,
+                mockFile.mimetype,
+                mockFile.size
+            );
         });
     });
 
@@ -113,69 +135,60 @@ describe("S3Service", () => {
         const userId = "user-123";
 
         it("should return a correctly formatted list of files for a user", async () => {
-            const mockS3Response = {
-                Contents: [
-                    {
-                        Key: `user-${userId}/uuid1_file1.txt`,
-                        LastModified: new Date("2023-01-01"),
-                    },
-                    {
-                        Key: `user-${userId}/uuid2_image.jpg`,
-                        LastModified: new Date("2023-01-02"),
-                    },
-                ],
-            };
-            mockSend.mockResolvedValue(mockS3Response);
+            const mockDbFiles: Partial<File>[] = [
+                {
+                    objectKey: `user-${userId}/uuid1_file1.txt`,
+                    originalName: "file1.txt",
+                    mimeType: "text/plain",
+                    size: 100,
+                    uploadedAt: new Date("2023-01-01"),
+                },
+                {
+                    objectKey: `user-${userId}/uuid2_image.jpg`,
+                    originalName: "image.jpg",
+                    mimeType: "image/jpeg",
+                    size: 1024,
+                    uploadedAt: new Date("2023-01-02"),
+                },
+            ];
+            mockFileService.getFilesByUserId.mockResolvedValue(mockDbFiles);
 
             const files = await s3Service.listFilesForUser(userId);
 
-            expect(mockSend).toHaveBeenCalledOnce();
-            expect(mockSend).toHaveBeenCalledWith(expect.any(ListObjectsV2Command));
-
-            const sentCommand = (mockSend.mock.calls[0][0] as ListObjectsV2Command).input;
-            expect(sentCommand.Bucket).toBe("test-bucket");
-            expect(sentCommand.Prefix).toBe(`user-${userId}/`);
+            expect(mockFileService.getFilesByUserId).toHaveBeenCalledWith(userId);
 
             expect(files).toHaveLength(2);
             expect(files).toContainEqual({
                 key: `user-${userId}/uuid1_file1.txt`,
                 lastModified: new Date("2023-01-01"),
                 originalName: "file1.txt",
+                mimeType: "text/plain",
+                size: 100,
             });
             expect(files).toContainEqual({
                 key: `user-${userId}/uuid2_image.jpg`,
                 lastModified: new Date("2023-01-02"),
                 originalName: "image.jpg",
+                mimeType: "image/jpeg",
+                size: 1024,
             });
         });
 
         it("should return an empty array if the user has no files", async () => {
-            const mockS3Response = {
-                Contents: [],
-            };
-            mockSend.mockResolvedValue(mockS3Response);
+            mockFileService.getFilesByUserId.mockResolvedValue([]);
 
             const files = await s3Service.listFilesForUser(userId);
 
-            expect(mockSend).toHaveBeenCalledOnce();
-            expect(files).toEqual([]);
-        });
-
-        it("should return an empty array if the S3 response has no 'Contents' property", async () => {
-            const mockS3Response = {};
-            mockSend.mockResolvedValue(mockS3Response);
-
-            const files = await s3Service.listFilesForUser(userId);
-
-            expect(mockSend).toHaveBeenCalledOnce();
+            expect(mockFileService.getFilesByUserId).toHaveBeenCalledWith(userId);
             expect(files).toEqual([]);
         });
     });
 
     describe("deleteFile", () => {
-        it("should call the S3 client with the correct DeleteObjectCommand", async () => {
+        it("should call the S3 client with the correct DeleteObjectCommand and delete the file record", async () => {
             const objectKey = "user-123/some-file-to-delete.txt";
             mockSend.mockResolvedValue({});
+            mockFileService.deleteFileRecord.mockResolvedValue(true);
 
             await expect(s3Service.deleteFile(objectKey)).resolves.toBeUndefined();
 
@@ -185,6 +198,8 @@ describe("S3Service", () => {
             const sentCommand = (mockSend.mock.calls[0][0] as DeleteObjectCommand).input;
             expect(sentCommand.Bucket).toBe("test-bucket");
             expect(sentCommand.Key).toBe(objectKey);
+
+            expect(mockFileService.deleteFileRecord).toHaveBeenCalledWith(objectKey);
         });
 
         it("should throw an error if the S3 client fails to delete the object", async () => {
@@ -193,11 +208,13 @@ describe("S3Service", () => {
             mockSend.mockRejectedValue(s3Error);
 
             await expect(s3Service.deleteFile(objectKey)).rejects.toThrow("Access Denied");
+
+            expect(mockFileService.deleteFileRecord).not.toHaveBeenCalled();
         });
     });
 
     describe("isFileDuplicate", () => {
-        it("should correctly identify duplicate files", async () => {
+        it("should use FileService to check for duplicate files", async () => {
             const userId = "user-123";
             const mockFile = {
                 originalname: "duplicate-image.jpg",
@@ -205,30 +222,12 @@ describe("S3Service", () => {
                 mimetype: "image/jpeg",
             };
 
-            const mockFiles = [
-                {
-                    key: `user-${userId}/file1_original-file.txt`,
-                    lastModified: new Date("2023-01-01"),
-                    originalName: "original-file.txt",
-                },
-                {
-                    key: `user-${userId}/file2_duplicate-image.jpg`,
-                    lastModified: new Date("2023-01-02"),
-                    originalName: "duplicate-image.jpg",
-                },
-            ];
-
-            mockSend.mockResolvedValueOnce({
-                Contents: mockFiles.map((file) => ({
-                    Key: file.key,
-                    LastModified: file.lastModified,
-                })),
-            });
+            mockFileService.isFileDuplicate.mockResolvedValue(true);
 
             const isDuplicate = await s3Service.isFileDuplicate(mockFile as never, userId);
 
             expect(isDuplicate).toBe(true);
-            expect(mockSend).toHaveBeenCalledWith(expect.any(ListObjectsV2Command));
+            expect(mockFileService.isFileDuplicate).toHaveBeenCalledWith(mockFile.originalname, userId);
         });
 
         it("should correctly identify non-duplicate files", async () => {
@@ -239,60 +238,12 @@ describe("S3Service", () => {
                 mimetype: "image/jpeg",
             };
 
-            const mockFiles = [
-                {
-                    key: `user-${userId}/file1_existing-file.txt`,
-                    lastModified: new Date("2023-01-01"),
-                    originalName: "existing-file.txt",
-                },
-                {
-                    key: `user-${userId}/file2_another-image.jpg`,
-                    lastModified: new Date("2023-01-02"),
-                    originalName: "another-image.jpg",
-                },
-            ];
-
-            mockSend.mockResolvedValueOnce({
-                Contents: mockFiles.map((file) => ({
-                    Key: file.key,
-                    LastModified: file.lastModified,
-                })),
-            });
+            mockFileService.isFileDuplicate.mockResolvedValue(false);
 
             const isDuplicate = await s3Service.isFileDuplicate(mockFile as never, userId);
 
             expect(isDuplicate).toBe(false);
-            expect(mockSend).toHaveBeenCalledWith(expect.any(ListObjectsV2Command));
-        });
-
-        it("should handle empty file lists correctly", async () => {
-            const userId = "user-123";
-            const mockFile = {
-                originalname: "test-image.jpg",
-                buffer: Buffer.from("test-data"),
-                mimetype: "image/jpeg",
-            };
-
-            mockSend.mockResolvedValueOnce({
-                Contents: [],
-            });
-
-            const isDuplicate = await s3Service.isFileDuplicate(mockFile as never, userId);
-
-            expect(isDuplicate).toBe(false);
-            expect(mockSend).toHaveBeenCalledWith(expect.any(ListObjectsV2Command));
-        });
-    });
-
-    describe("extractOriginalNameFromKey", () => {
-        it("should correctly extract the original filename from an object key", () => {
-            const originalName = (s3Service as any).extractOriginalNameFromKey("user-123/abc123_original-file.jpg");
-            expect(originalName).toBe("original-file.jpg");
-        });
-
-        it("should return undefined for invalid object keys", () => {
-            const originalName = (s3Service as any).extractOriginalNameFromKey("invalid-key");
-            expect(originalName).toBeUndefined();
+            expect(mockFileService.isFileDuplicate).toHaveBeenCalledWith(mockFile.originalname, userId);
         });
     });
 
@@ -307,7 +258,6 @@ describe("S3Service", () => {
 
             expect(signedUrl).toBe(fakeSignedUrl);
 
-            // Prüfung, dass getSignedUrl korrekt aufgerufen wurde
             expect(mockGetSignedUrl).toHaveBeenCalledOnce();
             expect(mockGetSignedUrl).toHaveBeenCalledWith(
                 expect.anything(),
