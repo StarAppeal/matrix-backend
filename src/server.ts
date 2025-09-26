@@ -22,6 +22,7 @@ import { SpotifyTokenService } from "./services/spotifyTokenService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { S3Service } from "./services/s3Service";
 import { RestStorage } from "./rest/restStorage";
+import logger from "./utils/logger";
 
 interface ServerDependencies {
     userService: UserService;
@@ -72,7 +73,7 @@ export class Server {
         this._setupErrorHandling();
 
         this.httpServer = this.app.listen(this.config.port, () => {
-            console.log(`Server is running on port ${this.config.port}`);
+            logger.info(`Server started and listening on port ${this.config.port}`);
         });
 
         this.webSocketServer = new ExtendedWebSocketServer(
@@ -89,11 +90,11 @@ export class Server {
     }
 
     public async stop(): Promise<void> {
-        console.log("Stopping server gracefully...");
+        logger.info("Shutting down server gracefully...");
         await disconnectFromDatabase();
         if (this.httpServer) {
             this.httpServer.close(() => {
-                console.log("HTTP server closed.");
+                logger.info("HTTP server closed successfully");
             });
         }
     }
@@ -161,9 +162,9 @@ export class Server {
             const errorId = randomUUID();
             const statusCode = err?.status || 500;
 
-            console.error(`Error ID: ${errorId} | Status: ${statusCode} | Message: ${err?.message}`);
+            logger.error(`Error ID: ${errorId} | Status: ${statusCode} | Message: ${err?.message}`);
             if (err.stack) {
-                console.error(`Stack Trace [${errorId}]:`, err.stack);
+                logger.error(`Stack Trace [${errorId}]:`, err.stack);
             }
 
             let errorMessage = err?.message || "Internal Server Error";
@@ -183,7 +184,7 @@ export class Server {
 
     private _setupGracefulShutdown(): void {
         process.on("SIGTERM", async () => {
-            console.log("SIGTERM signal received. Closing server gracefully.");
+            logger.info("SIGTERM signal received. Closing server gracefully.");
             await this.stop();
             process.exit(0);
         });

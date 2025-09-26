@@ -1,4 +1,5 @@
 import { FileModel, File } from "../../db/models/file";
+import logger from "../../utils/logger";
 
 export class FileService {
     private static instance: FileService;
@@ -48,12 +49,12 @@ export class FileService {
         try {
             const count = await FileModel.countDocuments({
                 userId,
-                originalName: originalName,
+                originalName,
             });
 
             return count > 0;
         } catch (error) {
-            console.error(`Error in isFileDuplicate: ${error}`);
+            logger.error(`Error checking file duplicate: ${error}`);
             return false;
         }
     }

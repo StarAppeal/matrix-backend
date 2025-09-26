@@ -3,6 +3,7 @@ import { CustomWebsocketEvent } from "./websocketCustomEvents/customWebsocketEve
 import { getEventListeners } from "./websocketCustomEvents/websocketEventUtils";
 import { SpotifyPollingService } from "../../services/spotifyPollingService";
 import { WeatherPollingService } from "../../services/weatherPollingService";
+import logger from "../../utils/logger";
 
 export class WebsocketEventHandler {
     constructor(
@@ -12,21 +13,25 @@ export class WebsocketEventHandler {
     ) {}
 
     public enableErrorEvent() {
-        this.webSocket.on("error", console.error);
+        this.webSocket.on("error", (error) => {
+            logger.error("WebSocket error:", error);
+        });
     }
 
     //needed for the heartbeat mechanism
     public enablePongEvent() {
         this.webSocket.on("pong", () => {
             this.webSocket.isAlive = true;
-            console.log("Pong received");
+            logger.debug("Pong received from client");
         });
     }
 
     public enableDisconnectEvent(callback: () => void) {
         this.webSocket.onclose = (event) => {
-            console.log("WebSocket closed:", event.code, event.reason, event.wasClean, event.type);
-            console.log(`User: ${this.webSocket.payload.username} disconnected`);
+            logger.info(
+                `WebSocket closed: code=${event.code}, reason=${event.reason}, wasClean=${event.wasClean}, type=${event.type}`
+            );
+            logger.info(`User: ${this.webSocket.payload.username} disconnected`);
 
             callback();
         };
@@ -37,7 +42,7 @@ export class WebsocketEventHandler {
             const message = data.toString();
             const messageJson = JSON.parse(message);
             const { type } = messageJson;
-            console.log("Received message:", message);
+            logger.debug(`Received WebSocket message of type "${type}"`, { messageData: messageJson });
 
             // emit event to the custom event handler
             this.webSocket.emit(type, messageJson);

@@ -1,6 +1,7 @@
 import { appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../utils/eventBus";
 import { getCurrentWeather } from "./owmApiService";
 import { IUser } from "../db/models/user";
+import logger from "../utils/logger";
 
 export class WeatherPollingService {
     private readonly activeLocationPolls: Map<string, NodeJS.Timeout>;
@@ -20,7 +21,7 @@ export class WeatherPollingService {
     }
 
     public subscribeUser(uuid: string, location: string): void {
-        console.log(`[WeatherPolling] User ${uuid} subscribed to location "${location}"`);
+        logger.info(`User ${uuid} subscribed to weather updates for location "${location}"`);
 
         if (!this.locationSubscriptions.has(location)) {
             this.locationSubscriptions.set(location, new Set());
@@ -39,7 +40,7 @@ export class WeatherPollingService {
     }
 
     public unsubscribeUser(uuid: string, location: string): void {
-        console.log(`[WeatherPolling] User ${uuid} unsubscribed from location "${location}"`);
+        logger.info(`User ${uuid} unsubscribed from weather updates for location "${location}"`);
 
         const subscribers = this.locationSubscriptions.get(location);
         if (subscribers) {
@@ -55,7 +56,7 @@ export class WeatherPollingService {
     }
 
     private _startPollingForLocation(location: string): void {
-        console.log(`[WeatherPolling] Starting new poll for location: "${location}"`);
+        logger.info(`Starting new weather polling service for location: "${location}"`);
         const intervalId = setInterval(() => this._pollLocation(location), 1000 * 60 * 10);
         this.activeLocationPolls.set(location, intervalId);
 
@@ -64,7 +65,7 @@ export class WeatherPollingService {
 
     private _stopPollingForLocation(location: string): void {
         if (this.activeLocationPolls.has(location)) {
-            console.log(`[WeatherPolling] Stopping poll for location: "${location}"`);
+            logger.info(`Stopping weather polling service for location: "${location}"`);
             clearInterval(this.activeLocationPolls.get(location)!);
             this.activeLocationPolls.delete(location);
         }
@@ -72,7 +73,7 @@ export class WeatherPollingService {
 
     private async _pollLocation(location: string): Promise<void> {
         try {
-            console.log(`[WeatherPolling] Fetching weather for "${location}"...`);
+            logger.debug(`Fetching weather data for location "${location}"`);
             const weatherData = await getCurrentWeather(location);
             if (!weatherData) return;
 
@@ -83,7 +84,7 @@ export class WeatherPollingService {
                 appEventBus.emit(WEATHER_STATE_UPDATED_EVENT, { weatherData, subscribers: Array.from(subscribers) });
             }
         } catch (error) {
-            console.error(`[WeatherPolling] Error polling for location "${location}":`, error);
+            logger.error(`Error polling weather data for location "${location}":`, error);
         }
     }
 
@@ -93,7 +94,7 @@ export class WeatherPollingService {
         const oldLocation = this.userLocationCache.get(uuid);
 
         if (oldLocation && newLocation && oldLocation !== newLocation) {
-            console.log(`[WeatherPolling] Detected location change for user ${uuid} via User-Update.`);
+            logger.info(`Detected location change for user ${uuid} via User-Update.`);
 
             this.unsubscribeUser(uuid, oldLocation);
             this.subscribeUser(uuid, newLocation);

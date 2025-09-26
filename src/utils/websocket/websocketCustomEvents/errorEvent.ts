@@ -1,6 +1,7 @@
 import { WebsocketEventType } from "./websocketEventType";
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
+import logger from "../../logger";
 
 interface ErrorData {
     message: string;
@@ -15,7 +16,7 @@ export class ErrorEvent extends CustomWebsocketEvent<ErrorData> {
     }
 
     handler = async (data: ErrorData) => {
-        console.warn("Error message received", data.message);
-        console.warn("Traceback", data.traceback);
+        logger.warn("Error message received", data.message);
+        logger.warn("Traceback", data.traceback);
     };
 }

@@ -3,6 +3,7 @@ import "dotenv/config";
 import { IncomingMessage } from "node:http";
 import { ExtendedIncomingMessage } from "../interfaces/extendedIncomingMessage";
 import { JwtAuthenticator } from "./jwtAuthenticator";
+import logger from "./logger";
 
 export function verifyClient(
     request: IncomingMessage,
@@ -19,6 +20,6 @@ export function verifyClient(
 }
 
 const reject = (request: IncomingMessage, callback: (res: boolean, code?: number, message?: string) => void) => {
-    console.log("Connection refused", `${request.socket.remoteAddress}:${request.socket.remotePort}`);
+    logger.warn(`Connection refused from ${request.socket.remoteAddress}:${request.socket.remotePort}`);
     callback(false, 401, "Unauthorized");
 };

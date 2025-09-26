@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { unauthorized } from "../utils/responses";
 import { JwtAuthenticator } from "../../utils/jwtAuthenticator";
+import logger from "../../utils/logger";
 
 const BEARER_PREFIX = "Bearer ";
 
@@ -24,7 +25,6 @@ export function authenticateJwt(jwtAuthenticator: JwtAuthenticator) {
 
         try {
             const decodedToken = jwtAuthenticator.verifyToken(token);
-            console.log(decodedToken);
 
             if (!decodedToken) {
                 return unauthorized(res, "Unauthorized: Invalid token");
@@ -33,7 +33,7 @@ export function authenticateJwt(jwtAuthenticator: JwtAuthenticator) {
             req.payload = decodedToken;
             next();
         } catch (error: any) {
-            console.error("JWT Verification Error:", error.message);
+            logger.error("JWT Verification Error:", error.message);
             return unauthorized(res, "Unauthorized: Token verification failed");
         }
     };

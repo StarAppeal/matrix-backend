@@ -1,5 +1,6 @@
 import { UserModel } from "./user";
 import { appEventBus, USER_UPDATED_EVENT } from "../../utils/eventBus";
+import logger from "../../utils/logger";
 
 export function watchUserChanges() {
     const changeStream = UserModel.watch([], { fullDocument: "updateLookup" });
@@ -12,5 +13,5 @@ export function watchUserChanges() {
         }
     });
 
-    console.log("Watching for changes in the User collection...");
+    logger.info("User collection change stream initialized - watching for database updates");
 }

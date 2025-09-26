@@ -4,6 +4,7 @@ import { IUser } from "../db/models/user";
 import { AxiosError } from "axios";
 import { UserService } from "./db/UserService";
 import { SpotifyTokenService } from "./spotifyTokenService";
+import logger from "../utils/logger";
 
 const userStateCache = new Map<string, any>();
 const activePolls = new Map<string, NodeJS.Timeout>();
@@ -19,7 +20,7 @@ export class SpotifyPollingService {
         const uuid = user.uuid;
         if (activePolls.has(uuid)) return;
 
-        console.log(`[SpotifyPolling] Starting polling for user ${uuid}`);
+        logger.info(`Starting Spotify polling service for user ${uuid}`);
         const intervalId = setInterval(() => this._pollUser(uuid), 3000);
         activePolls.set(uuid, intervalId);
 
@@ -28,7 +29,7 @@ export class SpotifyPollingService {
 
     public stopPollingForUser(uuid: string): void {
         if (activePolls.has(uuid)) {
-            console.log(`[SpotifyPolling] Stopping polling for user ${uuid}`);
+            logger.info(`Stopping Spotify polling service for user ${uuid}`);
             clearInterval(activePolls.get(uuid)!);
             activePolls.delete(uuid);
             userStateCache.delete(uuid);
@@ -44,7 +45,7 @@ export class SpotifyPollingService {
 
         try {
             if (Date.now() > user.spotifyConfig.expirationDate.getTime()) {
-                console.log(`[SpotifyPolling] Token for ${uuid} expired, refreshing...`);
+                logger.debug(`Spotify token expired for user ${uuid}, refreshing token`);
                 const token = await this.spotifyTokenService.refreshToken(user.spotifyConfig.refreshToken);
                 const newConfig = {
                     refreshToken: user.spotifyConfig.refreshToken,
@@ -54,14 +55,14 @@ export class SpotifyPollingService {
                 };
                 user = await this.userService.updateUserByUUID(uuid, { spotifyConfig: newConfig });
 
-                console.log(`[SpotifyPolling] Token for ${uuid} refreshed.`);
+                logger.debug(`Successfully refreshed Spotify token for user ${uuid}`);
             }
 
             const currentState = await this.spotifyApiService.getCurrentlyPlaying(user!.spotifyConfig!.accessToken);
             const lastState = userStateCache.get(uuid);
 
             if (this._hasStateChanged(lastState, currentState)) {
-                console.log(`[SpotifyPolling] State change for ${uuid}. Emitting event.`);
+                logger.debug(`Spotify state changed for user ${uuid} - emitting update event`);
                 userStateCache.set(uuid, currentState);
                 appEventBus.emit(SPOTIFY_STATE_UPDATED_EVENT, { uuid, state: currentState });
             }
@@ -69,14 +70,14 @@ export class SpotifyPollingService {
             if (error instanceof AxiosError && error.response) {
                 if (error.response.status === 429) {
                     const retryAfter = Number(error.response.headers["retry-after"] || 5);
-                    console.warn(`[SpotifyPolling] Rate limit for ${uuid}. Pausing for ${retryAfter}s.`);
+                    logger.warn(`Spotify API rate limit reached for user ${uuid}. Pausing for ${retryAfter} seconds`);
                     this._pausePolling(uuid, retryAfter * 1000);
                 } else if (error.response.status === 401) {
-                    console.error(`[SpotifyPolling] Bad token for ${uuid}. Stopping poll.`);
+                    logger.error(`Invalid Spotify token for user ${uuid}. Stopping polling service`);
                     this.stopPollingForUser(uuid);
                 }
             } else {
-                console.error(`[SpotifyPolling] Unknown error for ${uuid}:`, error);
+                logger.error(`Unknown error in Spotify polling service for user ${uuid}:`, error);
             }
         }
     }
@@ -93,7 +94,7 @@ export class SpotifyPollingService {
             clearInterval(activePolls.get(uuid)!);
             activePolls.delete(uuid);
             setTimeout(() => {
-                console.log(`[SpotifyPolling] Resuming polling for ${uuid}.`);
+                logger.debug(`Resuming Spotify polling service for user ${uuid}`);
                 this.userService.getUserByUUID(uuid).then((user) => {
                     if (user) this.startPollingForUser(user);
                 });
