@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mocked } from "vitest";
 
 import type { IncomingMessage } from "node:http";
 import { verifyClient } from "../../src/utils/verifyClient";
