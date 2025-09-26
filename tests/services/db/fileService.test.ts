@@ -1,10 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FileModel } from "../../../src/db/models/file";
 import { FileService } from "../../../src/services/db/fileService";
+import logger from "../../../src/utils/logger";
 
 vi.mock("../../../src/db/models/file");
 
 const mockedFileModel = vi.mocked(FileModel);
+
+vi.mock("../../../src/utils/logger", () => ({
+    default: {
+        warn: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
 
 describe("FileService", () => {
     let fileService: FileService;
@@ -165,15 +175,10 @@ describe("FileService", () => {
         it("should return false if an error occurs", async () => {
             mockedFileModel.countDocuments.mockRejectedValue(new Error("Database error"));
 
-            // Mock console.error to prevent test output cluttering
-            const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
             const result = await fileService.isFileDuplicate("error-file.txt", "user123");
 
             expect(result).toBe(false);
-            expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Error in isFileDuplicate"));
-
-            consoleSpy.mockRestore();
+            expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("Error checking file duplicate"));
         });
     });
 

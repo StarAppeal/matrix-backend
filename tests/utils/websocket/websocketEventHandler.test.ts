@@ -2,21 +2,28 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vi
 import { WebsocketEventHandler } from "../../../src/utils/websocket/websocketEventHandler";
 import { ExtendedWebSocket } from "../../../src/interfaces/extendedWebsocket";
 import { CustomWebsocketEvent } from "../../../src/utils/websocket/websocketCustomEvents/customWebsocketEvent";
-import {SpotifyPollingService} from "../../../src/services/spotifyPollingService";
-import {WeatherPollingService} from "../../../src/services/weatherPollingService";
+import { SpotifyPollingService } from "../../../src/services/spotifyPollingService";
+import { WeatherPollingService } from "../../../src/services/weatherPollingService";
+import logger from "../../../src/utils/logger";
+
+vi.mock("../../../src/utils/logger", () => ({
+    default: {
+        warn: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
 
 describe("WebsocketEventHandler", () => {
     let mockWebSocket: Mocked<ExtendedWebSocket>;
     let websocketEventHandler: WebsocketEventHandler;
-    let mockSpotifyPollingService: Mocked<SpotifyPollingService>
-    let mockWeatherPollingService: Mocked<WeatherPollingService>
+    let mockSpotifyPollingService: Mocked<SpotifyPollingService>;
+    let mockWeatherPollingService: Mocked<WeatherPollingService>;
     let registeredHandlers: Map<string, (...args: any[]) => void>;
 
     beforeEach(() => {
         vi.clearAllMocks();
-
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        vi.spyOn(console, "log").mockImplementation(() => {});
 
         registeredHandlers = new Map();
 
@@ -34,7 +41,11 @@ describe("WebsocketEventHandler", () => {
         mockSpotifyPollingService = {} as Mocked<SpotifyPollingService>;
         mockWeatherPollingService = {} as Mocked<WeatherPollingService>;
 
-        websocketEventHandler = new WebsocketEventHandler(mockWebSocket, mockSpotifyPollingService, mockWeatherPollingService);
+        websocketEventHandler = new WebsocketEventHandler(
+            mockWebSocket,
+            mockSpotifyPollingService,
+            mockWeatherPollingService
+        );
     });
 
     afterEach(() => {
@@ -43,7 +54,16 @@ describe("WebsocketEventHandler", () => {
 
     it("should register an error event handler", () => {
         websocketEventHandler.enableErrorEvent();
-        expect(mockWebSocket.on).toHaveBeenCalledWith("error", console.error);
+
+        expect(mockWebSocket.on).toHaveBeenCalledWith("error", expect.any(Function));
+
+        const errorHandler = registeredHandlers.get("error");
+        expect(errorHandler).toBeDefined();
+
+        const testError = new Error("Test error");
+        errorHandler!(testError);
+
+        expect(logger.error).toHaveBeenCalledWith("WebSocket error:", testError);
     });
 
     it("should register a pong event handler that sets isAlive to true", () => {
@@ -55,7 +75,7 @@ describe("WebsocketEventHandler", () => {
         pongHandler!();
 
         expect(mockWebSocket.isAlive).toBe(true);
-        expect(console.log).toHaveBeenCalledWith("Pong received");
+        expect(logger.debug).toHaveBeenCalledWith("Pong received from client");
     });
 
     describe("enableDisconnectEvent", () => {
@@ -65,13 +85,16 @@ describe("WebsocketEventHandler", () => {
             websocketEventHandler.enableDisconnectEvent(mockCallback);
             expect(mockWebSocket.onclose).toBeInstanceOf(Function);
 
-            mockWebSocket.onclose!({ code: 1000, reason: "Normal" } as any);
+            mockWebSocket.onclose!({ code: 1000, reason: "Normal", wasClean: true, type: "close" } as any);
 
-            expect(console.log).toHaveBeenCalledWith("User: testuser disconnected");
+            expect(logger.info).toHaveBeenCalledWith(
+                "WebSocket closed: code=1000, reason=Normal, wasClean=true, type=close"
+            );
+            expect(logger.info).toHaveBeenCalledWith(`User: ${mockWebSocket.payload.username} disconnected`);
             expect(mockCallback).toHaveBeenCalledOnce();
         });
 
-        it("should handle disconnect with", () => {
+        it("should handle disconnect without calling clearInterval", () => {
             const mockCallback = vi.fn();
             const clearIntervalSpy = vi.spyOn(global, "clearInterval");
 
@@ -95,7 +118,9 @@ describe("WebsocketEventHandler", () => {
 
             messageHandler!(rawData);
 
-            expect(console.log).toHaveBeenCalledWith("Received message:", JSON.stringify(message));
+            expect(logger.debug).toHaveBeenCalledWith(`Received WebSocket message of type "test_event"`, {
+                messageData: message,
+            });
             expect(mockWebSocket.emit).toHaveBeenCalledWith("test_event", message);
         });
     });

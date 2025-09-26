@@ -1,17 +1,26 @@
-import {describe, it, expect, vi, beforeEach, afterEach, Mocked} from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from "vitest";
 
 import type { IncomingMessage } from "node:http";
 import { verifyClient } from "../../src/utils/verifyClient";
-import {JwtAuthenticator} from "../../src/utils/jwtAuthenticator";
+import { JwtAuthenticator } from "../../src/utils/jwtAuthenticator";
 // @ts-ignore
-import {createMockJwtAuthenticator} from "../helpers/testSetup";
+import { createMockJwtAuthenticator } from "../helpers/testSetup";
+import logger from "../../src/utils/logger";
+
+vi.mock("../../src/utils/logger", () => ({
+    default: {
+        warn: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
 
 describe("verifyClient", () => {
-    const payload = { id: "user-1", username: "hi", uuid: "1234" }
+    const payload = { id: "user-1", username: "hi", uuid: "1234" };
     const cb = vi.fn();
 
-    let mockJwtAuthenticator: Mocked<JwtAuthenticator>
-    let consoleSpy: ReturnType<typeof vi.spyOn>;
+    let mockJwtAuthenticator: Mocked<JwtAuthenticator>;
 
     function makeReq(authHeader?: string) {
         const headers: Record<string, string> = {};
@@ -24,18 +33,13 @@ describe("verifyClient", () => {
     beforeEach(() => {
         cb.mockReset();
         mockJwtAuthenticator = createMockJwtAuthenticator() as any;
-        consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-        consoleSpy.mockRestore();
     });
 
     it("accepts connections with valid token and sets payload", () => {
         const req = makeReq("Bearer valid.jwt");
         mockJwtAuthenticator.verifyToken.mockReturnValue(payload);
 
-        verifyClient(req, mockJwtAuthenticator ,cb);
+        verifyClient(req, mockJwtAuthenticator, cb);
 
         expect(mockJwtAuthenticator.verifyToken).toHaveBeenCalledWith("valid.jwt");
         expect(cb).toHaveBeenCalledWith(true);
@@ -49,7 +53,7 @@ describe("verifyClient", () => {
         verifyClient(req, mockJwtAuthenticator, cb);
 
         expect(cb).toHaveBeenCalledWith(false, 401, "Unauthorized");
-        expect(consoleSpy).toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalled();
     });
 
     it("rejects connection, if token is invalid", () => {
@@ -67,7 +71,7 @@ describe("verifyClient", () => {
         const req = makeReq(`Bearer ${expectedToken}`);
         mockJwtAuthenticator.verifyToken.mockReturnValue(payload);
 
-        verifyClient(req,mockJwtAuthenticator, cb);
+        verifyClient(req, mockJwtAuthenticator, cb);
 
         expect(mockJwtAuthenticator.verifyToken).toHaveBeenCalledWith(expectedToken);
         expect(cb).toHaveBeenCalledWith(true);

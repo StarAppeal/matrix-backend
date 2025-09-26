@@ -1,9 +1,8 @@
-import {describe, it, expect, vi, beforeEach, afterEach, Mocked} from "vitest";
-import {appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT} from "../../src/utils/eventBus";
-import {WeatherPollingService} from "../../src/services/weatherPollingService";
-import {IUser} from "../../src/db/models/user";
-import {getCurrentWeather} from "../../src/services/owmApiService";
-
+import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from "vitest";
+import { appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../../src/utils/eventBus";
+import { WeatherPollingService } from "../../src/services/weatherPollingService";
+import { IUser } from "../../src/db/models/user";
+import { getCurrentWeather } from "../../src/services/owmApiService";
 
 vi.mock("../../src/services/owmApiService");
 
@@ -12,8 +11,8 @@ vi.mock("../../src/utils/eventBus", () => ({
         on: vi.fn(),
         emit: vi.fn(),
     },
-    WEATHER_STATE_UPDATED_EVENT: 'weather:state-updated',
-    USER_UPDATED_EVENT: 'user:updated',
+    WEATHER_STATE_UPDATED_EVENT: "weather:state-updated",
+    USER_UPDATED_EVENT: "user:updated",
 }));
 
 vi.mock("../../src/services/owmApiService", () => ({
@@ -67,18 +66,26 @@ describe("WeatherPollingService", () => {
         });
 
         it("should stop the poll when the last user unsubscribes from a location", async () => {
+            // @ts-ignore - access to private property for test purposes
+            const activePolls = (pollingService as any).activeLocationPolls;
+
             pollingService.subscribeUser("user-1", "Berlin");
             pollingService.subscribeUser("user-2", "Berlin");
 
             await vi.advanceTimersByTimeAsync(0);
 
-            expect(vi.getTimerCount()).toBe(1);
+            expect(activePolls.has("Berlin")).toBe(true);
 
             pollingService.unsubscribeUser("user-1", "Berlin");
-            expect(vi.getTimerCount()).toBe(1);
+            expect(activePolls.has("Berlin")).toBe(true);
+
+            // @ts-ignore - access to private property for test purposes
+            const stopPollingSpy = vi.spyOn(pollingService as any, "_stopPollingForLocation");
 
             pollingService.unsubscribeUser("user-2", "Berlin");
-            expect(vi.getTimerCount()).toBe(0);
+
+            expect(stopPollingSpy).toHaveBeenCalledWith("Berlin");
+            expect(activePolls.has("Berlin")).toBe(false);
         });
     });
 
@@ -109,9 +116,7 @@ describe("WeatherPollingService", () => {
         let userUpdateListener: (user: IUser) => void;
 
         beforeEach(() => {
-            const onCall = mockedAppEventBus.on.mock.calls.find(
-                call => call[0] === USER_UPDATED_EVENT
-            );
+            const onCall = mockedAppEventBus.on.mock.calls.find((call) => call[0] === USER_UPDATED_EVENT);
             if (onCall) {
                 userUpdateListener = onCall[1];
             }
@@ -123,8 +128,8 @@ describe("WeatherPollingService", () => {
         });
 
         it("should automatically move a user's subscription when their location changes", () => {
-            const unsubscribeSpy = vi.spyOn(pollingService, 'unsubscribeUser');
-            const subscribeSpy = vi.spyOn(pollingService, 'subscribeUser');
+            const unsubscribeSpy = vi.spyOn(pollingService, "unsubscribeUser");
+            const subscribeSpy = vi.spyOn(pollingService, "subscribeUser");
 
             pollingService.subscribeUser("user-moving", "Berlin");
 
@@ -139,7 +144,7 @@ describe("WeatherPollingService", () => {
         });
 
         it("should do nothing if the user's location has not changed", () => {
-            const unsubscribeSpy = vi.spyOn(pollingService, 'unsubscribeUser');
+            const unsubscribeSpy = vi.spyOn(pollingService, "unsubscribeUser");
 
             pollingService.subscribeUser("user-staying", "Berlin");
 

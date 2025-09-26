@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { DecodedToken } from "../interfaces/decodedToken";
+import logger from "./logger";
 
 export class JwtAuthenticator {
     constructor(private secret: string) {}
@@ -12,7 +13,7 @@ export class JwtAuthenticator {
         try {
             return jwt.verify(token, this.secret) as DecodedToken;
         } catch (error) {
-            console.error("Error while verifying token:", error);
+            logger.error("Error while verifying token:", error);
         }
 
         return null;
