@@ -9,14 +9,6 @@ const logLevels = {
     debug: 4,
 };
 
-const logColors = {
-    error: "red",
-    warn: "yellow",
-    info: "green",
-    http: "magenta",
-    debug: "blue",
-};
-
 const logFormat = winston.format.combine(
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.errors({ stack: true }),
