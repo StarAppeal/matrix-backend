@@ -3,10 +3,10 @@ import {
     CreateBucketCommand,
     PutObjectCommand,
     GetObjectCommand,
-    ListObjectsV2Command,
     DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { FileService } from "./db/fileService";
 import { randomUUID } from "crypto";
 
 export interface S3ClientConfig {
@@ -25,8 +25,9 @@ export class S3Service {
     private readonly client: S3Client;
     private readonly bucketName: string;
     private readonly publicUrl: string;
+    private readonly fileService: FileService;
 
-    private constructor(clientConfig: S3ClientConfig) {
+    private constructor(clientConfig: S3ClientConfig, fileService: FileService) {
         this.client = new S3Client({
             endpoint: `${clientConfig.endpoint}:${clientConfig.port}`,
             forcePathStyle: true,
@@ -39,14 +40,15 @@ export class S3Service {
 
         this.bucketName = clientConfig.bucket;
         this.publicUrl = clientConfig.publicUrl;
+        this.fileService = fileService;
     }
 
-    public static getInstance(config?: S3ClientConfig): S3Service {
+    public static getInstance(config?: S3ClientConfig, fileService?: FileService): S3Service {
         if (!this.instance) {
-            if (!config) {
-                throw new Error("S3Service must be initialized with a config on first use.");
+            if (!config || !fileService) {
+                throw new Error("S3Service must be initialized with a config and fileService on first use.");
             }
-            this.instance = new S3Service(config);
+            this.instance = new S3Service(config, fileService);
         }
         return this.instance;
     }
@@ -65,64 +67,39 @@ export class S3Service {
     }
 
     async uploadFile(file: Express.Multer.File, userId: string): Promise<string> {
-        const objectKey = `user-${userId}/${randomUUID()}_${file.originalname}`;
+        const uuid = randomUUID();
+        const objectKey = `user-${userId}/${uuid}_${file.originalname}`;
 
         const command = new PutObjectCommand({
             Bucket: this.bucketName,
             Key: objectKey,
             Body: file.buffer,
             ContentType: file.mimetype,
-            Metadata: {
-                originalname: encodeURIComponent(file.originalname),
-            },
         });
 
         await this.client.send(command);
+
+        await this.fileService.createFileRecord(userId, objectKey, file.originalname, file.mimetype, file.size);
+
         return objectKey;
     }
 
-    async listFilesForUser(userId: string): Promise<{ key: string; lastModified: Date; originalName?: string }[]> {
-        const command = new ListObjectsV2Command({
-            Bucket: this.bucketName,
-            Prefix: `user-${userId}/`,
-        });
+    async listFilesForUser(
+        userId: string
+    ): Promise<{ key: string; lastModified: Date; originalName: string; mimeType: string; size: number }[]> {
+        const files = await this.fileService.getFilesByUserId(userId);
 
-        const response = await this.client.send(command);
-
-        return (
-            response.Contents?.map((item) => ({
-                key: item.Key!,
-                lastModified: item.LastModified!,
-                originalName: this.extractOriginalNameFromKey(item.Key!),
-            })) || []
-        );
+        return files.map((file) => ({
+            key: file.objectKey,
+            lastModified: file.uploadedAt,
+            originalName: file.originalName,
+            mimeType: file.mimeType,
+            size: file.size,
+        }));
     }
 
     async isFileDuplicate(file: Express.Multer.File, userId: string): Promise<boolean> {
-        const existingFiles = await this.listFilesForUser(userId);
-        const fileName = file.originalname.toLowerCase();
-
-        // Prüfen, ob eine Datei mit demselben Namen bereits existiert
-        for (const existingFile of existingFiles) {
-            const existingFileName = this.extractOriginalNameFromKey(existingFile.key);
-            if (existingFileName && existingFileName.toLowerCase() === fileName) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private extractOriginalNameFromKey(key: string): string | undefined {
-        // Extrahiere den Dateinamen aus dem Objektschlüssel
-        // Format: user-{userId}/{uuid}_{originalname}
-        const parts = key.split("/");
-        if (parts.length >= 2) {
-            const filename = parts[parts.length - 1];
-            const filenameMatch = filename.match(/[^_]+_(.+)$/);
-            return filenameMatch ? filenameMatch[1] : undefined;
-        }
-        return undefined;
+        return await this.fileService.isFileDuplicate(file.originalname, userId);
     }
 
     async deleteFile(objectKey: string): Promise<void> {
@@ -132,6 +109,9 @@ export class S3Service {
         });
 
         await this.client.send(command);
+
+        await this.fileService.deleteFileRecord(objectKey);
+
         console.log(`File deleted: ${objectKey}`);
     }
 
