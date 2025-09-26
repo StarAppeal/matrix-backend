@@ -1,5 +1,6 @@
 import axios from "axios";
 import { OAuthTokenResponse } from "../interfaces/OAuthTokenResponse";
+import logger from "../utils/logger";
 
 const url = "https://accounts.spotify.com/api/token";
 
@@ -10,7 +11,7 @@ export class SpotifyTokenService {
     ) {}
 
     public async refreshToken(refreshToken: string) {
-        console.log("refreshToken");
+        logger.debug("Refreshing Spotify token");
         const response = await axios.post(url, `grant_type=refresh_token&refresh_token=${refreshToken}`, {
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
@@ -22,7 +23,7 @@ export class SpotifyTokenService {
     }
 
     public async generateToken(authorizationCode: string, redirectUri: string) {
-        console.log("generateToken");
+        logger.debug("Generating new Spotify token");
         const response = await axios.post(
             url,
             `grant_type=authorization_code&code=${authorizationCode}&redirect_uri=${redirectUri}`,
@@ -34,7 +35,7 @@ export class SpotifyTokenService {
             }
         );
 
-        console.log(response.data);
+        logger.debug("Received Spotify token response", { data: response.data });
 
         return response.data as OAuthTokenResponse;
     }

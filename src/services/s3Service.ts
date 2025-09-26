@@ -8,6 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FileService } from "./db/fileService";
 import { randomUUID } from "crypto";
+import logger from "../utils/logger";
 
 export interface S3ClientConfig {
     endpoint: string;
@@ -56,10 +57,10 @@ export class S3Service {
     async ensureBucketExists(): Promise<void> {
         try {
             await this.client.send(new CreateBucketCommand({ Bucket: this.bucketName }));
-            console.log(`Bucket "${this.bucketName}" created successfully or already existed.`);
+            logger.info(`Bucket "${this.bucketName}" created successfully or already existed.`);
         } catch (err: any) {
             if (err.name === "BucketAlreadyOwnedByYou" || err.name === "BucketAlreadyExists") {
-                console.log(`Bucket "${this.bucketName}" already exists.`);
+                logger.info(`Bucket "${this.bucketName}" already exists.`);
             } else {
                 throw err;
             }
@@ -112,7 +113,7 @@ export class S3Service {
 
         await this.fileService.deleteFileRecord(objectKey);
 
-        console.log(`File deleted: ${objectKey}`);
+        logger.info(`File deleted: ${objectKey}`);
     }
 
     async getSignedDownloadUrl(objectKey: string, expiresIn: number = 60): Promise<string> {

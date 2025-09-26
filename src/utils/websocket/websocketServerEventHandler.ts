@@ -3,6 +3,7 @@ import { ExtendedIncomingMessage } from "../../interfaces/extendedIncomingMessag
 import { Server as WebSocketServer } from "ws";
 import { heartbeat } from "./websocketServerHeartbeatInterval";
 import { UserService } from "../../services/db/UserService";
+import logger from "../../utils/logger";
 
 export class WebsocketServerEventHandler {
     private readonly heartbeat: () => void;
@@ -44,7 +45,7 @@ export class WebsocketServerEventHandler {
 
     public enableCloseEvent(callback: () => void) {
         this.webSocketServer.on("close", () => {
-            console.log("WebSocket server closed");
+            logger.info("WebSocket server closed");
             callback();
         });
     }

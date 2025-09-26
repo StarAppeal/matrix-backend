@@ -16,6 +16,7 @@ import { SpotifyPollingService } from "./services/spotifyPollingService";
 import { UserService } from "./services/db/UserService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
+import logger from "./utils/logger";
 
 export class ExtendedWebSocketServer {
     private readonly _wss: WebSocketServer;
@@ -76,7 +77,7 @@ export class ExtendedWebSocketServer {
     }
 
     private _onNewClientReady(ws: ExtendedWebSocket): void {
-        console.log("WebSocket client connected and authenticated");
+        logger.info("WebSocket client connected and authenticated");
 
         const socketEventHandler = new WebsocketEventHandler(
             ws,
@@ -89,7 +90,7 @@ export class ExtendedWebSocketServer {
         socketEventHandler.enableMessageEvent();
         socketEventHandler.registerCustomEvents();
         socketEventHandler.enableDisconnectEvent(() => {
-            console.log("User disconnected");
+            logger.info("User disconnected");
         });
 
         // send initial state and settings
@@ -99,17 +100,17 @@ export class ExtendedWebSocketServer {
 
     private _listenForAppEvents(): void {
         appEventBus.on(USER_UPDATED_EVENT, (user: IUser) => {
-            console.log(`Received update for user ${user.uuid}`);
+            logger.debug(`Received update for user ${user.uuid}`);
             const client = this._findClientByUUID(user.uuid);
             if (client) {
-                console.log(`Pushing update to user ${user.uuid}`);
+                logger.debug(`Pushing update to user ${user.uuid}`);
                 client.emit(WebsocketEventType.UPDATE_USER_SINGLE, user);
             }
         });
 
         appEventBus.on(SPOTIFY_STATE_UPDATED_EVENT, ({ uuid, state }) => {
             const client = this._findClientByUUID(uuid);
-            console.log(`Received update for user ${uuid}`);
+            logger.debug(`Received update for user ${uuid}`);
             if (client) {
                 client.send(
                     JSON.stringify({

@@ -9,6 +9,7 @@ import { SpotifyPollingService } from "./services/spotifyPollingService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { FileService } from "./services/db/fileService";
+import logger from "./utils/logger";
 
 async function bootstrap() {
     const {
@@ -103,7 +104,7 @@ async function bootstrap() {
 
 if (process.env.NODE_ENV !== "test") {
     bootstrap().catch((error) => {
-        console.error("Fatal error during server startup:", error.message);
+        logger.error("Fatal error during server startup:", error.message);
         process.exit(1);
     });
 }

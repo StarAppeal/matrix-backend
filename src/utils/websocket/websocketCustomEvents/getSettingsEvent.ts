@@ -1,12 +1,14 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
-import { NoData } from "./NoData";
+import logger from "../../../utils/logger";
 
-export class GetSettingsEvent extends CustomWebsocketEvent<NoData> {
+export class GetSettingsEvent extends CustomWebsocketEvent {
     event = WebsocketEventType.GET_SETTINGS;
 
     handler = async () => {
-        console.log("Getting settings");
+        logger.debug(`User ${this.ws.payload?.username} requested settings`);
+
+        // Send settings back to client
         this.ws.send(
             JSON.stringify({
                 type: "SETTINGS",

@@ -1,16 +1,22 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
-import { NoData } from "./NoData";
+import logger from "../../../utils/logger";
 
-export class GetStateEvent extends CustomWebsocketEvent<NoData> {
+export class GetStateEvent extends CustomWebsocketEvent {
     event = WebsocketEventType.GET_STATE;
 
     handler = async () => {
-        console.log("Getting state");
-        const messageToSend = {
-            type: "STATE",
-            payload: this.ws.user.lastState,
-        };
-        this.ws.send(JSON.stringify(messageToSend), { binary: false });
+        logger.debug(`User ${this.ws.payload?.username} requested state information`);
+
+        // Send state back to client
+        this.ws.send(
+            JSON.stringify({
+                type: "STATE",
+                payload: {
+                    state: this.ws.user.lastState,
+                },
+            }),
+            { binary: false }
+        );
     };
 }
