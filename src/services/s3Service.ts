@@ -65,21 +65,23 @@ export class S3Service {
     }
 
     async uploadFile(file: Express.Multer.File, userId: string): Promise<string> {
-        const fileExtension = file.originalname.split(".").pop();
-        const objectKey = `user-${userId}/${randomUUID()}.${fileExtension}`;
+        const objectKey = `user-${userId}/${randomUUID()}_${file.originalname}`;
 
         const command = new PutObjectCommand({
             Bucket: this.bucketName,
             Key: objectKey,
             Body: file.buffer,
             ContentType: file.mimetype,
+            Metadata: {
+                originalname: encodeURIComponent(file.originalname),
+            },
         });
 
         await this.client.send(command);
         return objectKey;
     }
 
-    async listFilesForUser(userId: string): Promise<{ key: string; lastModified: Date }[]> {
+    async listFilesForUser(userId: string): Promise<{ key: string; lastModified: Date; originalName?: string }[]> {
         const command = new ListObjectsV2Command({
             Bucket: this.bucketName,
             Prefix: `user-${userId}/`,
@@ -91,8 +93,36 @@ export class S3Service {
             response.Contents?.map((item) => ({
                 key: item.Key!,
                 lastModified: item.LastModified!,
+                originalName: this.extractOriginalNameFromKey(item.Key!),
             })) || []
         );
+    }
+
+    async isFileDuplicate(file: Express.Multer.File, userId: string): Promise<boolean> {
+        const existingFiles = await this.listFilesForUser(userId);
+        const fileName = file.originalname.toLowerCase();
+
+        // Prüfen, ob eine Datei mit demselben Namen bereits existiert
+        for (const existingFile of existingFiles) {
+            const existingFileName = this.extractOriginalNameFromKey(existingFile.key);
+            if (existingFileName && existingFileName.toLowerCase() === fileName) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private extractOriginalNameFromKey(key: string): string | undefined {
+        // Extrahiere den Dateinamen aus dem Objektschlüssel
+        // Format: user-{userId}/{uuid}_{originalname}
+        const parts = key.split("/");
+        if (parts.length >= 2) {
+            const filename = parts[parts.length - 1];
+            const filenameMatch = filename.match(/[^_]+_(.+)$/);
+            return filenameMatch ? filenameMatch[1] : undefined;
+        }
+        return undefined;
     }
 
     async deleteFile(objectKey: string): Promise<void> {
