@@ -1,10 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mocked } from "vitest";
 import { WebsocketServerEventHandler } from "../../../src/utils/websocket/websocketServerEventHandler";
-import {UserService} from "../../../src/services/db/UserService";
+import { UserService } from "../../../src/services/db/UserService";
+import logger from "../../../src/utils/logger";
 
 const heartbeatSpy = vi.fn();
+
 vi.mock("../../../src/utils/websocket/websocketServerHeartbeatInterval", () => ({
     heartbeat: () => heartbeatSpy,
+}));
+
+vi.mock("../../../src/utils/logger", () => ({
+    default: {
+        warn: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
 }));
 
 const userObj = {
@@ -81,14 +92,11 @@ describe("WebsocketServerEventHandler", () => {
     it("enableCloseEvent registers Listener and calls callback on close", () => {
         const handler = new WebsocketServerEventHandler(wss as any, mockUserService);
         const cb = vi.fn();
-        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
         handler.enableCloseEvent(cb);
         wss.emit("close");
 
         expect(cb).toHaveBeenCalledTimes(1);
-        expect(logSpy).toHaveBeenCalledWith("WebSocket server closed");
-
-        logSpy.mockRestore();
+        expect(logger.info).toHaveBeenCalledWith("WebSocket server closed");
     });
 });

@@ -12,9 +12,7 @@ export class GetStateEvent extends CustomWebsocketEvent {
         this.ws.send(
             JSON.stringify({
                 type: "STATE",
-                payload: {
-                    state: this.ws.user.lastState,
-                },
+                payload: this.ws.user.lastState,
             }),
             { binary: false }
         );

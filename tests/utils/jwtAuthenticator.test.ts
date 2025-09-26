@@ -9,8 +9,18 @@ vi.mock("jsonwebtoken", () => {
     };
 });
 
+vi.mock("../../src/utils/logger", () => ({
+    default: {
+        warn: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    },
+}));
+
 import jwt from "jsonwebtoken";
 import { JwtAuthenticator } from "../../src/utils/jwtAuthenticator";
+import logger from "../../src/utils/logger";
 
 describe("JwtAuthenticator", () => {
     const secret = "test-secret";
@@ -40,15 +50,13 @@ describe("JwtAuthenticator", () => {
     });
 
     it("verifyToken returns null when verify throws error", () => {
-        const spy = vi.spyOn(console, "error").mockImplementation(() => {});
         (jwt.verify as any).mockImplementation(() => {
             throw new Error("invalid");
         });
 
         const res = auth.verifyToken("broken.token");
         expect(res).toBeNull();
-        expect(spy).toHaveBeenCalled();
-        spy.mockRestore();
+        expect(logger.error).toHaveBeenCalled();
     });
 
     it("generateToken signs payload with secret", () => {
