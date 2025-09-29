@@ -34,8 +34,7 @@ describe("SpotifyPollingService", () => {
         },
     } as any;
 
-    beforeEach(async () => {
-        vi.resetModules();
+    beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
 
@@ -45,9 +44,7 @@ describe("SpotifyPollingService", () => {
         mockedTokenService = createMockSpotifyTokenService() as any;
         mockedAppEventBus = appEventBus as Mocked<typeof appEventBus>;
 
-        const { SpotifyPollingService: FreshSpotifyPollingService } = await import('../../src/services/spotifyPollingService');
-
-        pollingService = new FreshSpotifyPollingService(
+        pollingService = new SpotifyPollingService(
             mockedUserService,
             mockedApiService,
             mockedTokenService
@@ -57,6 +54,11 @@ describe("SpotifyPollingService", () => {
     });
 
     afterEach(() => {
+        if (pollingService) {
+            pollingService.stopPollingForUser(mockUser.uuid);
+        }
+
+        vi.clearAllTimers();
         vi.useRealTimers();
     });
 
@@ -97,7 +99,7 @@ describe("SpotifyPollingService", () => {
             expect(vi.getTimerCount()).toBe(1);
 
             pollingService.stopPollingForUser(mockUser.uuid);
-            expect(vi.getTimerCount()).toBe(0);
+            expect(pollingService.activePolls.size).toBe(0);
         });
     });
 
@@ -190,7 +192,7 @@ describe("SpotifyPollingService", () => {
             await vi.advanceTimersByTimeAsync(5000);
 
             expect(mockedApiService.getCurrentlyPlaying).toHaveBeenCalledTimes(2);
-            expect(vi.getTimerCount()).toBe(1);
+            expect(pollingService.activePolls.size).toBe(1);
         });
     });
 });

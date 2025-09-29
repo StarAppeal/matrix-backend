@@ -6,10 +6,12 @@ import { UserService } from "./db/UserService";
 import { SpotifyTokenService } from "./spotifyTokenService";
 import logger from "../utils/logger";
 
-const userStateCache = new Map<string, any>();
-const activePolls = new Map<string, NodeJS.Timeout>();
 
 export class SpotifyPollingService {
+
+    private readonly userStateCache = new Map<string, any>();
+    private readonly activePolls = new Map<string, NodeJS.Timeout>();
+    
     constructor(
         private readonly userService: UserService,
         private readonly spotifyApiService: SpotifyApiService,
@@ -18,21 +20,33 @@ export class SpotifyPollingService {
 
     public startPollingForUser(user: IUser): void {
         const uuid = user.uuid;
-        if (activePolls.has(uuid)) return;
+        if (this.activePolls.has(uuid)) return;
 
         logger.info(`Starting Spotify polling service for user ${uuid}`);
-        const intervalId = setInterval(() => this._pollUser(uuid), 3000);
-        activePolls.set(uuid, intervalId);
 
-        this._pollUser(uuid);
+        const poll = async () => {
+            if (!this.activePolls.has(uuid)) return;
+
+            await this._pollUser(uuid);
+
+            if (this.activePolls.has(uuid)) {
+                const timeoutId = setTimeout(poll, 3000);
+                this.activePolls.set(uuid, timeoutId);
+            }
+        };
+
+        this.activePolls.set(uuid, null as any);
+
+        poll();
     }
 
+
     public stopPollingForUser(uuid: string): void {
-        if (activePolls.has(uuid)) {
+        if (this.activePolls.has(uuid)) {
             logger.info(`Stopping Spotify polling service for user ${uuid}`);
-            clearInterval(activePolls.get(uuid)!);
-            activePolls.delete(uuid);
-            userStateCache.delete(uuid);
+            clearInterval(this.activePolls.get(uuid)!);
+            this.activePolls.delete(uuid);
+            this.userStateCache.delete(uuid);
         }
     }
 
@@ -59,11 +73,11 @@ export class SpotifyPollingService {
             }
 
             const currentState = await this.spotifyApiService.getCurrentlyPlaying(user!.spotifyConfig!.accessToken);
-            const lastState = userStateCache.get(uuid);
+            const lastState = this.userStateCache.get(uuid);
 
             if (this._hasStateChanged(lastState, currentState)) {
                 logger.debug(`Spotify state changed for user ${uuid} - emitting update event`);
-                userStateCache.set(uuid, currentState);
+                this.userStateCache.set(uuid, currentState);
                 appEventBus.emit(SPOTIFY_STATE_UPDATED_EVENT, { uuid, state: currentState });
             }
         } catch (error) {
@@ -90,9 +104,9 @@ export class SpotifyPollingService {
     }
 
     private _pausePolling(uuid: string, durationMs: number): void {
-        if (activePolls.has(uuid)) {
-            clearInterval(activePolls.get(uuid)!);
-            activePolls.delete(uuid);
+        if (this.activePolls.has(uuid)) {
+            clearInterval(this.activePolls.get(uuid)!);
+            this.activePolls.delete(uuid);
             setTimeout(() => {
                 logger.debug(`Resuming Spotify polling service for user ${uuid}`);
                 this.userService.getUserByUUID(uuid).then((user) => {
