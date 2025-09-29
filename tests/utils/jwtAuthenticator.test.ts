@@ -64,7 +64,17 @@ describe("JwtAuthenticator", () => {
         const payload = { username: "bob" } as any;
 
         const token = auth.generateToken(payload);
-        expect(jwt.sign).toHaveBeenCalledWith(payload, secret);
+        expect(jwt.sign).toHaveBeenCalledWith(payload, secret, {});
+        expect(token).toBe("signed.jwt");
+    });
+
+    it("generateToken signs payload with expiry when expiresInMs is provided", () => {
+        (jwt.sign as any).mockReturnValue("signed.jwt");
+        const payload = { username: "bob" } as any;
+        const expiresInMs = 24 * 60 * 60 * 1000;
+
+        const token = auth.generateToken(payload, expiresInMs);
+        expect(jwt.sign).toHaveBeenCalledWith(payload, secret, { expiresIn: 86400 }); // 86400 Sekunden = 1 Tag
         expect(token).toBe("signed.jwt");
     });
 });

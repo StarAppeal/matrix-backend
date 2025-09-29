@@ -4,7 +4,6 @@ import express from "express";
 import {RestAuth} from "../../src/rest/auth";
 import {JwtAuthenticator} from "../../src/utils/jwtAuthenticator";
 import {PasswordUtils} from "../../src/utils/passwordUtils";
-// @ts-ignore
 import {createMockJwtAuthenticator, createMockUserService, createPublicTestApp} from "../helpers/testSetup";
 import crypto from "crypto";
 
@@ -172,7 +171,7 @@ describe("RestAuth", () => {
                 username: "testuser",
                 id: "user-id-123",
                 uuid: "uuid-123",
-            });
+            }, 24 * 60 * 60 * 1000);
 
             const cookieHeader = response.headers['set-cookie'];
             expect(cookieHeader).toBeDefined();
@@ -185,6 +184,34 @@ describe("RestAuth", () => {
             expect(authTokenCookie).toContain("HttpOnly");
             expect(authTokenCookie).toContain("Path=/");
             expect(authTokenCookie).toContain("SameSite=Lax");
+        });
+
+        it("should login with longer token validity when stayLoggedIn is true", async () => {
+            const mockUser = {name: "testuser", password: "hashed", uuid: "uuid-123", id: "user-id-123"};
+            const mockToken = "jwt-token-123";
+            const loginDataWithStayLoggedIn = { ...validLoginData, stayLoggedIn: true };
+
+            mockUserService.getUserAuthByName.mockResolvedValue(mockUser);
+            mockPasswordUtils.comparePassword.mockResolvedValue(true);
+            mockJwtAuthenticator.generateToken.mockReturnValue(mockToken);
+
+            const response = await request(app).post("/auth/login").send(loginDataWithStayLoggedIn).expect(200);
+
+            expect(response.body.ok).toBe(true);
+            expect(response.body.data.token).toBe(mockToken);
+            expect(mockJwtAuthenticator.generateToken).toHaveBeenCalledWith({
+                username: "testuser",
+                id: "user-id-123",
+                uuid: "uuid-123",
+            }, 30 * 24 * 60 * 60 * 1000);
+
+            const cookieHeader = response.headers['set-cookie'];
+            expect(cookieHeader).toBeDefined();
+
+            const cookies = Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader!];
+            const authTokenCookie = cookies.find((cookie: string) => cookie.startsWith("auth-token="));
+            expect(authTokenCookie).toBeDefined();
+            expect(authTokenCookie).toContain(`auth-token=${mockToken}`);
         });
 
         describe("POST /logout", () => {

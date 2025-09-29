@@ -19,7 +19,11 @@ export class JwtAuthenticator {
         return null;
     }
 
-    public generateToken(payload: DecodedToken): string {
-        return jwt.sign(payload, this.secret);
+    public generateToken(payload: DecodedToken, expiresInMs?: number): string {
+        const options: jwt.SignOptions = {};
+        if (expiresInMs !== undefined) {
+            options.expiresIn = Math.floor(expiresInMs / 1000);
+        }
+        return jwt.sign(payload, this.secret, options);
     }
 }

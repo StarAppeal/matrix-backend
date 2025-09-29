@@ -8,6 +8,9 @@ import { validateBody, v } from "./middleware/validate";
 import { ok, badRequest, unauthorized, created, conflict, notFound } from "./utils/responses";
 import { UserService } from "../services/db/UserService";
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const MONTH_IN_MS = 30 * 24 * 60 * 60 * 1000;
+
 export class RestAuth {
     private readonly userService: UserService;
     private readonly jwtAuthenticator: JwtAuthenticator;
@@ -72,9 +75,14 @@ export class RestAuth {
             validateBody({
                 username: { required: true, validator: v.isString({ nonEmpty: true }) },
                 password: { required: true, validator: v.isString({ nonEmpty: true }) },
+                stayLoggedIn: { required: false, validator: v.isBoolean() },
             }),
             asyncHandler(async (req, res) => {
-                const { username, password } = req.body as { username: string; password: string };
+                const { username, password, stayLoggedIn } = req.body as {
+                    username: string;
+                    password: string;
+                    stayLoggedIn: boolean;
+                };
                 const user = await this.userService.getUserAuthByName(username);
 
                 if (!user) {
@@ -86,17 +94,24 @@ export class RestAuth {
                     return unauthorized(res, "Invalid password", { field: "password", code: "INVALID_PASSWORD" });
                 }
 
-                const jwtToken = this.jwtAuthenticator.generateToken({
-                    username: user.name,
-                    id: user.id,
-                    uuid: user.uuid,
-                });
+                const tokenAgeMs = stayLoggedIn
+                    ? MONTH_IN_MS
+                    : DAY_IN_MS;
+
+                const jwtToken = this.jwtAuthenticator.generateToken(
+                    {
+                        username: user.name,
+                        id: user.id,
+                        uuid: user.uuid,
+                    },
+                    tokenAgeMs
+                );
 
                 res.cookie("auth-token", jwtToken, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === "production",
                     sameSite: "lax",
-                    maxAge: 24 * 60 * 60 * 1000,
+                    maxAge: tokenAgeMs,
                 });
 
                 return ok(res, { token: jwtToken });
