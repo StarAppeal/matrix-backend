@@ -98,6 +98,7 @@ describe("SpotifyPollingService", () => {
             expect(vi.getTimerCount()).toBe(1);
 
             pollingService.stopPollingForUser(mockUser.uuid);
+            // @ts-ignore - access to private property for test
             expect(pollingService.activePolls.size).toBe(0);
         });
     });
@@ -191,6 +192,8 @@ describe("SpotifyPollingService", () => {
             await vi.advanceTimersByTimeAsync(5000);
 
             expect(mockedApiService.getCurrentlyPlaying).toHaveBeenCalledTimes(2);
+
+            // @ts-ignore - access to private property for test
             expect(pollingService.activePolls.size).toBe(1);
         });
     });
