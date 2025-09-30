@@ -2,7 +2,6 @@ import winston from "winston";
 import path from "path";
 import fs from "fs";
 
-
 const logLevels = {
     error: 0,
     warn: 1,

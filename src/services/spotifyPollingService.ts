@@ -94,7 +94,10 @@ export class SpotifyPollingService {
         }
     }
 
-    private _hasStateChanged(lastState: CurrentlyPlaying | undefined | null, currentState: CurrentlyPlaying | undefined | null): boolean {
+    private _hasStateChanged(
+        lastState: CurrentlyPlaying | undefined | null,
+        currentState: CurrentlyPlaying | undefined | null
+    ): boolean {
         if (!currentState && !lastState) return false;
         if (!currentState || !lastState) return true;
 
