@@ -9,6 +9,8 @@ import { StopWeatherUpdatesEvent } from "./stopWeatherUpdatesEvent";
 import { UpdateUserSingleEvent } from "./updateUserEvent";
 import { SpotifyPollingService } from "../../../services/spotifyPollingService";
 import { WeatherPollingService } from "../../../services/weatherPollingService";
+import { SingleSpotifyUpdateEvent } from "./singleSpotifyUpdateEvent";
+import { SingleWeatherUpdateEvent } from "./singleWeatherUpdateEvent";
 
 export type WebsocketEvent =
     | GetStateEvent
@@ -18,6 +20,8 @@ export type WebsocketEvent =
     | GetWeatherUpdatesEvent
     | StopWeatherUpdatesEvent
     | UpdateUserSingleEvent
+    | SingleSpotifyUpdateEvent
+    | SingleWeatherUpdateEvent
     | ErrorEvent;
 
 export function getEventListeners(
@@ -33,6 +37,8 @@ export function getEventListeners(
         new GetWeatherUpdatesEvent(ws, weatherPollingService),
         new StopWeatherUpdatesEvent(ws, weatherPollingService),
         new UpdateUserSingleEvent(ws),
+        new SingleSpotifyUpdateEvent(ws),
+        new SingleWeatherUpdateEvent(ws),
         new ErrorEvent(ws),
     ];
 }

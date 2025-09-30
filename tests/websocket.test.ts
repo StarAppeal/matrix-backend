@@ -8,8 +8,8 @@ import {getEventListeners} from "../src/utils/websocket/websocketCustomEvents/we
 // @ts-ignore
 import {createMockJwtAuthenticator, createMockUserService} from "./helpers/testSetup";
 import {UserService} from "../src/services/db/UserService";
-import {SpotifyPollingService} from "../src/services/spotifyPollingService";
-import {USER_UPDATED_EVENT, SPOTIFY_STATE_UPDATED_EVENT} from "../src/utils/eventBus";
+import { SpotifyPollingService } from "../src/services/spotifyPollingService";
+import { USER_UPDATED_EVENT, SPOTIFY_STATE_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../src/utils/eventBus";
 import {WebsocketEventType} from "../src/utils/websocket/websocketCustomEvents/websocketEventType";
 import {WeatherPollingService} from "../src/services/weatherPollingService";
 
@@ -196,17 +196,34 @@ describe("ExtendedWebSocketServer", () => {
             const spotifyStateListener = eventBusListeners.get(SPOTIFY_STATE_UPDATED_EVENT);
             expect(spotifyStateListener).toBeDefined();
 
+            vi.mocked(mockClient.emit).mockClear();
+
             const spotifyUpdatePayload = {state: {item: {name: "Neuer Song"}}};
             const eventPayload = {uuid: "user-123", ...spotifyUpdatePayload};
 
             spotifyStateListener!(eventPayload);
 
-            expect(mockClient.send).toHaveBeenCalledOnce();
-            const expectedMessage = JSON.stringify({
-                type: "SPOTIFY_UPDATE",
-                payload: spotifyUpdatePayload.state,
-            });
-            expect(mockClient.send).toHaveBeenCalledWith(expectedMessage, {binary: false});
+            expect(mockClient.emit).toHaveBeenCalledOnce();
+            expect(mockClient.emit).toHaveBeenCalledWith(
+                WebsocketEventType.SINGLE_SPOTIFY_UPDATE, spotifyUpdatePayload.state
+            );
+        });
+
+        it("should listen for WEATHER_STATE_UPDATED_EVENT and send to the correct client", () => {
+            const weatherStateListener = eventBusListeners.get(WEATHER_STATE_UPDATED_EVENT);
+            expect(weatherStateListener).toBeDefined();
+
+            vi.mocked(mockClient.emit).mockClear();
+
+            const weatherUpdatePayload = {weatherData: {timezone: "Europe/Berlin", weather: {temp: 20}}};
+            const eventPayload = {subscribers: ["user-123"], ...weatherUpdatePayload};
+
+            weatherStateListener!(eventPayload);
+
+            expect(mockClient.emit).toHaveBeenCalledOnce()
+            expect(mockClient.emit).toHaveBeenCalledWith(
+                WebsocketEventType.SINGLE_WEATHER_UPDATE, weatherUpdatePayload.weatherData
+            );
         });
 
         it("should not send a message if the target client is not connected", () => {
