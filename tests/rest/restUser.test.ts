@@ -345,7 +345,7 @@ describe("RestUser", () => {
         });
 
         describe("GET /:id (Admin only)", () => {
-            const specificUserId = "specific-user-id";
+            const specificUserId = "66580f13f1e9e8c4b7a2d4c1";
             const mockUser = {
                 id: specificUserId,
                 name: "specificuser",
@@ -373,10 +373,10 @@ describe("RestUser", () => {
                     mockedUserService.getUserById.mockResolvedValue(null);
 
                     const response = await request(testEnv.app)
-                        .get(`/user/nonexistent-id`)
+                        .get(`/user/66580f13f1e9e8c4b7a2d4c2`)
                         .expect(400);
 
-                    expect(response.body.data.message).toBe("Unable to find matching document with id: nonexistent-id");
+                    expect(response.body.data.message).toBe("Unable to find matching document with id: 66580f13f1e9e8c4b7a2d4c2");
                 });
             });
 

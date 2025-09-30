@@ -99,10 +99,10 @@ export class RestUser {
 
         router.get(
             "/:id",
+            isAdmin(this.userService),
             validateParams({
                 id: { required: true, validator: v.isObjectId() },
             }),
-            isAdmin(this.userService),
             asyncHandler(async (req, res) => {
                 const id = req.params.id;
                 const user = await this.userService.getUserById(id);
