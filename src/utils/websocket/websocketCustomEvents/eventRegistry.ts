@@ -65,4 +65,4 @@ export const eventRegistry = [
     },
 ];
 
-export type WebsocketEvent = ReturnType<typeof eventRegistry[number]["factory"]>;
+export type WebsocketEvent = ReturnType<(typeof eventRegistry)[number]["factory"]>;

@@ -127,7 +127,7 @@ export class ExtendedWebSocketServer {
             for (const uuid of subscribers) {
                 const client = this._findClientByUUID(uuid);
                 if (client) {
-                    console.log(weatherData)
+                    console.log(weatherData);
                     client.emit(WebsocketEventType.SINGLE_WEATHER_UPDATE, weatherData);
                 }
             }
