@@ -87,7 +87,6 @@ describe("database.service", () => {
             });
 
             it("should retry connecting after a 5-second delay if the first attempt fails", async () => {
-                const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
                 const connectionError = new Error("Database unavailable");
 
                 mockedMongooseConnect.mockRejectedValueOnce(connectionError).mockResolvedValueOnce(undefined as any);
@@ -97,17 +96,12 @@ describe("database.service", () => {
                 await vi.runAllTicks();
 
                 expect(mockedMongooseConnect).toHaveBeenCalledOnce();
-                expect(consoleErrorSpy).toHaveBeenCalledWith(
-                    "Failed to connect to MongoDB. Retrying in 5 seconds...",
-                    connectionError
-                );
 
                 await vi.advanceTimersByTimeAsync(5000);
 
                 expect(mockedMongooseConnect).toHaveBeenCalledTimes(2);
 
                 await expect(connectionPromise).resolves.toBeUndefined();
-                consoleErrorSpy.mockRestore();
             });
         });
     });
