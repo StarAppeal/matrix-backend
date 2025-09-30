@@ -1,5 +1,4 @@
 import { ExtendedWebSocket } from "../../interfaces/extendedWebsocket";
-import { CustomWebsocketEvent } from "./websocketCustomEvents/customWebsocketEvent";
 import { getEventListeners, WebsocketEvent } from "./websocketCustomEvents/websocketEventUtils";
 import { SpotifyPollingService } from "../../services/spotifyPollingService";
 import { WeatherPollingService } from "../../services/weatherPollingService";
