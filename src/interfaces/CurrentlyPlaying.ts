@@ -6,6 +6,7 @@ export interface CurrentlyPlaying {
     };
     progress_ms?: number;
     item?: {
+        id: number;
         name: string;
         artists: {
             name: string;

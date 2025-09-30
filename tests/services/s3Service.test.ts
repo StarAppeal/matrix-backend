@@ -79,8 +79,9 @@ describe("S3Service", () => {
         });
 
         it("should call ensureBucketExists and handle existing buckets gracefully", async () => {
-            mockSend.mockRejectedValue({ name: "BucketAlreadyOwnedByYou" });
-
+            const bucketError = new Error();
+            bucketError.name = "BucketAlreadyOwnedByYou";
+            mockSend.mockRejectedValue(bucketError);
             await expect(s3Service.ensureBucketExists()).resolves.toBeUndefined();
 
             expect(mockSend).toHaveBeenCalledWith(expect.any(CreateBucketCommand));

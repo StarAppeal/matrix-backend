@@ -94,9 +94,7 @@ export class RestAuth {
                     return unauthorized(res, "Invalid password", { field: "password", code: "INVALID_PASSWORD" });
                 }
 
-                const tokenAgeMs = stayLoggedIn
-                    ? MONTH_IN_MS
-                    : DAY_IN_MS;
+                const tokenAgeMs = stayLoggedIn ? MONTH_IN_MS : DAY_IN_MS;
 
                 const jwtToken = this.jwtAuthenticator.generateToken(
                     {

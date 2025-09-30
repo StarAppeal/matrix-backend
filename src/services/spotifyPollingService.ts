@@ -5,13 +5,12 @@ import { AxiosError } from "axios";
 import { UserService } from "./db/UserService";
 import { SpotifyTokenService } from "./spotifyTokenService";
 import logger from "../utils/logger";
-
+import { CurrentlyPlaying } from "../interfaces/CurrentlyPlaying";
 
 export class SpotifyPollingService {
+    private readonly userStateCache = new Map<string, CurrentlyPlaying>();
+    private readonly activePolls = new Map<string, NodeJS.Timeout | null>();
 
-    private readonly userStateCache = new Map<string, any>();
-    private readonly activePolls = new Map<string, NodeJS.Timeout>();
-    
     constructor(
         private readonly userService: UserService,
         private readonly spotifyApiService: SpotifyApiService,
@@ -35,16 +34,15 @@ export class SpotifyPollingService {
             }
         };
 
-        this.activePolls.set(uuid, null as any);
+        this.activePolls.set(uuid, null);
 
         poll();
     }
 
-
     public stopPollingForUser(uuid: string): void {
         if (this.activePolls.has(uuid)) {
             logger.info(`Stopping Spotify polling service for user ${uuid}`);
-            clearInterval(this.activePolls.get(uuid)!);
+            clearTimeout(this.activePolls.get(uuid)!);
             this.activePolls.delete(uuid);
             this.userStateCache.delete(uuid);
         }
@@ -77,7 +75,7 @@ export class SpotifyPollingService {
 
             if (this._hasStateChanged(lastState, currentState)) {
                 logger.debug(`Spotify state changed for user ${uuid} - emitting update event`);
-                this.userStateCache.set(uuid, currentState);
+                this.userStateCache.set(uuid, currentState!);
                 appEventBus.emit(SPOTIFY_STATE_UPDATED_EVENT, { uuid, state: currentState });
             }
         } catch (error) {
@@ -96,7 +94,7 @@ export class SpotifyPollingService {
         }
     }
 
-    private _hasStateChanged(lastState: any, currentState: any): boolean {
+    private _hasStateChanged(lastState: CurrentlyPlaying | undefined | null, currentState: CurrentlyPlaying | undefined | null): boolean {
         if (!currentState && !lastState) return false;
         if (!currentState || !lastState) return true;
 
@@ -105,7 +103,7 @@ export class SpotifyPollingService {
 
     private _pausePolling(uuid: string, durationMs: number): void {
         if (this.activePolls.has(uuid)) {
-            clearInterval(this.activePolls.get(uuid)!);
+            clearTimeout(this.activePolls.get(uuid)!);
             this.activePolls.delete(uuid);
             setTimeout(() => {
                 logger.debug(`Resuming Spotify polling service for user ${uuid}`);

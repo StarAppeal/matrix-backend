@@ -41,6 +41,7 @@ describe("SpotifyTokenGenerator", () => {
         it("should handle token service errors", async () => {
             mockTokenService.refreshToken.mockRejectedValue(new Error("Spotify API error"));
             const response = await request(app).post("/spotify/token/refresh").send(validRefreshData).expect(500);
+            console.log(response.body)
             expect(response.body.data.message).toBe("Failed to handle spotify token request");
         });
 

@@ -158,7 +158,7 @@ export class Server {
     }
 
     private _setupErrorHandling(): void {
-        this.app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+        this.app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
             const errorId = randomUUID();
             const statusCode = err?.status || 500;
 

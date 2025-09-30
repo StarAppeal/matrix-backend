@@ -1,6 +1,12 @@
 import { UpdateQuery } from "mongoose";
 import { CreateUserPayload, IUser, SpotifyConfig, UserModel } from "../../db/models/user";
 
+interface MongooseError extends Error {
+    code?: number;
+    keyPattern?: { [key: string]: number | boolean | string };
+    name: string;
+}
+
 export class UserService {
     private static _instance: UserService;
 
@@ -57,13 +63,15 @@ export class UserService {
             delete userObject.password;
 
             return userObject as IUser;
-        } catch (error: any) {
-            if (error.code === 11000 && error.keyPattern?.uuid) {
+        } catch (error: unknown) {
+            const mongoError = error as MongooseError;
+
+            if (mongoError.code === 11000 && mongoError.keyPattern?.uuid) {
                 throw new Error("User with that uuid already exists");
             }
 
-            if (error.name === "ValidationError") {
-                throw new Error(`ValidationError: ${error.message}`);
+            if (mongoError.name === "ValidationError") {
+                throw new Error(`ValidationError: ${mongoError.message}`);
             }
 
             console.error("Error creating user:", error);

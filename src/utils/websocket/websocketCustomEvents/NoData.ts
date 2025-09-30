@@ -1,1 +1,1 @@
-export interface NoData {}
+export type NoData = void;

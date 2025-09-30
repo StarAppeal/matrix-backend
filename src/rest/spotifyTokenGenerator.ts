@@ -1,5 +1,4 @@
-import express from "express";
-import { asyncHandler } from "./middleware/asyncHandler";
+import express, {  Request, Response } from "express";import { asyncHandler } from "./middleware/asyncHandler";
 import { validateBody, v } from "./middleware/validate";
 import { ok, internalError } from "./utils/responses";
 import { SpotifyTokenService } from "../services/spotifyTokenService";
@@ -39,7 +38,7 @@ export class SpotifyTokenGenerator {
             })
         );
 
-        router.use((err: any, _req: any, res: any, _next: any) => {
+        router.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
             return internalError(res, "Failed to handle spotify token request");
         });
 

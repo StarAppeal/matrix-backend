@@ -1,5 +1,7 @@
 import winston from "winston";
 import path from "path";
+import fs from "fs";
+
 
 const logLevels = {
     error: 0,
@@ -50,10 +52,6 @@ const logger = winston.createLogger({
     rejectionHandlers: [new winston.transports.File({ filename: path.join("logs", "rejections.log") })],
 });
 
-try {
-    require("fs").mkdirSync("logs");
-} catch (e) {
-    // Directory already exists
-}
+fs.mkdirSync("logs", { recursive: true });
 
 export default logger;
