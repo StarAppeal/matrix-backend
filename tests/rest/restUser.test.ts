@@ -4,6 +4,7 @@ import request from "supertest";
 import {RestUser} from "../../src/rest/restUser";
 // @ts-ignore
 import {createMockUserService, setupTestEnvironment, type TestEnvironment} from "../helpers/testSetup";
+import { Types } from "mongoose";
 
 vi.mock("../../src/services/db/UserService", () => ({
     UserService: {
@@ -345,7 +346,7 @@ describe("RestUser", () => {
         });
 
         describe("GET /:id (Admin only)", () => {
-            const specificUserId = "66580f13f1e9e8c4b7a2d4c1";
+            const specificUserId = new Types.ObjectId().toString();
             const mockUser = {
                 id: specificUserId,
                 name: "specificuser",
@@ -372,11 +373,15 @@ describe("RestUser", () => {
                 it("should return bad request when target user is not found", async () => {
                     mockedUserService.getUserById.mockResolvedValue(null);
 
+                    const nonExistentUserId = new Types.ObjectId().toString();
                     const response = await request(testEnv.app)
-                        .get(`/user/66580f13f1e9e8c4b7a2d4c2`)
+                        .get(`/user/${nonExistentUserId}`)
                         .expect(400);
 
-                    expect(response.body.data.message).toBe("Unable to find matching document with id: 66580f13f1e9e8c4b7a2d4c2");
+
+
+
+                    expect(response.body.data.message).toBe(`Unable to find matching document with id: ${nonExistentUserId}`);
                 });
             });
 

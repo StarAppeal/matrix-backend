@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { v, validateBody, validateParams, validateQuery } from "../../../src/rest/middleware/validate";
+import { Types } from "mongoose";
 
 describe("v.isString", () => {
   it("accepts a simple string", () => {
@@ -89,6 +90,18 @@ describe("v.isUrl", () => {
     expect(v.isUrl()("notaurl")).toBe("must be a valid URL");
     expect(v.isUrl()(123 as any)).toBe("must be a string URL");
   });
+});
+
+describe("v.isObjectId", () => {
+    it("accepts valid ObjectIds", () => {
+        expect(v.isObjectId()(new Types.ObjectId().toString())).toBe(true);
+    });
+
+    it("rejects invalid ObjectIds and non-strings", () => {
+        expect(v.isObjectId()("invalidobjectid")).toBe("must be a valid ObjectId");
+        expect(v.isObjectId()(123 as any)).toBe("must be a valid ObjectId");
+    });
+
 });
 
 describe("validateBody Middleware", () => {
