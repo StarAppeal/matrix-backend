@@ -19,6 +19,8 @@ import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import logger from "./utils/logger";
 
 export class ExtendedWebSocketServer {
+    private readonly uuidClientMap = new Map<string, ExtendedWebSocket>();
+
     private readonly _wss: WebSocketServer;
     private readonly userService: UserService;
     private readonly spotifyPollingService: SpotifyPollingService;
@@ -77,6 +79,10 @@ export class ExtendedWebSocketServer {
     }
 
     private _onNewClientReady(ws: ExtendedWebSocket): void {
+        if (ws.payload?.uuid) {
+            this.uuidClientMap.set(ws.payload.uuid, ws);
+        }
+
         logger.info("WebSocket client connected and authenticated");
 
         const socketEventHandler = new WebsocketEventHandler(
@@ -90,6 +96,7 @@ export class ExtendedWebSocketServer {
         socketEventHandler.enableMessageEvent();
         socketEventHandler.registerCustomEvents();
         socketEventHandler.enableDisconnectEvent(() => {
+            this.uuidClientMap.delete(ws.payload?.uuid);
             logger.info("User disconnected");
         });
 
@@ -139,11 +146,6 @@ export class ExtendedWebSocketServer {
     }
 
     private _findClientByUUID(uuid: string): ExtendedWebSocket | undefined {
-        for (const client of this.getConnectedClients()) {
-            if (client.payload?.uuid === uuid) {
-                return client;
-            }
-        }
-        return undefined;
+        return this.uuidClientMap.get(uuid);
     }
 }
