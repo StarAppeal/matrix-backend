@@ -119,13 +119,7 @@ export class ExtendedWebSocketServer {
             const client = this._findClientByUUID(uuid);
             logger.debug(`Received update for user ${uuid}`);
             if (client) {
-                client.send(
-                    JSON.stringify({
-                        type: "SPOTIFY_UPDATE",
-                        payload: state,
-                    }),
-                    { binary: false }
-                );
+                client.emit(WebsocketEventType.SINGLE_SPOTIFY_UPDATE, state);
             }
         });
 
@@ -133,13 +127,8 @@ export class ExtendedWebSocketServer {
             for (const uuid of subscribers) {
                 const client = this._findClientByUUID(uuid);
                 if (client) {
-                    client.send(
-                        JSON.stringify({
-                            type: "WEATHER_UPDATE",
-                            payload: weatherData,
-                        }),
-                        { binary: false }
-                    );
+                    console.log(weatherData)
+                    client.emit(WebsocketEventType.SINGLE_WEATHER_UPDATE, weatherData);
                 }
             }
         });
