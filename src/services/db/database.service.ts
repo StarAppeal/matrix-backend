@@ -1,5 +1,6 @@
 import "dotenv/config";
 import mongoose, { ConnectOptions } from "mongoose";
+import logger from "../../utils/logger";
 
 let isConnected: boolean = false;
 let connectionPromise: Promise<void> | null = null;
@@ -14,10 +15,10 @@ const connectWithRetry = async (dbName: string, dbConnString: string): Promise<v
     };
 
     try {
-        console.log("Attempting to connect to MongoDB...");
+        logger.debug("Attempting to connect to MongoDB...");
         await mongoose.connect(dbConnString, options);
     } catch (error) {
-        console.error("Failed to connect to MongoDB. Retrying in 5 seconds...", error);
+        logger.error("Failed to connect to MongoDB. Retrying in 5 seconds...", error);
         await new Promise<void>((resolve) => setTimeout(resolve, 5000));
         return connectWithRetry(dbName, dbConnString);
     }
@@ -30,23 +31,23 @@ export async function connectToDatabase(dbName: string, dbConnString: string): P
 
     connectionPromise = (async (): Promise<void> => {
         if (isConnected) {
-            console.log("Already connected to MongoDB.");
+            logger.debug("Already connected to MongoDB.");
             return;
         }
 
         mongoose.connection.on("connected", () => {
             isConnected = true;
-            console.log("Mongoose connected to DB.");
+            logger.info("Mongoose connected to DB.");
         });
 
         mongoose.connection.on("disconnected", () => {
             isConnected = false;
-            console.warn("Mongoose disconnected from DB. Attempting to reconnect...");
+            logger.warn("Mongoose disconnected from DB. Attempting to reconnect...");
         });
 
         mongoose.connection.on("error", (err: Error) => {
             isConnected = false;
-            console.error("Mongoose connection error:", err);
+            logger.error("Mongoose connection error:", err);
         });
 
         await connectWithRetry(dbName, dbConnString);
