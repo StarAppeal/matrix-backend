@@ -1,6 +1,6 @@
 import { ExtendedWebSocket } from "../../interfaces/extendedWebsocket";
 import { CustomWebsocketEvent } from "./websocketCustomEvents/customWebsocketEvent";
-import { getEventListeners } from "./websocketCustomEvents/websocketEventUtils";
+import { getEventListeners, WebsocketEvent } from "./websocketCustomEvents/websocketEventUtils";
 import { SpotifyPollingService } from "../../services/spotifyPollingService";
 import { WeatherPollingService } from "../../services/weatherPollingService";
 import logger from "../../utils/logger";
@@ -54,7 +54,7 @@ export class WebsocketEventHandler {
         events.forEach(this.registerCustomEvent, this);
     }
 
-    private registerCustomEvent(customWebsocketEvent: CustomWebsocketEvent) {
+    private registerCustomEvent(customWebsocketEvent: WebsocketEvent) {
         this.webSocket.on(customWebsocketEvent.event, customWebsocketEvent.handler.bind(customWebsocketEvent));
     }
 }
