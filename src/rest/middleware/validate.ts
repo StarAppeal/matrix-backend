@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { badRequest } from "../utils/responses";
+import { Types } from "mongoose";
 
 /**
  * A type definition for a validation function.
@@ -84,6 +85,14 @@ export const v = {
             } catch {
                 return "must be a valid URL";
             }
+        };
+    },
+    isObjectId: (): Validator => {
+        return (value: unknown) => {
+            if (typeof value === "string" && Types.ObjectId.isValid(value)) {
+                return true;
+            }
+            return "must be a valid ObjectId";
         };
     },
 };
