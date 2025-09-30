@@ -100,7 +100,7 @@ export class RestUser {
         router.get(
             "/:id",
             validateParams({
-                id: { required: true, validator: v.isString({ nonEmpty: true }) },
+                id: { required: true, validator: v.isObjectId() },
             }),
             isAdmin(this.userService),
             asyncHandler(async (req, res) => {
