@@ -58,11 +58,16 @@ export class S3Service {
         try {
             await this.client.send(new CreateBucketCommand({ Bucket: this.bucketName }));
             logger.info(`Bucket "${this.bucketName}" created successfully or already existed.`);
-        } catch (err: any) {
-            if (err.name === "BucketAlreadyOwnedByYou" || err.name === "BucketAlreadyExists") {
-                logger.info(`Bucket "${this.bucketName}" already exists.`);
+        } catch (err: unknown) {
+            console.log(typeof err)
+            if (err instanceof Error) {
+                if (err.name === "BucketAlreadyOwnedByYou" || err.name === "BucketAlreadyExists") {
+                    logger.info(`Bucket "${this.bucketName}" already exists.`);
+                } else {
+                    throw err;
+                }
             } else {
-                throw err;
+                throw new Error("Unknown error occurred while creating bucket.");
             }
         }
     }

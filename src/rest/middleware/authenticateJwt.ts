@@ -32,8 +32,9 @@ export function authenticateJwt(jwtAuthenticator: JwtAuthenticator) {
 
             req.payload = decodedToken;
             next();
-        } catch (error: any) {
-            logger.error("JWT Verification Error:", error.message);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : "Unbekannter Fehler";
+            logger.error("JWT Verification Error:", errorMessage);
             return unauthorized(res, "Unauthorized: Token verification failed");
         }
     };

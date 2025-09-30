@@ -1,6 +1,6 @@
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
 
-export abstract class CustomWebsocketEvent<T = any> {
+export abstract class CustomWebsocketEvent<T = never> {
     abstract event: string;
     abstract handler: (data: T) => void;
     protected ws: ExtendedWebSocket;

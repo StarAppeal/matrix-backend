@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import { Server } from "../src/server";
-import { Router, type Request, type Response, type NextFunction } from "express"; // Import Express types
+import { Router, type Request, type Response, type NextFunction } from "express";
 import type { Express } from "express";
 import { authLimiter } from "../src/rest/middleware/rateLimit";
 

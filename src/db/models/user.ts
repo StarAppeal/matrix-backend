@@ -1,5 +1,5 @@
 import "dotenv/config";
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, CallbackError } from "mongoose";
 import { PasswordUtils } from "../../utils/passwordUtils";
 
 export interface IUser extends Document {
@@ -136,31 +136,31 @@ const userSchema = new Schema(
     }
 );
 
-userSchema.virtual("id").get(function (this: any) {
-    return this._id?.toHexString?.() ?? this._id;
+userSchema.virtual("id").get(function (this: mongoose.Document & IUser) {
+    return (this._id as mongoose.Types.ObjectId)?.toHexString() ?? this._id;
 });
 
 function isBcryptHash(value: unknown): boolean {
     return typeof value === "string" && /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(value);
 }
 
-async function hashIfNeeded(next: Function, user: any) {
+async function hashIfNeeded(next: (error?: mongoose.CallbackError) => void, user: IUser) {
     if (!user.isModified?.("password")) return next();
     if (isBcryptHash(user.password)) return next();
     try {
-        user.password = await PasswordUtils.hashPassword(user.password);
+        user.password = await PasswordUtils.hashPassword(user.password!);
         return next();
-    } catch (e) {
-        return next(e);
+    } catch (e: CallbackError | unknown) {
+        return next(e as CallbackError);
     }
 }
 
 userSchema.pre("save", function (next) {
-    return hashIfNeeded(next, this);
+    return hashIfNeeded(next, this as IUser);
 });
 
 userSchema.pre("findOneAndUpdate", async function (next) {
-    const update = this.getUpdate() as any;
+    const update = this.getUpdate() as mongoose.UpdateQuery<IUser>;
     if (!update) return next();
 
     const newPassword = update.password ?? update.$set?.password;
@@ -172,8 +172,8 @@ userSchema.pre("findOneAndUpdate", async function (next) {
         if (update.password) update.password = hashed;
         if (update.$set?.password) update.$set.password = hashed;
         return next();
-    } catch (e: Error | any) {
-        return next(e);
+    } catch (e: unknown) {
+        return next(e as CallbackError);
     }
 });
 

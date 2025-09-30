@@ -6,7 +6,6 @@ import { SpotifyTokenService } from "../../src/services/spotifyTokenService";
 import { appEventBus, SPOTIFY_STATE_UPDATED_EVENT } from "../../src/utils/eventBus";
 import { SpotifyPollingService } from "../../src/services/spotifyPollingService";
 import { IUser } from "../../src/db/models/user";
-// @ts-ignore
 import { createMockSpotifyApiService, createMockSpotifyTokenService, createMockUserService } from "../helpers/testSetup";
 
 vi.mock("../../src/services/db/UserService");

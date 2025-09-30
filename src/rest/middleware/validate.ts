@@ -7,7 +7,7 @@ import { badRequest } from "../utils/responses";
  * of any type and returns either `true` if the validation is successful
  * or a `string` containing an error message if the validation fails.
  */
-type Validator = (value: any) => true | string;
+type Validator = (value: unknown) => true | string;
 
 /**
  * A collection of validation functions for validating various data types.
@@ -40,7 +40,7 @@ type Validator = (value: any) => true | string;
  */
 export const v = {
     isString: (opts?: { nonEmpty?: boolean; max?: number; min?: number }): Validator => {
-        return (value: any) => {
+        return (value: unknown) => {
             if (typeof value !== "string") return "must be a string";
             if (opts?.nonEmpty && value.trim().length === 0) return "must be a non-empty string";
             if (opts?.max !== undefined && value.length > opts.max) return `must be at most ${opts.max} chars`;
@@ -49,7 +49,7 @@ export const v = {
         };
     },
     isNumber: (opts?: { min?: number; max?: number; integer?: boolean }): Validator => {
-        return (value: any) => {
+        return (value: unknown) => {
             if (typeof value !== "number" || Number.isNaN(value)) return "must be a number";
             if (opts?.integer && !Number.isInteger(value)) return "must be an integer";
             if (opts?.min !== undefined && value < opts.min) return `must be >= ${opts.min}`;
@@ -58,24 +58,25 @@ export const v = {
         };
     },
     isBoolean: (): Validator => {
-        return (value: any) => (typeof value === "boolean" ? true : "must be a boolean");
+        return (value: unknown) => (typeof value === "boolean" ? true : "must be a boolean");
     },
     isEnum: <T extends readonly string[]>(values: T): Validator => {
-        return (value: any) => (values.includes(value) ? true : `must be one of: ${values.join(", ")}`);
+        return (value: unknown) =>
+            typeof value === "string" && values.includes(value) ? true : `must be one of: ${values.join(", ")}`;
     },
     isArrayLength: (len: number): Validator => {
-        return (value: any) =>
+        return (value: unknown) =>
             Array.isArray(value) && value.length === len ? true : `must be an array of length ${len}`;
     },
     isObject: (opts?: { nonEmpty?: boolean }): Validator => {
-        return (value: any) => {
+        return (value: unknown) => {
             if (typeof value !== "object" || value === null) return "must be an object";
             if (opts?.nonEmpty && Object.keys(value).length === 0) return "must be a non-empty object";
             return true;
         };
     },
     isUrl: (): Validator => {
-        return (value: any) => {
+        return (value: unknown) => {
             if (typeof value !== "string") return "must be a string URL";
             try {
                 new URL(value);
@@ -106,7 +107,7 @@ type Schema = Record<string, { required?: boolean; validator: Validator }>;
  * @param {Schema} schema - The schema containing validation rules for each property.
  * @return {string[]} An array of error messages. If there are no validation errors, the array will be empty.
  */
-function validate(source: any, schema: Schema): string[] {
+function validate(source: Record<string, unknown>, schema: Schema): string[] {
     const errors: string[] = [];
     for (const [key, rule] of Object.entries(schema)) {
         const value = source?.[key];

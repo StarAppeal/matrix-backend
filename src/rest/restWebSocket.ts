@@ -35,7 +35,7 @@ export class RestWebSocket {
                 },
                 users: {
                     required: true,
-                    validator: (value: any) =>
+                    validator: (value) =>
                         Array.isArray(value) &&
                         value.length > 0 &&
                         value.every((s) => typeof s === "string" && s.trim().length > 0)
