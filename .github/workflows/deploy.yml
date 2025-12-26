@@ -42,9 +42,9 @@ jobs:
           script: |
             cd /home/matrix/ledmatrix-deployment
 
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull backend
+            docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull backend
             
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
             
             docker image prune -f
         env:
