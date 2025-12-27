@@ -10,7 +10,10 @@ export interface IUser extends Document {
     lastState?: MatrixState;
     spotifyConfig?: SpotifyConfig;
     timezone: string;
-    location: string;
+    location: {
+        lat: number;
+        lon: number;
+    };
 }
 
 export interface CreateUserPayload {
@@ -128,7 +131,13 @@ const userSchema = new Schema(
         lastState: { type: matrixStateSchema },
         spotifyConfig: { type: spotifyConfigSchema },
         timezone: { type: String, required: true },
-        location: { type: String, required: true },
+        location: {
+            type: {
+                lat: { type: Number, required: true },
+                lon: { type: Number, required: true },
+            },
+            required: true,
+        },
     },
     {
         optimisticConcurrency: true,
