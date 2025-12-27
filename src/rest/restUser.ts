@@ -5,6 +5,7 @@ import { v, validateBody, validateParams } from "./middleware/validate";
 import { badRequest, ok } from "./utils/responses";
 import { isAdmin } from "./middleware/isAdmin";
 import { UserService } from "../services/db/UserService";
+import { MatrixState } from "../db/models/user";
 
 export class RestUser {
     private readonly userService: UserService;
@@ -66,6 +67,21 @@ export class RestUser {
             asyncHandler(async (req, res) => {
                 const updated = await this.userService.clearSpotifyConfigByUUID(req.payload.uuid);
                 return ok(res, { user: updated });
+            })
+        );
+
+        router.put(
+            "/me/state",
+            validateBody({
+                lastState: {
+                    required: true,
+                    validator: v.isObject({ nonEmpty: true }),
+                },
+            }),
+            asyncHandler(async (req, res) => {
+                const { lastState } = req.body as { lastState: MatrixState };
+                await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
+                return ok(res, { message: "State updated successfully." });
             })
         );
 
