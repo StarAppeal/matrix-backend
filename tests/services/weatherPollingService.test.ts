@@ -25,9 +25,15 @@ describe("WeatherPollingService", () => {
 
     let pollingService: WeatherPollingService;
 
+    const BERLIN_COORDS = { lat: 52.52, lon: 13.40 };
+    const LONDON_COORDS = { lat: 51.50, lon: -0.12 };
+
+    const BERLIN_KEY = "52.52,13.4";
+    const LONDON_KEY = "51.5,-0.12";
+
     const mockUser: IUser = {
         uuid: "user-123",
-        location: "Berlin",
+        location: BERLIN_COORDS,
     } as any;
 
     beforeEach(() => {
@@ -35,7 +41,6 @@ describe("WeatherPollingService", () => {
         vi.useFakeTimers();
 
         mockedAppEventBus = appEventBus as Mocked<typeof appEventBus>;
-
         pollingService = new WeatherPollingService();
     });
 
@@ -47,17 +52,17 @@ describe("WeatherPollingService", () => {
         it("should start a new poll when the first user subscribes to a location", async () => {
             mockedGetCurrentWeather.mockResolvedValue({ temp: 10 } as any);
 
-            pollingService.subscribeUser(mockUser.uuid, mockUser.location);
+            pollingService.subscribeUser(mockUser.uuid, BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
             await vi.advanceTimersByTimeAsync(0);
 
             expect(vi.getTimerCount()).toBe(1);
-            expect(mockedGetCurrentWeather).toHaveBeenCalledOnce();
+            expect(mockedGetCurrentWeather).toHaveBeenCalledWith(BERLIN_COORDS.lat, BERLIN_COORDS.lon);
         });
 
         it("should NOT start a new poll if another user subscribes to the same location", async () => {
-            pollingService.subscribeUser("user-1", "Berlin");
-            pollingService.subscribeUser("user-2", "Berlin");
+            pollingService.subscribeUser("user-1", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
+            pollingService.subscribeUser("user-2", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
             await vi.advanceTimersByTimeAsync(0);
 
@@ -69,23 +74,23 @@ describe("WeatherPollingService", () => {
             // @ts-ignore - access to private property for test purposes
             const activePolls = (pollingService as any).activeLocationPolls;
 
-            pollingService.subscribeUser("user-1", "Berlin");
-            pollingService.subscribeUser("user-2", "Berlin");
+            pollingService.subscribeUser("user-1", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
+            pollingService.subscribeUser("user-2", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
             await vi.advanceTimersByTimeAsync(0);
 
-            expect(activePolls.has("Berlin")).toBe(true);
+            expect(activePolls.has(BERLIN_KEY)).toBe(true);
 
-            pollingService.unsubscribeUser("user-1", "Berlin");
-            expect(activePolls.has("Berlin")).toBe(true);
+            pollingService.unsubscribeUser("user-1", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
+            expect(activePolls.has(BERLIN_KEY)).toBe(true);
 
-            // @ts-ignore - access to private property for test purposes
+            // @ts-ignore - access to private method spy
             const stopPollingSpy = vi.spyOn(pollingService as any, "_stopPollingForLocation");
 
-            pollingService.unsubscribeUser("user-2", "Berlin");
+            pollingService.unsubscribeUser("user-2", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
-            expect(stopPollingSpy).toHaveBeenCalledWith("Berlin");
-            expect(activePolls.has("Berlin")).toBe(false);
+            expect(stopPollingSpy).toHaveBeenCalledWith(BERLIN_KEY);
+            expect(activePolls.has(BERLIN_KEY)).toBe(false);
         });
     });
 
@@ -94,14 +99,15 @@ describe("WeatherPollingService", () => {
             const weatherData = { temp: 12, city: "London" };
             mockedGetCurrentWeather.mockResolvedValue(weatherData as any);
 
-            pollingService.subscribeUser("user-london-1", "London");
-            pollingService.subscribeUser("user-london-2", "London");
+            pollingService.subscribeUser("user-london-1", LONDON_COORDS.lat, LONDON_COORDS.lon);
+            pollingService.subscribeUser("user-london-2", LONDON_COORDS.lat, LONDON_COORDS.lon);
 
             await vi.advanceTimersByTimeAsync(0);
+
             expect(mockedAppEventBus.emit).toHaveBeenCalledTimes(1);
             expect(mockedAppEventBus.emit).toHaveBeenCalledWith(WEATHER_STATE_UPDATED_EVENT, {
                 weatherData,
-                subscribers: ["user-london-1", "user-london-2"],
+                subscribers: expect.arrayContaining(["user-london-1", "user-london-2"]),
             });
 
             await vi.advanceTimersByTimeAsync(10 * 60 * 1000);
@@ -131,27 +137,38 @@ describe("WeatherPollingService", () => {
             const unsubscribeSpy = vi.spyOn(pollingService, "unsubscribeUser");
             const subscribeSpy = vi.spyOn(pollingService, "subscribeUser");
 
-            pollingService.subscribeUser("user-moving", "Berlin");
+            pollingService.subscribeUser("user-moving", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
-            const updatedUser = { uuid: "user-moving", location: "London" } as IUser;
+            const updatedUser = {
+                uuid: "user-moving",
+                location: LONDON_COORDS
+            } as IUser;
+
             userUpdateListener(updatedUser);
 
-            expect(unsubscribeSpy).toHaveBeenCalledOnce();
-            expect(unsubscribeSpy).toHaveBeenCalledWith("user-moving", "Berlin");
+            expect(subscribeSpy).toHaveBeenCalledTimes(2);
+            expect(subscribeSpy).toHaveBeenLastCalledWith("user-moving", LONDON_COORDS.lat, LONDON_COORDS.lon);
 
-            expect(subscribeSpy).toHaveBeenCalledTimes(2); // Once for Berlin, once for London
-            expect(subscribeSpy).toHaveBeenCalledWith("user-moving", "London");
+            // @ts-ignore
+            const subs = (pollingService as any).locationSubscriptions;
+            expect(subs.get(BERLIN_KEY)?.has("user-moving")).toBeFalsy();
+            expect(subs.get(LONDON_KEY)?.has("user-moving")).toBe(true);
         });
 
         it("should do nothing if the user's location has not changed", () => {
-            const unsubscribeSpy = vi.spyOn(pollingService, "unsubscribeUser");
+            const subscribeSpy = vi.spyOn(pollingService, "subscribeUser");
 
-            pollingService.subscribeUser("user-staying", "Berlin");
+            pollingService.subscribeUser("user-staying", BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
-            const updatedUser = { uuid: "user-staying", location: "Berlin", name: "New Name" } as IUser;
+            const updatedUser = {
+                uuid: "user-staying",
+                location: BERLIN_COORDS,
+                name: "New Name"
+            } as IUser;
+
             userUpdateListener(updatedUser);
 
-            expect(unsubscribeSpy).not.toHaveBeenCalled();
+            expect(subscribeSpy).toHaveBeenCalledTimes(1); // Nur das initiale
         });
     });
 });

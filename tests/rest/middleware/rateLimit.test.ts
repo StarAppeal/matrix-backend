@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import request from "supertest";
 import express from "express";
-import { authLimiter, spotifyLimiter } from "../../../src/rest/middleware/rateLimit";
+import { authLimiter, spotifyLimiter, weatherLimiter } from "../../../src/rest/middleware/rateLimit";
 
 function createTestApp() {
     const app = express();
     app.set("trust proxy", 1);
     app.get("/auth-test", authLimiter, (_req, res) => res.status(200).send({ ok: true }));
     app.get("/spotify-test", spotifyLimiter, (_req, res) => res.status(200).send({ ok: true }));
+    app.get("/weather-test", weatherLimiter, (_req, res) => res.status(200).send({ ok: true }));
     return app;
 }
 
@@ -39,6 +40,16 @@ describe("RateLimit", () => {
         const res = await request(app).get("/spotify-test");
         expect(res.status).toBe(429);
 
+        expect(res.headers["ratelimit-policy"]).toBeTruthy();
+    });
+
+    it("limits /weather-test after 25 requests, returns http 429", async () => {
+        const app = createTestApp();
+
+        await hit(app, "/weather-test", 25);
+
+        const res = await request(app).get("/weather-test");
+        expect(res.status).toBe(429);
         expect(res.headers["ratelimit-policy"]).toBeTruthy();
     });
 });

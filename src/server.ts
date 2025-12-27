@@ -10,7 +10,7 @@ import { RestUser } from "./rest/restUser";
 import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
 import { SpotifyTokenGenerator } from "./rest/spotifyTokenGenerator";
 import { RestAuth } from "./rest/auth";
-import { authLimiter, spotifyLimiter } from "./rest/middleware/rateLimit";
+import { authLimiter, spotifyLimiter, weatherLimiter } from "./rest/middleware/rateLimit";
 import { extractTokenFromCookie } from "./rest/middleware/extractTokenFromCookie";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
@@ -23,6 +23,7 @@ import { WeatherPollingService } from "./services/weatherPollingService";
 import { S3Service } from "./services/s3Service";
 import { RestStorage } from "./rest/restStorage";
 import logger from "./utils/logger";
+import { RestLocation } from "./rest/restLocation";
 
 interface ServerDependencies {
     userService: UserService;
@@ -125,6 +126,7 @@ export class Server {
         const spotifyTokenGenerator = new SpotifyTokenGenerator(spotifyTokenService);
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
+        const restLocation = new RestLocation();
 
         this.app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
 
@@ -135,6 +137,7 @@ export class Server {
         this.app.use("/api/user", _authenticateJwt, restUser.createRouter());
         this.app.use("/api/jwt", _authenticateJwt, jwtTokenExtractor.createRouter());
         this.app.use("/api/storage", _authenticateJwt, storage.createRouter());
+        this.app.use("/api/location", _authenticateJwt, weatherLimiter, restLocation.createRouter());
 
         this.app.use("/api/websocket", _authenticateJwt, (req, res, next) => {
             if (this.webSocketServer) {

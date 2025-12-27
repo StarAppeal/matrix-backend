@@ -21,3 +21,11 @@ export const spotifyLimiter = rateLimit({
     legacyHeaders: false,
     handler: onLimitReached,
 });
+
+export const weatherLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 25,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: onLimitReached,
+});
