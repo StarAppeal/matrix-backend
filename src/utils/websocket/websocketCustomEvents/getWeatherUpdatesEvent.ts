@@ -15,6 +15,7 @@ export class GetWeatherUpdatesEvent extends CustomWebsocketEvent<NoData> {
 
     handler = async () => {
         const user = this.ws.user;
+        console.log(`User ${user?.uuid} requested to get weather updates`);
         if (user?.location && user.uuid) {
             this.weatherPollingService.subscribeUser(user.uuid, user.location.lat, user.location.lon);
         }
