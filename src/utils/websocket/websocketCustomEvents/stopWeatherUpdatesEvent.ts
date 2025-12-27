@@ -18,7 +18,7 @@ export class StopWeatherUpdatesEvent extends CustomWebsocketEvent<NoData> {
         logger.info(`User ${this.ws.user.uuid} requested to stop weather updates`);
         const user = this.ws.user;
         if (user?.location && user.uuid) {
-            this.weatherPollingService.unsubscribeUser(user.uuid, user.location);
+            this.weatherPollingService.unsubscribeUser(user.uuid, user.location.lat, user.location.lon);
         }
     };
 }
