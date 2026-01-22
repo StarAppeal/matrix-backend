@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { PasswordUtils, ValidationResult } from "../../src/utils/passwordUtils";
 
 vi.mock("bcrypt", () => ({
