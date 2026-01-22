@@ -11,6 +11,7 @@ export interface IUser extends Document {
     spotifyConfig?: SpotifyConfig;
     timezone: string;
     location: {
+        name: string;
         lat: number;
         lon: number;
     };
@@ -23,6 +24,7 @@ export interface CreateUserPayload {
     config: UserConfig;
     timezone: string;
     location: {
+        name: string;
         lat: number;
         lon: number;
     };
@@ -127,6 +129,7 @@ const userConfigSchema = new Schema(
 
 const locationSchema = new Schema(
     {
+        name: { type: String, required: true },
         lat: { type: Number, required: true },
         lon: { type: Number, required: true },
     },

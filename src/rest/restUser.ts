@@ -35,6 +35,22 @@ export class RestUser {
         );
 
         router.put(
+            "/me/location",
+            validateBody({
+                name: { required: true, validator: v.isString({ nonEmpty: true }) },
+                lat: { required: true, validator: v.isNumber() },
+                lon: { required: true, validator: v.isNumber() },
+            }),
+            asyncHandler(async (req, res) => {
+                const { name, lat, lon } = req.body as { name: string; lat: number; lon: number };
+
+                const user = await this.userService.updateUserByUUID(req.payload.uuid, { location: { name, lat, lon } });
+
+                return ok(res, user);
+            })
+        );
+
+        router.put(
             "/me/spotify",
             validateBody({
                 accessToken: { required: true, validator: v.isString({ nonEmpty: true }) },
