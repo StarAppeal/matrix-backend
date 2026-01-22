@@ -22,7 +22,10 @@ export interface CreateUserPayload {
     uuid: string;
     config: UserConfig;
     timezone: string;
-    location: string;
+    location: {
+        lat: number;
+        lon: number;
+    };
 }
 
 export interface UserConfig {
@@ -122,6 +125,14 @@ const userConfigSchema = new Schema(
     { _id: false }
 );
 
+const locationSchema = new Schema(
+    {
+        lat: { type: Number, required: true },
+        lon: { type: Number, required: true },
+    },
+    { _id: false }
+);
+
 const userSchema = new Schema(
     {
         name: { type: String, required: true, index: true },
@@ -131,13 +142,7 @@ const userSchema = new Schema(
         lastState: { type: matrixStateSchema },
         spotifyConfig: { type: spotifyConfigSchema },
         timezone: { type: String, required: true },
-        location: {
-            type: {
-                lat: { type: Number, required: true },
-                lon: { type: Number, required: true },
-            },
-            required: true,
-        },
+        location: { type: locationSchema, required: true },
     },
     {
         optimisticConcurrency: true,

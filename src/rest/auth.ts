@@ -29,14 +29,17 @@ export class RestAuth {
                 username: { required: true, validator: v.isString({ nonEmpty: true, min: 3 }) },
                 password: { required: true, validator: v.isString({ nonEmpty: true, min: 8 }) },
                 timezone: { required: true, validator: v.isString({ nonEmpty: true }) },
-                location: { required: true, validator: v.isString({ nonEmpty: true }) },
+                location: { required: true, validator: v.isObject({ nonEmpty: true }) },
             }),
             asyncHandler(async (req, res) => {
                 const { username, password, timezone, location } = req.body as {
                     username: string;
                     password: string;
                     timezone: string;
-                    location: string;
+                    location: {
+                        lat: number;
+                        lon: number;
+                    };
                 };
 
                 if (await this.userService.existsUserByName(username)) {
