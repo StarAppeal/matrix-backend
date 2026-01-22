@@ -115,16 +115,17 @@ describe("WebSocket Custom Event Handlers", () => {
 
     describe("GetWeatherUpdatesEvent", () => {
         it("should subscribe the user to the WeatherPollingService using their location", async () => {
+            const location = {lat: 51.5074, lon: -0.1278};
             const mockWs = createMockWebSocket({
                 uuid: "user-uuid-weather",
-                location: "London",
+                location
             });
 
             const event = new GetWeatherUpdatesEvent(mockWs, mockWeatherPollingService);
             await event.handler();
 
             expect(mockWeatherPollingService.subscribeUser).toHaveBeenCalledOnce();
-            expect(mockWeatherPollingService.subscribeUser).toHaveBeenCalledWith("user-uuid-weather", "London");
+            expect(mockWeatherPollingService.subscribeUser).toHaveBeenCalledWith("user-uuid-weather", location.lat, location.lon);
         });
 
         it("should do nothing if the user has no location", async () => {
@@ -139,16 +140,17 @@ describe("WebSocket Custom Event Handlers", () => {
 
     describe("StopWeatherUpdatesEvent", () => {
         it("should unsubscribe the user from the WeatherPollingService using their location", async () => {
+            const location = {lat: 48.8566, lon: 2.3522};
             const mockWs = createMockWebSocket({
                 uuid: "user-uuid-weather",
-                location: "Paris",
+                location
             });
 
             const event = new StopWeatherUpdatesEvent(mockWs, mockWeatherPollingService);
             await event.handler();
 
             expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledOnce();
-            expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledWith("user-uuid-weather", "Paris");
+            expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledWith("user-uuid-weather", location.lat, location.lon);
         });
 
         it("should do nothing if the user has no location", async () => {
