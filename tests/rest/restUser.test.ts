@@ -58,6 +58,154 @@ describe("RestUser", () => {
         });
     });
 
+    describe("PUT /me/location", () => {
+        const validLocationData = {
+            name: "Berlin",
+            lat: 52.52,
+            lon: 13.405
+        };
+
+        it("should update user location successfully", async () => {
+            const mockUser = {
+                id: "test-user-id",
+                name: "testuser",
+                uuid: "test-user-uuid",
+                location: validLocationData
+            };
+
+            mockedUserService.updateUserByUUID.mockResolvedValue(mockUser);
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(validLocationData)
+                .expect(200);
+
+            expect(response.body.data).toEqual(mockUser);
+            expect(mockedUserService.updateUserByUUID).toHaveBeenCalledWith(
+                "test-user-uuid",
+                { location: validLocationData }
+            );
+        });
+
+        it("should return bad request for missing name", async () => {
+            const invalidData = { lat: 52.52, lon: 13.405 };
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(invalidData)
+                .expect(400);
+
+            expect(response.body.data.details[0]).toContain("name");
+        });
+
+        it("should return bad request for empty name", async () => {
+            const invalidData = { name: "", lat: 52.52, lon: 13.405 };
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(invalidData)
+                .expect(400);
+
+            expect(response.body.data.details[0]).toContain("name");
+        });
+
+        it("should return bad request for missing lat", async () => {
+            const invalidData = { name: "Berlin", lon: 13.405 };
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(invalidData)
+                .expect(400);
+
+            expect(response.body.data.details[0]).toContain("lat");
+        });
+
+        it("should return bad request for missing lon", async () => {
+            const invalidData = { name: "Berlin", lat: 52.52 };
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(invalidData)
+                .expect(400);
+
+            expect(response.body.data.details[0]).toContain("lon");
+        });
+
+        it("should return bad request for non-number lat", async () => {
+            const invalidData = { name: "Berlin", lat: "not-a-number", lon: 13.405 };
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(invalidData)
+                .expect(400);
+
+            expect(response.body.data.details[0]).toContain("lat");
+        });
+
+        it("should return bad request for non-number lon", async () => {
+            const invalidData = { name: "Berlin", lat: 52.52, lon: "not-a-number" };
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(invalidData)
+                .expect(400);
+
+            expect(response.body.data.details[0]).toContain("lon");
+        });
+
+        it("should accept negative coordinates", async () => {
+            const locationWithNegativeCoords = {
+                name: "Buenos Aires",
+                lat: -34.6037,
+                lon: -58.3816
+            };
+
+            const mockUser = {
+                id: "test-user-id",
+                name: "testuser",
+                uuid: "test-user-uuid",
+                location: locationWithNegativeCoords
+            };
+
+            mockedUserService.updateUserByUUID.mockResolvedValue(mockUser);
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(locationWithNegativeCoords)
+                .expect(200);
+
+            expect(response.body.data).toEqual(mockUser);
+            expect(mockedUserService.updateUserByUUID).toHaveBeenCalledWith(
+                "test-user-uuid",
+                { location: locationWithNegativeCoords }
+            );
+        });
+
+        it("should accept zero coordinates", async () => {
+            const locationWithZeroCoords = {
+                name: "Null Island",
+                lat: 0,
+                lon: 0
+            };
+
+            const mockUser = {
+                id: "test-user-id",
+                name: "testuser",
+                uuid: "test-user-uuid",
+                location: locationWithZeroCoords
+            };
+
+            mockedUserService.updateUserByUUID.mockResolvedValue(mockUser);
+
+            const response = await request(testEnv.app)
+                .put("/user/me/location")
+                .send(locationWithZeroCoords)
+                .expect(200);
+
+            expect(response.body.data).toEqual(mockUser);
+        });
+    });
+
     describe("PUT /me/spotify", () => {
         const validSpotifyData = {
             accessToken: "access-token-123",
@@ -511,3 +659,4 @@ describe("RestUser", () => {
 
     });
 });
+
