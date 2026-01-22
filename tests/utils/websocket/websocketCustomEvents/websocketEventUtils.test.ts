@@ -71,6 +71,19 @@ describe("WebSocket Custom Event Handlers", () => {
                 binary: false,
             });
         });
+
+        it("should send default state if user has no lastState", async () => {
+            const mockWs = createMockWebSocket({ lastState: undefined });
+
+            const event = new GetStateEvent(mockWs);
+            await event.handler();
+
+            expect(mockWs.send).toHaveBeenCalledOnce();
+            expect(mockWs.send).toHaveBeenCalledWith(
+                JSON.stringify({ type: "STATE", payload: { global: { mode: "idle", brightness: 100 } } }),
+                { binary: false }
+            );
+        });
     });
 
     describe("GetSettingsEvent", () => {
