@@ -7,10 +7,13 @@ export function watchUserChanges() {
     const changeStream = UserModel.watch([], { fullDocument: "updateLookup" });
 
     changeStream.on("change", (change: ChangeStreamDocument<IUser>) => {
-        if (change.operationType === "update" && change.fullDocument) {
-            const updatedUser = change.fullDocument;
-
-            appEventBus.emit(USER_UPDATED_EVENT, updatedUser);
+        switch (change.operationType) {
+            case "update":
+            case "replace":
+                if (change.fullDocument) {
+                    appEventBus.emit(USER_UPDATED_EVENT, change.fullDocument);
+                }
+                break;
         }
     });
 
