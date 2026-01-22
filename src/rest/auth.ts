@@ -37,6 +37,7 @@ export class RestAuth {
                     password: string;
                     timezone: string;
                     location: {
+                        name: string;
                         lat: number;
                         lon: number;
                     };

@@ -63,7 +63,11 @@ describe("RestAuth", () => {
             username: "testuser",
             password: "TestPassword123!",
             timezone: "Europe/Berlin",
-            location: "Berlin, Germany",
+            location: {
+                name: "Berlin",
+                lat: 52.52,
+                lon: 13.405,
+            },
         };
 
         it("should register a new user successfully", async () => {
@@ -73,7 +77,11 @@ describe("RestAuth", () => {
                 name: "testuser",
                 uuid: mockUUID,
                 timezone: "Europe/Berlin",
-                location: "Berlin, Germany",
+                location: {
+                    name: "Berlin",
+                    lat: 52.52,
+                    lon: 13.405,
+                },
                 config: {isVisible: false, isAdmin: false, canBeModified: false},
             };
 
@@ -91,9 +99,13 @@ describe("RestAuth", () => {
                 name: "testuser",
                 password: hashedPassword,
                 uuid: mockUUID,
-                config: {isVisible: false, isAdmin: false, canBeModified: false},
+                config: { isVisible: false, isAdmin: false, canBeModified: false },
                 timezone: "Europe/Berlin",
-                location: "Berlin, Germany",
+                location: {
+                    name: "Berlin",
+                    lat: 52.52,
+                    lon: 13.405,
+                },
             });
         });
 
