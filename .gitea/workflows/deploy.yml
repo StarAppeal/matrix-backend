@@ -9,8 +9,8 @@ env:
   IMAGE_NAME: starappeal/matrix-backend
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: heavy
     permissions:
       contents: read
       packages: write
@@ -30,6 +30,10 @@ jobs:
           push: true
           tags: ghcr.io/${{ env.IMAGE_NAME }}:latest
 
+  deploy:
+    runs-on: light
+    needs: build
+    steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
