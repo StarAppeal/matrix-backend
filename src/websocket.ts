@@ -97,6 +97,14 @@ export class ExtendedWebSocketServer {
         socketEventHandler.registerCustomEvents();
         socketEventHandler.enableDisconnectEvent(() => {
             this.uuidClientMap.delete(ws.payload?.uuid);
+
+            if (ws.user?.location) {
+                this.weatherPollingService.unsubscribeUser(ws.user.uuid,
+                    ws.user.location.lat, ws.user.location.lon)
+            }
+
+            this.spotifyPollingService.stopPollingForUser(ws.user.uuid,)
+
             logger.info("User disconnected");
         });
 

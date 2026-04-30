@@ -9,6 +9,20 @@ export function watchUserChanges() {
     changeStream.on("change", (change: ChangeStreamDocument<IUser>) => {
         switch (change.operationType) {
             case "update":
+                { const updatedFields = change.updateDescription?.updatedFields || {};
+
+                const updatedKeys = Object.keys(updatedFields);
+                const onlyStateChanged =
+                    updatedKeys.length > 0 && updatedKeys.every((key) => key.startsWith("lastState"));
+
+                if (onlyStateChanged) {
+                    return;
+                }
+
+                if (change.fullDocument) {
+                    appEventBus.emit(USER_UPDATED_EVENT, change.fullDocument);
+                }
+                break; }
             case "replace":
                 if (change.fullDocument) {
                     appEventBus.emit(USER_UPDATED_EVENT, change.fullDocument);

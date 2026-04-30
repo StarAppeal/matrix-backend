@@ -51,6 +51,7 @@ export class SpotifyPollingService {
     private async _pollUser(uuid: string): Promise<void> {
         let user = await this.userService.getUserByUUID(uuid);
         if (!user || !user.spotifyConfig) {
+            logger.warn(`User ${uuid} has no spotifyConfig. Stopping polling service.`);
             this.stopPollingForUser(uuid);
             return;
         }
