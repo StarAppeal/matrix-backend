@@ -355,9 +355,11 @@ describe("RestUser", () => {
             const mockUser = {
                 id: "test-user-id",
                 name: "testuser",
-                uuid: "test-user-uuid"
+                uuid: "test-user-uuid",
+                lastState: validStateData.lastState
             };
 
+            mockedUserService.getUserByUUID.mockResolvedValue(mockUser);
             mockedUserService.updateUserByUUID.mockResolvedValue(mockUser);
 
             const response = await request(testEnv.app)
@@ -418,6 +420,10 @@ describe("RestUser", () => {
                 }
             };
 
+            mockedUserService.getUserByUUID.mockResolvedValue({
+                uuid: "test-user-uuid",
+                lastState: partialState.lastState
+            });
             mockedUserService.updateUserByUUID.mockResolvedValue({});
 
             const response = await request(testEnv.app)

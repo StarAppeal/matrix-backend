@@ -5,13 +5,17 @@ import { v, validateBody, validateParams } from "./middleware/validate";
 import { badRequest, ok } from "./utils/responses";
 import { isAdmin } from "./middleware/isAdmin";
 import { UserService } from "../services/db/UserService";
+import { ExtendedWebSocketServer } from "../websocket";
 import { MatrixState } from "../db/models/user";
+import logger from "../utils/logger";
 
 export class RestUser {
     private readonly userService: UserService;
+    private readonly webSocketServerProvider?: () => ExtendedWebSocketServer | null;
 
-    constructor(userService: UserService) {
+    constructor(userService: UserService, webSocketServerProvider?: () => ExtendedWebSocketServer | null) {
         this.userService = userService;
+        this.webSocketServerProvider = webSocketServerProvider;
     }
 
     public createRouter() {
@@ -96,7 +100,23 @@ export class RestUser {
             }),
             asyncHandler(async (req, res) => {
                 const { lastState } = req.body as { lastState: MatrixState };
+                const user = await this.userService.getUserByUUID(req.payload.uuid);
+                if (!user) {
+                    return badRequest(res, "User not found");
+                }
+
                 await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
+
+                if (this.webSocketServerProvider) {
+                    const webSocketServer = this.webSocketServerProvider();
+
+                    if (webSocketServer) {
+                        logger.info("Sending payload to websocket");
+                        const message = JSON.stringify({ type: "STATE", payload: lastState });
+                        webSocketServer.sendMessageToUser(req.payload.uuid, message);
+                    }
+                }
+
                 return ok(res, { message: "State updated successfully." });
             })
         );

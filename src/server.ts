@@ -122,7 +122,7 @@ export class Server {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
         const restAuth = new RestAuth(userService, jwtAuthenticator);
-        const restUser = new RestUser(userService);
+        const restUser = new RestUser(userService, () => this.webSocketServer);
         const spotifyTokenGenerator = new SpotifyTokenGenerator(spotifyTokenService);
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
