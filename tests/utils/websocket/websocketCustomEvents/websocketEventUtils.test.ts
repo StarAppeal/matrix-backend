@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach, type Mocked, afterEach } from "vi
 import { ExtendedWebSocket } from "../../../../src/interfaces/extendedWebsocket";
 import { GetStateEvent } from "../../../../src/utils/websocket/websocketCustomEvents/getStateEvent";
 import { GetSettingsEvent } from "../../../../src/utils/websocket/websocketCustomEvents/getSettingsEvent";
-import { GetSpotifyUpdatesEvent } from "../../../../src/utils/websocket/websocketCustomEvents/getSpotifyUpdatesEvent";
-import { SpotifyPollingService } from "../../../../src/services/spotifyPollingService";
+import { GetMusicUpdatesEvent } from "../../../../src/utils/websocket/websocketCustomEvents/getMusicUpdatesEvent";
+import { MusicPollingService } from "../../../../src/services/musicPollingService";
 // @ts-ignore
-import { createMockSpotifyPollingService } from "../../../helpers/testSetup";
-import { StopSpotifyUpdatesEvent } from "../../../../src/utils/websocket/websocketCustomEvents/stopSpotifyUpdatesEvent";
+import { createMockMusicPollingService } from "../../../helpers/testSetup";
+import { StopMusicUpdatesEvent } from "../../../../src/utils/websocket/websocketCustomEvents/stopMusicUpdatesEvent";
 import { GetWeatherUpdatesEvent } from "../../../../src/utils/websocket/websocketCustomEvents/getWeatherUpdatesEvent";
 import { ErrorEvent } from "../../../../src/utils/websocket/websocketCustomEvents/errorEvent";
 import { UpdateUserSingleEvent } from "../../../../src/utils/websocket/websocketCustomEvents/updateUserEvent";
@@ -44,13 +44,13 @@ vi.mock("../../../../src/utils/logger", () => ({
 }));
 
 describe("WebSocket Custom Event Handlers", () => {
-    let mockSpotifyPollingService: Mocked<SpotifyPollingService>;
+    let mockmusicPollingService: Mocked<MusicPollingService>;
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
-        mockSpotifyPollingService = createMockSpotifyPollingService() as any;
+        mockmusicPollingService = createMockMusicPollingService() as any;
         mockWeatherPollingService = new WeatherPollingService() as Mocked<WeatherPollingService>;
     });
 
@@ -102,27 +102,27 @@ describe("WebSocket Custom Event Handlers", () => {
         });
     });
 
-    describe("GetSpotifyUpdatesEvent", () => {
+    describe("GetMusicUpdatesEvent", () => {
         it("should call the polling service to start polling for the user", async () => {
             const mockWs = createMockWebSocket();
 
-            const event = new GetSpotifyUpdatesEvent(mockWs, mockSpotifyPollingService);
+            const event = new GetMusicUpdatesEvent(mockWs, mockmusicPollingService);
             await event.handler();
 
-            expect(mockSpotifyPollingService.startPollingForUser).toHaveBeenCalledOnce();
-            expect(mockSpotifyPollingService.startPollingForUser).toHaveBeenCalledWith(mockWs.user);
+            expect(mockmusicPollingService.startPollingForUser).toHaveBeenCalledOnce();
+            expect(mockmusicPollingService.startPollingForUser).toHaveBeenCalledWith(mockWs.user);
         });
     });
 
-    describe("StopSpotifyUpdatesEvent", () => {
+    describe("StopMusicUpdatesEvent", () => {
         it("should call the polling service to stop polling for the user", async () => {
             const mockWs = createMockWebSocket();
 
-            const event = new StopSpotifyUpdatesEvent(mockWs, mockSpotifyPollingService);
+            const event = new StopMusicUpdatesEvent(mockWs, mockmusicPollingService);
             await event.handler();
 
-            expect(mockSpotifyPollingService.stopPollingForUser).toHaveBeenCalledOnce();
-            expect(mockSpotifyPollingService.stopPollingForUser).toHaveBeenCalledWith(mockWs.payload.uuid);
+            expect(mockmusicPollingService.stopPollingForUser).toHaveBeenCalledOnce();
+            expect(mockmusicPollingService.stopPollingForUser).toHaveBeenCalledWith(mockWs.payload.uuid);
         });
     });
 

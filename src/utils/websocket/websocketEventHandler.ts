@@ -1,13 +1,13 @@
 import { ExtendedWebSocket } from "../../interfaces/extendedWebsocket";
 import { getEventListeners, WebsocketEvent } from "./websocketCustomEvents/websocketEventUtils";
-import { SpotifyPollingService } from "../../services/spotifyPollingService";
+import { MusicPollingService } from "../../services/musicPollingService";
 import { WeatherPollingService } from "../../services/weatherPollingService";
 import logger from "../../utils/logger";
 
 export class WebsocketEventHandler {
     constructor(
         private webSocket: ExtendedWebSocket,
-        private spotifyPollingService: SpotifyPollingService,
+        private musicPollingService: MusicPollingService,
         private readonly weatherPollingService: WeatherPollingService
     ) {}
 
@@ -49,7 +49,7 @@ export class WebsocketEventHandler {
     }
 
     public registerCustomEvents() {
-        const events = getEventListeners(this.webSocket, this.spotifyPollingService, this.weatherPollingService);
+        const events = getEventListeners(this.webSocket, this.musicPollingService, this.weatherPollingService);
         events.forEach(this.registerCustomEvent, this);
     }
 

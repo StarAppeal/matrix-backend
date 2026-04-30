@@ -8,8 +8,8 @@ import {getEventListeners} from "../src/utils/websocket/websocketCustomEvents/we
 // @ts-ignore
 import {createMockJwtAuthenticator, createMockUserService} from "./helpers/testSetup";
 import {UserService} from "../src/services/db/UserService";
-import { SpotifyPollingService } from "../src/services/spotifyPollingService";
-import { USER_UPDATED_EVENT, SPOTIFY_STATE_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../src/utils/eventBus";
+import { MusicPollingService } from "../src/services/musicPollingService";
+import { USER_UPDATED_EVENT, MUSIC_STATE_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../src/utils/eventBus";
 import {WebsocketEventType} from "../src/utils/websocket/websocketCustomEvents/websocketEventType";
 import {WeatherPollingService} from "../src/services/weatherPollingService";
 
@@ -26,7 +26,7 @@ vi.mock("../src/utils/eventBus", () => ({
         emit: vi.fn(),
     },
     USER_UPDATED_EVENT: 'user:updated',
-    SPOTIFY_STATE_UPDATED_EVENT: 'spotify:state-updated',
+    MUSIC_STATE_UPDATED_EVENT: 'music:state-updated',
     WEATHER_STATE_UPDATED_EVENT: 'weather-state:updated',
 }));
 
@@ -46,7 +46,7 @@ describe("ExtendedWebSocketServer", () => {
     let mockHttpServer: Mocked<Server>;
     let extendedWss: ExtendedWebSocketServer;
     let mockUserService: Mocked<UserService>;
-    let mockSpotifyPollingService: Mocked<SpotifyPollingService>
+    let mockMusicPollingService: Mocked<MusicPollingService>
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
 
     beforeEach(() => {
@@ -66,14 +66,25 @@ describe("ExtendedWebSocketServer", () => {
             close: vi.fn(),
         } as unknown as Mocked<WebSocketServer>;
 
-        mockSpotifyPollingService = {} as any;
-        mockWeatherPollingService = {} as any;
+        mockMusicPollingService = {
+            startPollingForUser: vi.fn(),
+            stopPollingForUser: vi.fn(),
+        } as unknown as Mocked<MusicPollingService>;
+
+        mockWeatherPollingService = {
+            subscribeUser: vi.fn(),
+            unsubscribeUser: vi.fn(),
+        } as unknown as Mocked<WeatherPollingService>;
 
         mockUserService = createMockUserService();
 
-        extendedWss = new ExtendedWebSocketServer(mockHttpServer,
-            mockUserService, mockSpotifyPollingService, mockWeatherPollingService,
-            createMockJwtAuthenticator() as any);
+        extendedWss = new ExtendedWebSocketServer(
+            mockHttpServer,
+            mockUserService,
+            mockMusicPollingService,
+            mockWeatherPollingService,
+            createMockJwtAuthenticator() as any
+        );
     });
 
     describe("Constructor and Setup", () => {
@@ -145,7 +156,11 @@ describe("ExtendedWebSocketServer", () => {
 
         it("should create and configure a WebsocketEventHandler for new clients", () => {
             connectionHandler(mockWsClient, {});
-            expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(mockWsClient, mockSpotifyPollingService, mockWeatherPollingService);
+            expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(
+                mockWsClient,
+                mockMusicPollingService,
+                mockWeatherPollingService
+            );
             expect(mockClientEventHandler.enableErrorEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enablePongEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enableMessageEvent).toHaveBeenCalled();
@@ -157,6 +172,23 @@ describe("ExtendedWebSocketServer", () => {
             connectionHandler(mockWsClient, {});
             expect(mockWsClient.emit).toHaveBeenCalledWith("GET_STATE", {});
             expect(mockWsClient.emit).toHaveBeenCalledWith("GET_SETTINGS", {});
+        });
+
+        it("should handle disconnect correctly and unsubscribe from polling services", () => {
+            mockWsClient.payload = { uuid: "user-123", username: "test" };
+            mockWsClient.user = {
+                uuid: "user-123",
+                location: { lat: 52.5, lon: 13.4 },
+            };
+
+            connectionHandler(mockWsClient, {});
+
+            const disconnectCallback = vi.mocked(mockClientEventHandler.enableDisconnectEvent).mock.calls[0][0];
+
+            disconnectCallback();
+
+            expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledWith("user-123", 52.5, 13.4);
+            expect(mockMusicPollingService.stopPollingForUser).toHaveBeenCalledWith("user-123");
         });
     });
 
@@ -192,20 +224,20 @@ describe("ExtendedWebSocketServer", () => {
             );
         });
 
-        it("should listen for SPOTIFY_STATE_UPDATED_EVENT and send to the correct client", () => {
-            const spotifyStateListener = eventBusListeners.get(SPOTIFY_STATE_UPDATED_EVENT);
-            expect(spotifyStateListener).toBeDefined();
+        it("should listen for music_STATE_UPDATED_EVENT and send to the correct client", () => {
+            const musicStateListener = eventBusListeners.get(MUSIC_STATE_UPDATED_EVENT);
+            expect(musicStateListener).toBeDefined();
 
             vi.mocked(mockClient.emit).mockClear();
 
-            const spotifyUpdatePayload = {state: {item: {name: "Neuer Song"}}};
-            const eventPayload = {uuid: "user-123", ...spotifyUpdatePayload};
+            const musicUpdatePayload = {state: {item: {name: "Neuer Song"}}};
+            const eventPayload = {uuid: "user-123", ...musicUpdatePayload};
 
-            spotifyStateListener!(eventPayload);
+            musicStateListener!(eventPayload);
 
             expect(mockClient.emit).toHaveBeenCalledOnce();
             expect(mockClient.emit).toHaveBeenCalledWith(
-                WebsocketEventType.SINGLE_SPOTIFY_UPDATE, spotifyUpdatePayload.state
+                WebsocketEventType.SINGLE_MUSIC_UPDATE, musicUpdatePayload.state
             );
         });
 
@@ -228,7 +260,7 @@ describe("ExtendedWebSocketServer", () => {
 
         it("should not send a message if the target client is not connected", () => {
             const userUpdateListener = eventBusListeners.get(USER_UPDATED_EVENT);
-            const spotifyStateListener = eventBusListeners.get(SPOTIFY_STATE_UPDATED_EVENT);
+            const musicStateListener = eventBusListeners.get(MUSIC_STATE_UPDATED_EVENT);
 
             vi.mocked(mockClient.send).mockClear();
             vi.mocked(mockClient.emit).mockClear();
@@ -237,7 +269,7 @@ describe("ExtendedWebSocketServer", () => {
 
             userUpdateListener!(eventPayload);
 
-            spotifyStateListener!(eventPayload);
+            musicStateListener!(eventPayload);
 
             expect(mockClient.send).not.toHaveBeenCalled();
             expect(mockClient.emit).not.toHaveBeenCalled();

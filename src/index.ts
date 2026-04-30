@@ -2,10 +2,9 @@ import { Server } from "./server";
 import { config as baseConfig } from "./config/config";
 import { S3ClientConfig, S3Service } from "./services/s3Service";
 import { UserService } from "./services/db/UserService";
-import { SpotifyTokenService } from "./services/spotifyTokenService";
 import { connectToDatabase } from "./services/db/database.service";
-import { SpotifyApiService } from "./services/spotifyApiService";
-import { SpotifyPollingService } from "./services/spotifyPollingService";
+import { LastFmApiService } from "./services/lastFmApiService";
+import { MusicPollingService } from "./services/musicPollingService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { FileService } from "./services/db/fileService";
@@ -14,8 +13,6 @@ import logger from "./utils/logger";
 async function bootstrap() {
     const {
         SECRET_KEY,
-        SPOTIFY_CLIENT_ID,
-        SPOTIFY_CLIENT_SECRET,
         MINIO_ENDPOINT,
         MINIO_PORT,
         MINIO_BUCKET_NAME,
@@ -24,16 +21,11 @@ async function bootstrap() {
         DB_NAME,
         DB_CONN_STRING,
         MINIO_SERVER_URL,
+        LAST_FM_API_KEY,
     } = process.env;
 
     if (!SECRET_KEY || SECRET_KEY.length < 32) {
         throw new Error("CRITICAL ERROR: SECRET_KEY environment variable is not set or too short.");
-    }
-    if (!SPOTIFY_CLIENT_ID) {
-        throw new Error("CRITICAL ERROR: SPOTIFY_CLIENT_ID environment variable is not set.");
-    }
-    if (!SPOTIFY_CLIENT_SECRET) {
-        throw new Error("CRITICAL ERROR: SPOTIFY_CLIENT_SECRET environment variable is not set.");
     }
 
     if (!MINIO_ENDPOINT || !MINIO_PORT) {
@@ -56,6 +48,10 @@ async function bootstrap() {
         throw new Error("DB_NAME and/or DB_CONN_STRING environment variable is not set.");
     }
 
+    if (!LAST_FM_API_KEY) {
+        throw new Error("CRITICAL ERROR: LAST_FM_API_KEY environment variable is not set.");
+    }
+
     const s3ClientConfig: S3ClientConfig = {
         publicUrl: MINIO_SERVER_URL,
         endpoint: MINIO_ENDPOINT,
@@ -75,10 +71,9 @@ async function bootstrap() {
     const fileService = FileService.getInstance();
     const s3Service = S3Service.getInstance(s3ClientConfig, fileService);
     const userService = await UserService.create();
-    const spotifyTokenService = new SpotifyTokenService(SPOTIFY_CLIENT_ID!, SPOTIFY_CLIENT_SECRET!);
 
-    const spotifyApiService = new SpotifyApiService();
-    const spotifyPollingService = new SpotifyPollingService(userService, spotifyApiService, spotifyTokenService);
+    const lastFmApiService = new LastFmApiService(LAST_FM_API_KEY);
+    const musicPollingService = new MusicPollingService(userService, lastFmApiService);
     const weatherPollingService = new WeatherPollingService();
 
     const jwtAuthenticator = new JwtAuthenticator(SECRET_KEY);
@@ -92,10 +87,10 @@ async function bootstrap() {
         {
             s3Service,
             userService,
-            spotifyTokenService,
-            spotifyPollingService,
+            musicPollingService,
             weatherPollingService,
             jwtAuthenticator,
+            lastFmApiService
         }
     );
 

@@ -7,12 +7,10 @@ import { authLimiter } from "../src/rest/middleware/rateLimit";
 
 import {
     createMockJwtAuthenticator,
-    createMockSpotifyPollingService,
-    createMockSpotifyTokenService,
-    createMockUserService
+    createMockMusicPollingService,
+    createMockUserService,
     // @ts-ignore
 } from "./helpers/testSetup";
-
 
 const mockS3Service = {
     ensureBucketExists: vi.fn().mockResolvedValue(undefined),
@@ -21,11 +19,10 @@ const mockS3Service = {
 } as any;
 
 const mockUserService = createMockUserService() as any;
-const mockSpotifyTokenService = createMockSpotifyTokenService() as any;
-const mockSpotifyPollingService = createMockSpotifyPollingService() as any;
+const mockMusicPollingService = createMockMusicPollingService() as any;
 const mockWeatherPollingService = {
     subscribeUser: vi.fn(),
-    unsubscribeUser: vi.fn()
+    unsubscribeUser: vi.fn(),
 } as any;
 const mockJwtAuthenticator = createMockJwtAuthenticator() as any;
 
@@ -45,7 +42,6 @@ vi.mock("../src/rest/middleware/rateLimit", async (importOriginal) => {
     return {
         ...original,
         authLimiter: vi.fn((req: Request, res: Response, next: NextFunction) => next()),
-        spotifyLimiter: vi.fn((req: Request, res: Response, next: NextFunction) => next()),
     };
 });
 
@@ -64,7 +60,7 @@ vi.mock("../src/rest/auth", () => {
                 });
                 router.post("/login", (req, res) => res.status(200).send("ok"));
                 return router;
-            }
+            },
         };
     });
     return { RestAuth: MockRestAuth };
@@ -85,11 +81,10 @@ describe("Server Class Integration Tests", () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        server = new Server(mockServerConfig,  {
+        server = new Server(mockServerConfig, {
             s3Service: mockS3Service,
             userService: mockUserService,
-            spotifyTokenService: mockSpotifyTokenService,
-            spotifyPollingService: mockSpotifyPollingService,
+            musicPollingService: mockMusicPollingService,
             weatherPollingService: mockWeatherPollingService,
             jwtAuthenticator: mockJwtAuthenticator,
         });
@@ -101,11 +96,10 @@ describe("Server Class Integration Tests", () => {
         await server.stop();
     });
 
-    describe('Server Startup', () => {
-        it('should call ensureBucketExists on S3Service during startup', () => {
+    describe("Server Startup", () => {
+        it("should call ensureBucketExists on S3Service during startup", () => {
             expect(mockS3Service.ensureBucketExists).toHaveBeenCalledOnce();
         });
-
     });
 
     describe("Server Setup and Middleware", () => {
@@ -120,14 +114,14 @@ describe("Server Class Integration Tests", () => {
                 .set("Origin", "http://test-origin.com")
                 .expect(204);
 
-            expect(response.headers['access-control-allow-origin']).toBe("http://test-origin.com");
-            expect(response.headers['access-control-allow-credentials']).toBe("true");
+            expect(response.headers["access-control-allow-origin"]).toBe("http://test-origin.com");
+            expect(response.headers["access-control-allow-credentials"]).toBe("true");
         });
 
         it("should apply security headers to responses", async () => {
             const response = await request(app).get("/api/healthz").expect(200);
-            expect(response.headers['x-frame-options']).toBe('DENY');
-            expect(response.headers['referrer-policy']).toBe('no-referrer');
+            expect(response.headers["x-frame-options"]).toBe("DENY");
+            expect(response.headers["referrer-policy"]).toBe("no-referrer");
         });
 
         it("should apply the auth rate limiter to an auth route", async () => {
@@ -154,9 +148,7 @@ describe("Server Class Integration Tests", () => {
 
     describe("Error Handling Middleware", () => {
         it("should handle a 500 internal server error and return a generic message with an errorId", async () => {
-            const response = await request(app)
-                .get("/api/auth/test-500-error")
-                .expect(500);
+            const response = await request(app).get("/api/auth/test-500-error").expect(500);
 
             expect(response.body.ok).toBe(false);
             expect(response.body.data.error).toBe("An unexpected error occurred on the server.");
@@ -165,9 +157,7 @@ describe("Server Class Integration Tests", () => {
         });
 
         it("should handle a 400 client error and return the specific message without an errorId", async () => {
-            const response = await request(app)
-                .get("/api/auth/test-400-error")
-                .expect(400);
+            const response = await request(app).get("/api/auth/test-400-error").expect(400);
 
             expect(response.body.ok).toBe(false);
             expect(response.body.data.error).toBe("Simulated client error.");

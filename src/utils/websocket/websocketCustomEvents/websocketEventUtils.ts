@@ -1,16 +1,16 @@
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
-import { SpotifyPollingService } from "../../../services/spotifyPollingService";
+import { MusicPollingService } from "../../../services/musicPollingService";
 import { WeatherPollingService } from "../../../services/weatherPollingService";
 
 import { eventRegistry, WebsocketEvent } from "./eventRegistry";
 
 export function getEventListeners(
     ws: ExtendedWebSocket,
-    spotifyPollingService: SpotifyPollingService,
+    musicPollingService: MusicPollingService,
     weatherPollingService: WeatherPollingService
 ): WebsocketEvent[] {
     const services = {
-        spotifyPollingService,
+        musicPollingService,
         weatherPollingService,
     };
 

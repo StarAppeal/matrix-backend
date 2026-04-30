@@ -8,7 +8,7 @@ export interface IUser extends Document {
     uuid: string;
     config: UserConfig;
     lastState?: MatrixState;
-    spotifyConfig?: SpotifyConfig;
+    lastFmUsername?: string;
     timezone: string;
     location: {
         name: string;
@@ -59,13 +59,6 @@ export interface MatrixState {
     };
 }
 
-export interface SpotifyConfig {
-    accessToken: string;
-    refreshToken: string;
-    expirationDate: Date;
-    scope: string;
-}
-
 const matrixStateSchema = new Schema(
     {
         global: {
@@ -108,16 +101,6 @@ const matrixStateSchema = new Schema(
     { _id: false }
 );
 
-const spotifyConfigSchema = new Schema(
-    {
-        accessToken: { type: String },
-        refreshToken: { type: String },
-        expirationDate: { type: Date },
-        scope: { type: String },
-    },
-    { _id: false }
-);
-
 const userConfigSchema = new Schema(
     {
         isVisible: { type: Boolean, required: true },
@@ -143,7 +126,7 @@ const userSchema = new Schema(
         uuid: { type: String, required: true, unique: true, index: true },
         config: { type: userConfigSchema, required: true },
         lastState: { type: matrixStateSchema },
-        spotifyConfig: { type: spotifyConfigSchema },
+        lastFmUsername: { type: String },
         timezone: { type: String, required: true },
         location: { type: locationSchema, required: true },
     },

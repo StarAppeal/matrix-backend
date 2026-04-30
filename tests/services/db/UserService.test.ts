@@ -69,7 +69,7 @@ describe("UserService", () => {
 
             const result = await userService.getAllUsers();
 
-            expect(mockedUserModel.find).toHaveBeenCalledWith({}, { spotifyConfig: 0, lastState: 0 });
+            expect(mockedUserModel.find).toHaveBeenCalledWith({}, { lastState: 0 });
             expect(result).toEqual(users);
         });
     });
@@ -135,26 +135,6 @@ describe("UserService", () => {
         });
     });
 
-    describe("getSpotifyConfigByUUID", () => {
-        it("should return spotify config for user", async () => {
-            const spotifyConfig = { accessToken: "access-token" };
-            mockedUserModel.findOne.mockReturnValue(createMockMongooseQuery({ spotifyConfig }) as any);
-
-            const result = await userService.getSpotifyConfigByUUID("uuid-123");
-
-            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ uuid: "uuid-123" }, { spotifyConfig: 1 });
-            expect(result).toEqual(spotifyConfig);
-        });
-
-        it("should return undefined if user has no spotify config", async () => {
-            mockedUserModel.findOne.mockReturnValue(createMockMongooseQuery(null) as any);
-
-            const result = await userService.getSpotifyConfigByUUID("uuid-123");
-
-            expect(result).toBeUndefined();
-        });
-    });
-
     describe("createUser", () => {
         it("should create user and return without password", async () => {
             const userData = { name: "New User", password: "hashedPassword", uuid: "new-uuid" };
@@ -196,16 +176,16 @@ describe("UserService", () => {
         });
     });
 
-    describe("clearSpotifyConfigByUUID", () => {
-        it("should clear spotify config and return updated user", async () => {
+    describe("clearLastFmUsernameByUUID", () => {
+        it("should clear lastFmUsername config and return updated user", async () => {
             const updatedUser = { uuid: "uuid-123", name: "Test User" };
             mockedUserModel.findOneAndUpdate.mockReturnValue(createMockMongooseQuery(updatedUser) as any);
 
-            const result = await userService.clearSpotifyConfigByUUID("uuid-123");
+            const result = await userService.clearLastFmUsernameByUUID("uuid-123");
 
             expect(mockedUserModel.findOneAndUpdate).toHaveBeenCalledWith(
                 { uuid: "uuid-123" },
-                { $unset: { spotifyConfig: 1 } },
+                { $unset: { lastFmUsername: 1 } },
                 { new: true }
             );
             expect(result).toEqual(updatedUser);
@@ -214,7 +194,7 @@ describe("UserService", () => {
         it("should return null if user not found", async () => {
             mockedUserModel.findOneAndUpdate.mockReturnValue(createMockMongooseQuery(null) as any);
 
-            const result = await userService.clearSpotifyConfigByUUID("non-existent-uuid");
+            const result = await userService.clearLastFmUsernameByUUID("non-existent-uuid");
 
             expect(result).toBeNull();
         });

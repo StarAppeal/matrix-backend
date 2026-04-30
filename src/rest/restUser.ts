@@ -8,13 +8,20 @@ import { UserService } from "../services/db/UserService";
 import { ExtendedWebSocketServer } from "../websocket";
 import { MatrixState } from "../db/models/user";
 import logger from "../utils/logger";
+import { LastFmApiService } from "../services/lastFmApiService";
 
 export class RestUser {
     private readonly userService: UserService;
+    private readonly lastFmApiService: LastFmApiService;
     private readonly webSocketServerProvider?: () => ExtendedWebSocketServer | null;
 
-    constructor(userService: UserService, webSocketServerProvider?: () => ExtendedWebSocketServer | null) {
+    constructor(
+        userService: UserService,
+        lastFmApiService: LastFmApiService,
+        webSocketServerProvider?: () => ExtendedWebSocketServer | null
+    ) {
         this.userService = userService;
+        this.lastFmApiService = lastFmApiService;
         this.webSocketServerProvider = webSocketServerProvider;
     }
 
@@ -48,44 +55,40 @@ export class RestUser {
             asyncHandler(async (req, res) => {
                 const { name, lat, lon } = req.body as { name: string; lat: number; lon: number };
 
-                const user = await this.userService.updateUserByUUID(req.payload.uuid, { location: { name, lat, lon } });
+                const user = await this.userService.updateUserByUUID(req.payload.uuid, {
+                    location: { name, lat, lon },
+                });
 
                 return ok(res, user);
             })
         );
 
         router.put(
-            "/me/spotify",
+            "/me/lastFmUsername",
             validateBody({
-                accessToken: { required: true, validator: v.isString({ nonEmpty: true }) },
-                refreshToken: { required: true, validator: v.isString({ nonEmpty: true }) },
-                scope: { required: true, validator: v.isString({ nonEmpty: true }) },
-                expirationDate: { required: true, validator: v.isString({ nonEmpty: true }) },
+                username: { required: true, validator: v.isString({ nonEmpty: true }) },
             }),
             asyncHandler(async (req, res) => {
-                const { accessToken, refreshToken, scope, expirationDate } = req.body as {
-                    accessToken: string;
-                    refreshToken: string;
-                    scope: string;
-                    expirationDate: string;
-                };
+                const { username } = req.body as { username: string };
 
-                const spotifyConfig = {
-                    accessToken,
-                    refreshToken,
-                    scope,
-                    expirationDate: new Date(expirationDate),
-                };
+                const isValid = await this.lastFmApiService.validateUsername(username);
+                if (!isValid) {
+                    return badRequest(res, "Invalid Last.fm username");
+                }
 
-                await this.userService.updateUserByUUID(req.payload.uuid, { spotifyConfig: spotifyConfig });
-                return ok(res, { message: "Spotify config changed successfully." });
+                const user = await this.userService.updateUserByUUID(req.payload.uuid, {
+                    lastFmUsername: username,
+                });
+
+
+                return ok(res, user);
             })
         );
 
         router.delete(
-            "/me/spotify",
+            "/me/lastFmUsername",
             asyncHandler(async (req, res) => {
-                const updated = await this.userService.clearSpotifyConfigByUUID(req.payload.uuid);
+                const updated = await this.userService.clearLastFmUsernameByUUID(req.payload.uuid);
                 return ok(res, { user: updated });
             })
         );

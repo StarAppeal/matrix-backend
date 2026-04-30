@@ -7,12 +7,12 @@ import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
 import { WebsocketEventType } from "./utils/websocket/websocketCustomEvents/websocketEventType";
 import {
     appEventBus,
-    SPOTIFY_STATE_UPDATED_EVENT,
+    MUSIC_STATE_UPDATED_EVENT,
     USER_UPDATED_EVENT,
     WEATHER_STATE_UPDATED_EVENT,
 } from "./utils/eventBus";
 import { IUser } from "./db/models/user";
-import { SpotifyPollingService } from "./services/spotifyPollingService";
+import { MusicPollingService } from "./services/musicPollingService";
 import { UserService } from "./services/db/UserService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
@@ -23,18 +23,18 @@ export class ExtendedWebSocketServer {
 
     private readonly _wss: WebSocketServer;
     private readonly userService: UserService;
-    private readonly spotifyPollingService: SpotifyPollingService;
+    private readonly musicPollingService: MusicPollingService;
     private readonly weatherPollingService: WeatherPollingService;
 
     constructor(
         server: Server,
         userService: UserService,
-        spotifyPollingService: SpotifyPollingService,
+        musicPollingService: MusicPollingService,
         weatherPollingService: WeatherPollingService,
         jwtAuthenticator: JwtAuthenticator
     ) {
         this.userService = userService;
-        this.spotifyPollingService = spotifyPollingService;
+        this.musicPollingService = musicPollingService;
         this.weatherPollingService = weatherPollingService;
 
         this._wss = new WebSocketServer({
@@ -85,11 +85,7 @@ export class ExtendedWebSocketServer {
 
         logger.info("WebSocket client connected and authenticated");
 
-        const socketEventHandler = new WebsocketEventHandler(
-            ws,
-            this.spotifyPollingService,
-            this.weatherPollingService
-        );
+        const socketEventHandler = new WebsocketEventHandler(ws, this.musicPollingService, this.weatherPollingService);
 
         socketEventHandler.enableErrorEvent();
         socketEventHandler.enablePongEvent();
@@ -99,11 +95,10 @@ export class ExtendedWebSocketServer {
             this.uuidClientMap.delete(ws.payload?.uuid);
 
             if (ws.user?.location) {
-                this.weatherPollingService.unsubscribeUser(ws.user.uuid,
-                    ws.user.location.lat, ws.user.location.lon)
+                this.weatherPollingService.unsubscribeUser(ws.user.uuid, ws.user.location.lat, ws.user.location.lon);
             }
 
-            this.spotifyPollingService.stopPollingForUser(ws.user.uuid,)
+            this.musicPollingService.stopPollingForUser(ws.user.uuid);
 
             logger.info("User disconnected");
         });
@@ -123,11 +118,11 @@ export class ExtendedWebSocketServer {
             }
         });
 
-        appEventBus.on(SPOTIFY_STATE_UPDATED_EVENT, ({ uuid, state }) => {
+        appEventBus.on(MUSIC_STATE_UPDATED_EVENT, ({ uuid, state }) => {
             const client = this._findClientByUUID(uuid);
             logger.debug(`Received update for user ${uuid}`);
             if (client) {
-                client.emit(WebsocketEventType.SINGLE_SPOTIFY_UPDATE, state);
+                client.emit(WebsocketEventType.SINGLE_MUSIC_UPDATE, state);
             }
         });
 

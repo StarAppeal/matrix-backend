@@ -14,14 +14,6 @@ export const authLimiter = rateLimit({
     handler: onLimitReached,
 });
 
-export const spotifyLimiter = rateLimit({
-    windowMs: 60_000,
-    limit: 60,
-    standardHeaders: true,
-    legacyHeaders: false,
-    handler: onLimitReached,
-});
-
 export const weatherLimiter = rateLimit({
     windowMs: 60_000,
     limit: 25,

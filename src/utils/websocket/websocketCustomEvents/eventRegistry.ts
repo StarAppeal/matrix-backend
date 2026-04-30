@@ -1,20 +1,20 @@
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
-import { SpotifyPollingService } from "../../../services/spotifyPollingService";
+import { MusicPollingService } from "../../../services/musicPollingService";
 import { WeatherPollingService } from "../../../services/weatherPollingService";
 
 import { GetSettingsEvent } from "./getSettingsEvent";
-import { GetSpotifyUpdatesEvent } from "./getSpotifyUpdatesEvent";
+import { GetMusicUpdatesEvent } from "./getMusicUpdatesEvent";
 import { GetStateEvent } from "./getStateEvent";
-import { StopSpotifyUpdatesEvent } from "./stopSpotifyUpdatesEvent";
+import { StopMusicUpdatesEvent } from "./stopMusicUpdatesEvent";
 import { GetWeatherUpdatesEvent } from "./getWeatherUpdatesEvent";
 import { StopWeatherUpdatesEvent } from "./stopWeatherUpdatesEvent";
 import { UpdateUserSingleEvent } from "./updateUserEvent";
-import { SingleSpotifyUpdateEvent } from "./singleSpotifyUpdateEvent";
+import { SingleMusicUpdateEvent } from "./singleMusicUpdateEvent";
 import { SingleWeatherUpdateEvent } from "./singleWeatherUpdateEvent";
 import { ErrorEvent } from "./errorEvent";
 
 interface ServiceDependencies {
-    spotifyPollingService: SpotifyPollingService;
+    musicPollingService: MusicPollingService;
     weatherPollingService: WeatherPollingService;
 }
 
@@ -28,14 +28,14 @@ export const eventRegistry = [
         factory: (ws: ExtendedWebSocket) => new GetSettingsEvent(ws),
     },
     {
-        Klass: GetSpotifyUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { spotifyPollingService }: ServiceDependencies) =>
-            new GetSpotifyUpdatesEvent(ws, spotifyPollingService),
+        Klass: GetMusicUpdatesEvent,
+        factory: (ws: ExtendedWebSocket, { musicPollingService }: ServiceDependencies) =>
+            new GetMusicUpdatesEvent(ws, musicPollingService),
     },
     {
-        Klass: StopSpotifyUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { spotifyPollingService }: ServiceDependencies) =>
-            new StopSpotifyUpdatesEvent(ws, spotifyPollingService),
+        Klass: StopMusicUpdatesEvent,
+        factory: (ws: ExtendedWebSocket, { musicPollingService }: ServiceDependencies) =>
+            new StopMusicUpdatesEvent(ws, musicPollingService),
     },
     {
         Klass: GetWeatherUpdatesEvent,
@@ -52,8 +52,8 @@ export const eventRegistry = [
         factory: (ws: ExtendedWebSocket) => new UpdateUserSingleEvent(ws),
     },
     {
-        Klass: SingleSpotifyUpdateEvent,
-        factory: (ws: ExtendedWebSocket) => new SingleSpotifyUpdateEvent(ws),
+        Klass: SingleMusicUpdateEvent,
+        factory: (ws: ExtendedWebSocket) => new SingleMusicUpdateEvent(ws),
     },
     {
         Klass: SingleWeatherUpdateEvent,

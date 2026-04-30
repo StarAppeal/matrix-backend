@@ -1,5 +1,4 @@
-import { UpdateQuery } from "mongoose";
-import { CreateUserPayload, IUser, SpotifyConfig, UserModel } from "../../db/models/user";
+import { CreateUserPayload, IUser, UserModel } from "../../db/models/user";
 
 interface MongooseError extends Error {
     code?: number;
@@ -30,7 +29,7 @@ export class UserService {
     }
 
     public async getAllUsers(): Promise<IUser[]> {
-        return await UserModel.find({}, { spotifyConfig: 0, lastState: 0 }).exec();
+        return await UserModel.find({}, { lastState: 0 }).exec();
     }
 
     public async getUserById(id: string): Promise<IUser | null> {
@@ -47,12 +46,6 @@ export class UserService {
 
     public async getUserAuthByName(name: string): Promise<IUser | null> {
         return await UserModel.findOne({ name }).collation({ locale: "en", strength: 2 }).select("+password").exec();
-    }
-
-    public async getSpotifyConfigByUUID(uuid: string): Promise<SpotifyConfig | undefined> {
-        return await UserModel.findOne({ uuid }, { spotifyConfig: 1 })
-            .exec()
-            .then((user) => user?.spotifyConfig);
     }
 
     public async createUser(userData: CreateUserPayload): Promise<IUser> {
@@ -83,9 +76,7 @@ export class UserService {
         return (await UserModel.countDocuments({ name })) > 0;
     }
 
-    public async clearSpotifyConfigByUUID(uuid: string): Promise<IUser | null> {
-        return await UserModel.findOneAndUpdate({ uuid }, { $unset: { spotifyConfig: 1 } } as UpdateQuery<IUser>, {
-            new: true,
-        }).exec();
+    public async clearLastFmUsernameByUUID(uuid: string): Promise<IUser | null> {
+        return await UserModel.findOneAndUpdate({ uuid }, { $unset: { lastFmUsername: 1 } }, { new: true }).exec();
     }
 }

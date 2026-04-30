@@ -51,12 +51,11 @@ export const createMockUserService = () => ({
     getUserById: vi.fn(),
     updateUserById: vi.fn(),
     getUserByName: vi.fn(),
-    getSpotifyConfigByUUID: vi.fn(),
-    clearSpotifyConfigByUUID: vi.fn(),
     existsUserByName: vi.fn(),
     createUser: vi.fn(),
     getUserAuthByName: vi.fn(),
     updateUserByUUID: vi.fn(),
+    clearLastFmUsernameByUUID: vi.fn(),
 });
 
 /**
@@ -109,19 +108,12 @@ export const createMockJwtAuthenticator = () => ({
     verifyToken: vi.fn(),
 });
 
-/**
- * Erstellt ein Mock-Objekt für den SpotifyTokenService.
- */
-export const createMockSpotifyTokenService = () => ({
-    refreshToken: vi.fn(),
-    generateToken: vi.fn(),
-});
-
-export const createMockSpotifyApiService = () => ({
+export const createMockLastFmApiService = () => ({
     getCurrentlyPlaying: vi.fn(),
+    validateUsername: vi.fn(),
 });
 
-export const createMockSpotifyPollingService = () => ({
+export const createMockMusicPollingService = () => ({
     startPollingForUser: vi.fn(),
     stopPollingForUser: vi.fn(),
 });

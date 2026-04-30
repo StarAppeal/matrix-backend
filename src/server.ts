@@ -8,30 +8,29 @@ import { ExtendedWebSocketServer } from "./websocket";
 import { RestWebSocket } from "./rest/restWebSocket";
 import { RestUser } from "./rest/restUser";
 import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
-import { SpotifyTokenGenerator } from "./rest/spotifyTokenGenerator";
 import { RestAuth } from "./rest/auth";
-import { authLimiter, spotifyLimiter, weatherLimiter } from "./rest/middleware/rateLimit";
+import { authLimiter, weatherLimiter } from "./rest/middleware/rateLimit";
 import { extractTokenFromCookie } from "./rest/middleware/extractTokenFromCookie";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
 import { watchUserChanges } from "./db/models/userWatch";
-import { SpotifyPollingService } from "./services/spotifyPollingService";
 import { UserService } from "./services/db/UserService";
 import { disconnectFromDatabase } from "./services/db/database.service";
-import { SpotifyTokenService } from "./services/spotifyTokenService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { S3Service } from "./services/s3Service";
 import { RestStorage } from "./rest/restStorage";
 import logger from "./utils/logger";
 import { RestLocation } from "./rest/restLocation";
+import { MusicPollingService } from "./services/musicPollingService";
+import { LastFmApiService } from "./services/lastFmApiService";
 
 interface ServerDependencies {
     userService: UserService;
     s3Service: S3Service;
-    spotifyTokenService: SpotifyTokenService;
-    spotifyPollingService: SpotifyPollingService;
+    musicPollingService: MusicPollingService;
     weatherPollingService: WeatherPollingService;
     jwtAuthenticator: JwtAuthenticator;
+    lastFmApiService: LastFmApiService;
 }
 
 interface ServerConfig {
@@ -59,10 +58,10 @@ export class Server {
         const {
             userService,
             s3Service,
-            spotifyTokenService,
-            spotifyPollingService,
+            musicPollingService,
             weatherPollingService,
             jwtAuthenticator,
+            lastFmApiService
         } = this.dependencies;
 
         await s3Service.ensureBucketExists();
@@ -70,7 +69,7 @@ export class Server {
         watchUserChanges();
 
         this._setupMiddleware();
-        this._setupRoutes(userService, spotifyTokenService, jwtAuthenticator, s3Service);
+        this._setupRoutes(userService, jwtAuthenticator, s3Service, lastFmApiService);
         this._setupErrorHandling();
 
         this.httpServer = this.app.listen(this.config.port, () => {
@@ -80,7 +79,7 @@ export class Server {
         this.webSocketServer = new ExtendedWebSocketServer(
             this.httpServer,
             userService,
-            spotifyPollingService,
+            musicPollingService,
             weatherPollingService,
             jwtAuthenticator
         );
@@ -115,15 +114,14 @@ export class Server {
 
     private _setupRoutes(
         userService: UserService,
-        spotifyTokenService: SpotifyTokenService,
         jwtAuthenticator: JwtAuthenticator,
-        s3Service: S3Service
+        s3Service: S3Service,
+        lastFmApiService: LastFmApiService,
     ): void {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
         const restAuth = new RestAuth(userService, jwtAuthenticator);
-        const restUser = new RestUser(userService, () => this.webSocketServer);
-        const spotifyTokenGenerator = new SpotifyTokenGenerator(spotifyTokenService);
+        const restUser = new RestUser(userService, lastFmApiService, () => this.webSocketServer);
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
         const restLocation = new RestLocation();
@@ -133,7 +131,6 @@ export class Server {
         this.app.use("/api/auth", authLimiter, restAuth.createRouter());
 
         this.app.use(extractTokenFromCookie);
-        this.app.use("/api/spotify", _authenticateJwt, spotifyLimiter, spotifyTokenGenerator.createRouter());
         this.app.use("/api/user", _authenticateJwt, restUser.createRouter());
         this.app.use("/api/jwt", _authenticateJwt, jwtTokenExtractor.createRouter());
         this.app.use("/api/storage", _authenticateJwt, storage.createRouter());
