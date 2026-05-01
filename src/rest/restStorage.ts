@@ -62,7 +62,6 @@ export class RestStorage {
 
                     return ok(res, { url: downloadUrl });
                 } catch (error: unknown) {
-                    // Typüberprüfung hinzufügen
                     if (error && typeof error === "object" && "name" in error && error.name === "NoSuchKey") {
                         return notFound(res, "File not found.");
                     } else {
