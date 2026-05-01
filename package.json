@@ -39,6 +39,7 @@
     "dotenv": "^16.4.4",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
+    "geo-tz": "^8.1.6",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.2",
     "multer": "^2.0.2",

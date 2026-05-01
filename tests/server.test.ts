@@ -6,7 +6,7 @@ import type { Express } from "express";
 import { authLimiter } from "../src/rest/middleware/rateLimit";
 
 import {
-    createMockJwtAuthenticator,
+    createMockJwtAuthenticator, createMockLastFmApiService,
     createMockMusicPollingService,
     createMockUserService,
     // @ts-ignore
@@ -25,6 +25,8 @@ const mockWeatherPollingService = {
     unsubscribeUser: vi.fn(),
 } as any;
 const mockJwtAuthenticator = createMockJwtAuthenticator() as any;
+
+const mockLastFmApiService = createMockLastFmApiService() as any;
 
 vi.mock("../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn().mockResolvedValue(undefined),
@@ -87,6 +89,7 @@ describe("Server Class Integration Tests", () => {
             musicPollingService: mockMusicPollingService,
             weatherPollingService: mockWeatherPollingService,
             jwtAuthenticator: mockJwtAuthenticator,
+            lastFmApiService: mockLastFmApiService,
         });
         await server.start();
         app = server.app;

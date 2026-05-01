@@ -17,7 +17,8 @@ export class WeatherPollingService {
         this.userLocationKeyCache = new Map();
 
         appEventBus.on(USER_UPDATED_EVENT, (user: IUser) => {
-            this._handleUserUpdate(user);
+            //TODO: fix for now
+            // this._handleUserUpdate(user);
         });
     }
 
@@ -107,6 +108,10 @@ export class WeatherPollingService {
     }
 
     private _handleUserUpdate(updatedUser: IUser): void {
+        // TODO: when user is updated, this will get called
+        // no matter if it wants to pull or not. it just starts polling
+        // event is being emitted via the event bus
+        // fix it. IMPORTANT
         const uuid = updatedUser.uuid;
 
         const newLat = updatedUser.location.lat;

@@ -9,6 +9,8 @@ import { ExtendedWebSocketServer } from "../websocket";
 import { MatrixState } from "../db/models/user";
 import logger from "../utils/logger";
 import { LastFmApiService } from "../services/lastFmApiService";
+import { getTimezoneName } from "../services/owmApiService";
+
 
 export class RestUser {
     private readonly userService: UserService;
@@ -55,8 +57,13 @@ export class RestUser {
             asyncHandler(async (req, res) => {
                 const { name, lat, lon } = req.body as { name: string; lat: number; lon: number };
 
+                //TODO: probably not saving timezone in database anymore, refactor it to determine it when needed (I guess?)
+                const timezone = getTimezoneName(lat, lon);
+                logger.info(`Determined timezone for coordinates (${lat}, ${lon}): ${timezone}`);
+
                 const user = await this.userService.updateUserByUUID(req.payload.uuid, {
                     location: { name, lat, lon },
+                    timezone,
                 });
 
                 return ok(res, user);
@@ -79,7 +86,6 @@ export class RestUser {
                 const user = await this.userService.updateUserByUUID(req.payload.uuid, {
                     lastFmUsername: username,
                 });
-
 
                 return ok(res, user);
             })
@@ -108,14 +114,14 @@ export class RestUser {
                     return badRequest(res, "User not found");
                 }
 
-                await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
+               const updated =  await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
 
                 if (this.webSocketServerProvider) {
                     const webSocketServer = this.webSocketServerProvider();
 
                     if (webSocketServer) {
                         logger.info("Sending payload to websocket");
-                        const message = JSON.stringify({ type: "STATE", payload: lastState });
+                        const message = JSON.stringify({ type: "STATE", payload: updated?.lastState });
                         webSocketServer.sendMessageToUser(req.payload.uuid, message);
                     }
                 }

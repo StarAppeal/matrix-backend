@@ -86,9 +86,10 @@ describe("RestUser", () => {
 
             const response = await request(testEnv.app).put("/user/me/location").send(validLocationData).expect(200);
 
+            // TODO: mock timezone
             expect(response.body.data).toEqual(mockUser);
             expect(mockedUserService.updateUserByUUID).toHaveBeenCalledWith("test-user-uuid", {
-                location: validLocationData,
+                location: validLocationData, timezone: "Europe/Berlin",
             });
         });
 
@@ -162,8 +163,10 @@ describe("RestUser", () => {
                 .expect(200);
 
             expect(response.body.data).toEqual(mockUser);
+            //TODO: mock timezone
             expect(mockedUserService.updateUserByUUID).toHaveBeenCalledWith("test-user-uuid", {
                 location: locationWithNegativeCoords,
+                timezone: "America/Argentina/Buenos_Aires",
             });
         });
 

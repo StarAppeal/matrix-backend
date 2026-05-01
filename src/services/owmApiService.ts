@@ -1,4 +1,5 @@
 import OpenWeatherAPI from "openweather-api-node";
+import { find } from "geo-tz";
 
 function getWeatherInstance(): OpenWeatherAPI {
     return new OpenWeatherAPI({
@@ -25,4 +26,9 @@ export async function validateLocation(query: string) {
         console.error("Geocoding Error", error);
         return [];
     }
+}
+
+export function getTimezoneName(lat: number, lon: number): string {
+    const tz = find(lat, lon);
+    return tz[0] || "Etc/UTC";
 }
