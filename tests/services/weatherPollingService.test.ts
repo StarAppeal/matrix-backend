@@ -133,6 +133,7 @@ describe("WeatherPollingService", () => {
             expect(typeof userUpdateListener).toBe("function");
         });
 
+        // test fails currently because of stuff :)
         it("should automatically move a user's subscription when their location changes", () => {
             const unsubscribeSpy = vi.spyOn(pollingService, "unsubscribeUser");
             const subscribeSpy = vi.spyOn(pollingService, "subscribeUser");
