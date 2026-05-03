@@ -7,6 +7,8 @@ import { asyncHandler } from "./middleware/asyncHandler";
 import { validateBody, v } from "./middleware/validate";
 import { ok, badRequest, unauthorized, created, conflict, notFound } from "./utils/responses";
 import { UserService } from "../services/db/UserService";
+import { authenticateJwt } from "./middleware/authenticateJwt";
+import { extractTokenFromCookie } from "./middleware/extractTokenFromCookie";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const MONTH_IN_MS = 30 * 24 * 60 * 60 * 1000;
@@ -125,6 +127,26 @@ export class RestAuth {
             asyncHandler(async (req, res) => {
                 res.clearCookie("auth-token");
                 return ok(res, { message: "Successfully logged out" });
+            })
+        );
+
+        router.get(
+            "/token",
+            extractTokenFromCookie,
+            authenticateJwt(this.jwtAuthenticator),
+            asyncHandler(async (req, res) => {
+                const payload = req.payload;
+
+                const jwtToken = this.jwtAuthenticator.generateToken(
+                    {
+                        uuid: payload.uuid,
+                        username: payload.username,
+                        id: payload.id,
+                    },
+                    10 * 1000
+                );
+
+                return ok(res, { token: jwtToken });
             })
         );
 
