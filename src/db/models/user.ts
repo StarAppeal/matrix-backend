@@ -38,7 +38,7 @@ export interface UserConfig {
 
 export interface MatrixState {
     global: {
-        mode: "image" | "text" | "idle" | "music" | "clock";
+        mode: "image" | "text" | "idle" | "music" | "clock" | "game_of_life";
         brightness: number;
     };
     text: {
@@ -49,7 +49,7 @@ export interface MatrixState {
         color: [number, number, number];
     };
     image: {
-        image: string;
+        image_url: string;
     };
     clock: {
         color: [number, number, number];
