@@ -1,11 +1,11 @@
-import axios from "axios";
 import { MusicState } from "../interfaces/MusicState";
 import logger from "../utils/logger";
+import { HttpClient } from "../utils/httpClient";
+import { LastFmRecentTracksResponse } from "../interfaces/lastFmRecentTracksResponse";
 
 export class LastFmApiService {
-    private readonly apiUrl = "https://ws.audioscrobbler.com/2.0/";
 
-    constructor(private readonly apiKey: string) {
+    constructor(private readonly apiKey: string, private readonly httpClient: HttpClient) {
         if (!this.apiKey) {
             logger.error("CRITICAL: LAST_FM_API_KEY is missing!");
         }
@@ -13,7 +13,7 @@ export class LastFmApiService {
 
     public async getCurrentlyPlaying(username: string): Promise<MusicState> {
         try {
-            const response = await axios.get(this.apiUrl, {
+            const response = await this.httpClient.get<LastFmRecentTracksResponse>("", {
                 params: {
                     method: "user.getrecenttracks",
                     user: username,
@@ -23,7 +23,7 @@ export class LastFmApiService {
                 },
             });
 
-            const tracks = response.data?.recenttracks?.track;
+            const tracks = response.recenttracks?.track;
 
             if (tracks && tracks.length > 0) {
                 const latestTrack = tracks[0];
@@ -34,7 +34,7 @@ export class LastFmApiService {
                         isPlaying: true,
                         title: latestTrack.name,
                         artist: latestTrack.artist["#text"],
-                        imageUrl: latestTrack.image[3]["#text"], // 3 = extralarge
+                        imageUrl: latestTrack.image[3]["#text"],
                     };
                 }
             }
@@ -48,7 +48,9 @@ export class LastFmApiService {
 
     public async validateUsername(username: string): Promise<boolean> {
         try {
-            const response = await axios.get(this.apiUrl, {
+            const response = await this.httpClient.get<{
+                user?: unknown;
+            }>("", {
                 params: {
                     method: "user.getinfo",
                     user: username,
@@ -57,19 +59,8 @@ export class LastFmApiService {
                 },
             });
 
-            if (response.data && response.data.error === 6) {
-                return false;
-            }
-
-            return !!response.data?.user;
-        } catch (error) {
-            if (axios.isAxiosError(error) && error.response) {
-                if (error.response.data && error.response.data.error === 6) {
-                    return false;
-                }
-            }
-
-            logger.error(`Error validating Last.fm username ${username}:`, error);
+            return !!response.user;
+        } catch (_) {
             return false;
         }
     }

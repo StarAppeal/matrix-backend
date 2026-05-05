@@ -72,7 +72,13 @@ async function bootstrap() {
     const s3Service = S3Service.getInstance(s3ClientConfig, fileService);
     const userService = await UserService.create();
 
-    const lastFmApiService = new LastFmApiService(LAST_FM_API_KEY);
+    const lastFmApiService = new LastFmApiService(
+        LAST_FM_API_KEY,
+        new HttpClient({
+            baseURL: "https://ws.audioscrobbler.com/2.0/",
+            timeout: 5000,
+        })
+    );
     const musicPollingService = new MusicPollingService(userService, lastFmApiService);
     const weatherPollingService = new WeatherPollingService();
 
@@ -99,7 +105,7 @@ async function bootstrap() {
 
 if (process.env.NODE_ENV !== "test") {
     bootstrap().catch((error) => {
-        logger.error("Fatal error during server startup:", error.message);
+        logger.error("Fatal error during server startup:", error);
         process.exit(1);
     });
 }

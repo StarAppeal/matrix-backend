@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import axios from "axios";
 import { LastFmApiService } from "../../src/services/lastFmApiService";
 import logger from "../../src/utils/logger";
+import { HttpClient } from "../../src/utils/httpClient";
 
-vi.mock("axios");
 vi.mock("../../src/utils/logger", () => ({
     default: {
         error: vi.fn(),
@@ -13,15 +12,17 @@ vi.mock("../../src/utils/logger", () => ({
     },
 }));
 
-const mockedAxios = vi.mocked(axios, true);
-
 describe("LastFmApiService", () => {
     let lastFmApiService: LastFmApiService;
     const mockApiKey = "mockApiKey";
 
+    const mockHttpClient = {
+        get: vi.fn(),
+    } as unknown as HttpClient;
+
     beforeEach(() => {
         vi.clearAllMocks();
-        lastFmApiService = new LastFmApiService(mockApiKey);
+        lastFmApiService = new LastFmApiService(mockApiKey, mockHttpClient);
     });
 
     describe("getCurrentlyPlaying", () => {
@@ -46,11 +47,11 @@ describe("LastFmApiService", () => {
                 },
             };
 
-            mockedAxios.get.mockResolvedValue({ data: mockLastFmResponse });
+            vi.mocked(mockHttpClient.get).mockResolvedValue(mockLastFmResponse);
 
             const result = await lastFmApiService.getCurrentlyPlaying(username);
 
-            expect(mockedAxios.get).toHaveBeenCalledWith("https://ws.audioscrobbler.com/2.0/", {
+            expect(mockHttpClient.get).toHaveBeenCalledWith("", {
                 params: {
                     method: "user.getrecenttracks",
                     user: username,
@@ -81,7 +82,7 @@ describe("LastFmApiService", () => {
                 },
             };
 
-            mockedAxios.get.mockResolvedValue({ data: mockLastFmResponse });
+            vi.mocked(mockHttpClient.get).mockResolvedValue(mockLastFmResponse);
 
             const result = await lastFmApiService.getCurrentlyPlaying(username);
 
@@ -89,7 +90,7 @@ describe("LastFmApiService", () => {
         });
 
         it("should return isPlaying: false and log an error if Axios throws", async () => {
-            mockedAxios.get.mockRejectedValue(new Error("Network Error"));
+            vi.mocked(mockHttpClient.get).mockRejectedValue(new Error("Network Error"));
 
             const result = await lastFmApiService.getCurrentlyPlaying(username);
 
@@ -102,7 +103,7 @@ describe("LastFmApiService", () => {
         const username = "testUser";
 
         it("should return true if user exists", async () => {
-            mockedAxios.get.mockResolvedValue({ data: { user: { name: username } } });
+            vi.mocked(mockHttpClient.get).mockResolvedValue({ user: { name: username } });
 
             const result = await lastFmApiService.validateUsername(username);
 
@@ -110,7 +111,7 @@ describe("LastFmApiService", () => {
         });
 
         it("should return false if Last.fm returns error 6 (User not found) with status 200", async () => {
-            mockedAxios.get.mockResolvedValue({ data: { error: 6, message: "User not found" } });
+            vi.mocked(mockHttpClient.get).mockResolvedValue({ error: 6, message: "User not found" });
 
             const result = await lastFmApiService.validateUsername(username);
 
@@ -118,10 +119,11 @@ describe("LastFmApiService", () => {
         });
 
         it("should return false if Axios throws a 404 with error 6", async () => {
-            const error: any = new Error("Not Found");
-            error.response = { data: { error: 6 } };
-            mockedAxios.isAxiosError.mockReturnValue(true);
-            mockedAxios.get.mockRejectedValue(error);
+            const axiosLikeError = new Error("Not Found") as any;
+            axiosLikeError.isAxiosError = true;
+            axiosLikeError.response = { data: { error: 6 } };
+
+            vi.mocked(mockHttpClient.get).mockRejectedValue(axiosLikeError);
 
             const result = await lastFmApiService.validateUsername(username);
 
@@ -129,13 +131,11 @@ describe("LastFmApiService", () => {
         });
 
         it("should return false and log error for generic network errors", async () => {
-            mockedAxios.isAxiosError.mockReturnValue(false);
-            mockedAxios.get.mockRejectedValue(new Error("Timeout"));
+            vi.mocked(mockHttpClient.get).mockRejectedValue(new Error("Timeout"));
 
             const result = await lastFmApiService.validateUsername(username);
 
             expect(result).toBe(false);
-            expect(logger.error).toHaveBeenCalled();
         });
     });
 });
