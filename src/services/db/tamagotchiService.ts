@@ -5,6 +5,7 @@ import {
     TamagotchiState,
     TICK_INTERVAL_MS,
 } from "../../db/models/tamagotchi";
+import logger from "../../utils/logger";
 
 export interface TamagotchiPayload {
     hunger: number;
@@ -36,6 +37,7 @@ export class TamagotchiService {
         const missedTicks = Math.floor(diffMs / TICK_INTERVAL_MS);
 
         if (missedTicks > 0) {
+            logger.info(`Evaluating pet ${uuid} for ${missedTicks} missed ticks (${diffMs} ms)`);
             pet.hunger = Math.max(0, pet.hunger - missedTicks * DECAY_RATES.hunger);
             pet.happiness = Math.max(0, pet.happiness - missedTicks * DECAY_RATES.happiness);
             pet.hygiene = Math.max(0, pet.hygiene - missedTicks * DECAY_RATES.hygiene);
