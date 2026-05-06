@@ -12,6 +12,7 @@ import { MusicPollingService } from "../src/services/musicPollingService";
 import { USER_UPDATED_EVENT, MUSIC_STATE_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../src/utils/eventBus";
 import {WebsocketEventType} from "../src/utils/websocket/websocketCustomEvents/websocketEventType";
 import {WeatherPollingService} from "../src/services/weatherPollingService";
+import { TamagotchiPollingService } from "../src/services/tamagotchiPollingService";
 
 let mockWssInstance: Mocked<WebSocketServer>;
 let mockServerEventHandler: Mocked<WebsocketServerEventHandler>;
@@ -25,9 +26,10 @@ vi.mock("../src/utils/eventBus", () => ({
         }),
         emit: vi.fn(),
     },
-    USER_UPDATED_EVENT: 'user:updated',
-    MUSIC_STATE_UPDATED_EVENT: 'music:state-updated',
-    WEATHER_STATE_UPDATED_EVENT: 'weather-state:updated',
+    USER_UPDATED_EVENT: "user:updated",
+    MUSIC_STATE_UPDATED_EVENT: "music:state-updated",
+    WEATHER_STATE_UPDATED_EVENT: "weather-state:updated",
+    TAMAGOTCHI_STATE_UPDATED_EVENT: "tamagotchi-state:updated",
 }));
 
 vi.mock("ws", () => ({
@@ -48,6 +50,7 @@ describe("ExtendedWebSocketServer", () => {
     let mockUserService: Mocked<UserService>;
     let mockMusicPollingService: Mocked<MusicPollingService>
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
+    let mockTamagotchiPollingService: Mocked<TamagotchiPollingService>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -76,6 +79,11 @@ describe("ExtendedWebSocketServer", () => {
             unsubscribeUser: vi.fn(),
         } as unknown as Mocked<WeatherPollingService>;
 
+        mockTamagotchiPollingService = {
+            startPollingForUser: vi.fn(),
+            stopPollingForUser: vi.fn(),
+        } as unknown as Mocked<TamagotchiPollingService>;
+
         mockUserService = createMockUserService();
 
         extendedWss = new ExtendedWebSocketServer(
@@ -83,6 +91,7 @@ describe("ExtendedWebSocketServer", () => {
             mockUserService,
             mockMusicPollingService,
             mockWeatherPollingService,
+            mockTamagotchiPollingService,
             createMockJwtAuthenticator() as any
         );
     });
@@ -159,7 +168,8 @@ describe("ExtendedWebSocketServer", () => {
             expect(vi.mocked(WebsocketEventHandler)).toHaveBeenCalledWith(
                 mockWsClient,
                 mockMusicPollingService,
-                mockWeatherPollingService
+                mockWeatherPollingService,
+                mockTamagotchiPollingService
             );
             expect(mockClientEventHandler.enableErrorEvent).toHaveBeenCalled();
             expect(mockClientEventHandler.enablePongEvent).toHaveBeenCalled();

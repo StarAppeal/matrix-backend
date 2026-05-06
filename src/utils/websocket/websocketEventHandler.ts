@@ -3,12 +3,14 @@ import { getEventListeners, WebsocketEvent } from "./websocketCustomEvents/webso
 import { MusicPollingService } from "../../services/musicPollingService";
 import { WeatherPollingService } from "../../services/weatherPollingService";
 import logger from "../../utils/logger";
+import { TamagotchiPollingService } from "../../services/tamagotchiPollingService";
 
 export class WebsocketEventHandler {
     constructor(
-        private webSocket: ExtendedWebSocket,
-        private musicPollingService: MusicPollingService,
-        private readonly weatherPollingService: WeatherPollingService
+        private readonly webSocket: ExtendedWebSocket,
+        private readonly musicPollingService: MusicPollingService,
+        private readonly weatherPollingService: WeatherPollingService,
+        private readonly tamagotchiPollingService: TamagotchiPollingService,
     ) {}
 
     public enableErrorEvent() {
@@ -49,7 +51,12 @@ export class WebsocketEventHandler {
     }
 
     public registerCustomEvents() {
-        const events = getEventListeners(this.webSocket, this.musicPollingService, this.weatherPollingService);
+        const events = getEventListeners(
+            this.webSocket,
+            this.musicPollingService,
+            this.weatherPollingService,
+            this.tamagotchiPollingService
+        );
         events.forEach(this.registerCustomEvent, this);
     }
 

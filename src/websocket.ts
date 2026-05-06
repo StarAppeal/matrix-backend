@@ -8,6 +8,7 @@ import { WebsocketEventType } from "./utils/websocket/websocketCustomEvents/webs
 import {
     appEventBus,
     MUSIC_STATE_UPDATED_EVENT,
+    TAMAGOTCHI_STATE_UPDATED_EVENT,
     USER_UPDATED_EVENT,
     WEATHER_STATE_UPDATED_EVENT,
 } from "./utils/eventBus";
@@ -17,6 +18,7 @@ import { UserService } from "./services/db/UserService";
 import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import logger from "./utils/logger";
+import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 
 export class ExtendedWebSocketServer {
     private readonly uuidClientMap = new Map<string, ExtendedWebSocket>();
@@ -25,17 +27,20 @@ export class ExtendedWebSocketServer {
     private readonly userService: UserService;
     private readonly musicPollingService: MusicPollingService;
     private readonly weatherPollingService: WeatherPollingService;
+    private readonly tamagotchiPollingService: TamagotchiPollingService;
 
     constructor(
         server: Server,
         userService: UserService,
         musicPollingService: MusicPollingService,
         weatherPollingService: WeatherPollingService,
+        tamagotchiPollingService: TamagotchiPollingService,
         jwtAuthenticator: JwtAuthenticator
     ) {
         this.userService = userService;
         this.musicPollingService = musicPollingService;
         this.weatherPollingService = weatherPollingService;
+        this.tamagotchiPollingService = tamagotchiPollingService;
 
         this._wss = new WebSocketServer({
             server,
@@ -85,7 +90,12 @@ export class ExtendedWebSocketServer {
 
         logger.info("WebSocket client connected and authenticated");
 
-        const socketEventHandler = new WebsocketEventHandler(ws, this.musicPollingService, this.weatherPollingService);
+        const socketEventHandler = new WebsocketEventHandler(
+            ws,
+            this.musicPollingService,
+            this.weatherPollingService,
+            this.tamagotchiPollingService
+        );
 
         socketEventHandler.enableErrorEvent();
         socketEventHandler.enablePongEvent();
@@ -99,6 +109,7 @@ export class ExtendedWebSocketServer {
             }
 
             this.musicPollingService.stopPollingForUser(ws.user.uuid);
+            this.tamagotchiPollingService.stopPollingForUser(ws.user.uuid);
 
             logger.info("User disconnected");
         });
@@ -132,6 +143,13 @@ export class ExtendedWebSocketServer {
                 if (client) {
                     client.emit(WebsocketEventType.SINGLE_WEATHER_UPDATE, weatherData);
                 }
+            }
+        });
+
+        appEventBus.on(TAMAGOTCHI_STATE_UPDATED_EVENT, ({ uuid, payload }) => {
+            const client = this._findClientByUUID(uuid);
+            if (client) {
+                client.emit(WebsocketEventType.SINGLE_TAMAGOTCHI_UPDATE, payload);
             }
         });
     }

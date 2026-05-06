@@ -23,12 +23,14 @@ import logger from "./utils/logger";
 import { RestLocation } from "./rest/restLocation";
 import { MusicPollingService } from "./services/musicPollingService";
 import { LastFmApiService } from "./services/lastFmApiService";
+import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 
 interface ServerDependencies {
     userService: UserService;
     s3Service: S3Service;
     musicPollingService: MusicPollingService;
     weatherPollingService: WeatherPollingService;
+    tamagotchiPollingService: TamagotchiPollingService;
     jwtAuthenticator: JwtAuthenticator;
     lastFmApiService: LastFmApiService;
 }
@@ -60,6 +62,7 @@ export class Server {
             s3Service,
             musicPollingService,
             weatherPollingService,
+            tamagotchiPollingService,
             jwtAuthenticator,
             lastFmApiService
         } = this.dependencies;
@@ -81,6 +84,7 @@ export class Server {
             userService,
             musicPollingService,
             weatherPollingService,
+            tamagotchiPollingService,
             jwtAuthenticator
         );
 

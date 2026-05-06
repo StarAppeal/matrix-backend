@@ -9,6 +9,9 @@ import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { FileService } from "./services/db/fileService";
 import logger from "./utils/logger";
+import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
+import { TamagotchiService } from "./services/db/tamagotchiService";
+import { HttpClient } from "./utils/httpClient";
 
 async function bootstrap() {
     const {
@@ -81,6 +84,7 @@ async function bootstrap() {
     );
     const musicPollingService = new MusicPollingService(userService, lastFmApiService);
     const weatherPollingService = new WeatherPollingService();
+    const tamagotchiPollingService = new TamagotchiPollingService(new TamagotchiService());
 
     const jwtAuthenticator = new JwtAuthenticator(SECRET_KEY);
 
@@ -95,8 +99,9 @@ async function bootstrap() {
             userService,
             musicPollingService,
             weatherPollingService,
+            tamagotchiPollingService,
             jwtAuthenticator,
-            lastFmApiService
+            lastFmApiService,
         }
     );
 
