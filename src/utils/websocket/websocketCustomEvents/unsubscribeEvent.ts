@@ -27,6 +27,10 @@ export class UnsubscribeEvent extends CustomWebsocketEvent<string> {
 
         // Weather has a different unsubscription signature (location-based), handle separately.
         if (topic === WEATHER_TOPIC) {
+            if (!this.ws.user.location?.lat || !this.ws.user.location?.lon) {
+                logger.warn(`User ${uuid} has no location set`);
+                return;
+            }
             this.weatherPollingService.unsubscribeUser(
                 uuid,
                 this.ws.user.location.lat,

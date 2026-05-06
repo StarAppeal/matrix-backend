@@ -104,7 +104,7 @@ export class ExtendedWebSocketServer {
         socketEventHandler.enableDisconnectEvent(() => {
             this.uuidClientMap.delete(ws.payload?.uuid);
 
-            if (ws.user?.location) {
+            if (ws.user?.location && ws.user.location?.lat && ws.user.location?.lon) {
                 this.weatherPollingService.unsubscribeUser(ws.user.uuid, ws.user.location.lat, ws.user.location.lon);
             }
 
