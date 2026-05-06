@@ -26,18 +26,9 @@ describe("UserService", () => {
         vi.clearAllMocks();
         mockedConnectToDatabase.mockResolvedValue(undefined);
 
-        (UserService as any)._instance = undefined;
-        userService = await UserService.create();
+        userService = new UserService();
     });
 
-    describe("create (singleton)", () => {
-        it("should create a singleton instance", async () => {
-            const instance1 = userService;
-            const instance2 = await UserService.create();
-
-            expect(instance1).toBe(instance2);
-        });
-    });
 
     describe("updateUserById", () => {
         it("should update user by id and return updated user without password", async () => {

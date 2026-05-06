@@ -42,7 +42,6 @@ export const createMockUserService = () => ({
 
 export const setupTestEnvironment = (router: Router, basePath: string): TestEnvironment => {
     const mockUserService = createMockUserService();
-    vi.mocked(UserService.create).mockResolvedValue(mockUserService);
 
     const mockPasswordUtils = vi.mocked(PasswordUtils);
 

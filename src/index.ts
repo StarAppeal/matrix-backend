@@ -79,7 +79,7 @@ async function bootstrap() {
 
     const fileService = FileService.getInstance();
     const s3Service = S3Service.getInstance(s3ClientConfig, fileService);
-    const userService = await UserService.create();
+    const userService = new UserService();
 
     const lastFmApiService = new LastFmApiService(
         LAST_FM_API_KEY,

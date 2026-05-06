@@ -8,17 +8,6 @@ interface MongooseError extends Error {
 }
 
 export class UserService {
-    private static _instance: UserService;
-
-    private constructor() {}
-
-    public static async create(): Promise<UserService> {
-        if (!this._instance) {
-            this._instance = new UserService();
-        }
-        return this._instance;
-    }
-
     public async updateUserById(id: string, user: Partial<IUser>): Promise<IUser | null> {
         return await UserModel.findByIdAndUpdate(id, user, {
             new: true,

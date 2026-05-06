@@ -6,7 +6,6 @@ import { setupTestEnvironment, type TestEnvironment } from "../helpers/testSetup
 
 vi.mock("../../src/services/db/UserService", () => ({
     UserService: {
-        create: vi.fn(),
         getUserByUUID: vi.fn()
     }
 }));
