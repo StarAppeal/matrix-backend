@@ -20,10 +20,17 @@ const logFormat = winston.format.combine(
 );
 
 const colorizedFormat = winston.format.combine(
-    winston.format.colorize({ all: true }),
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+
+    winston.format((info) => {
+        info.level = info.level.toUpperCase();
+        return info;
+    })(),
+
+    winston.format.colorize({ all: true }),
+
     winston.format.printf(({ level, message, timestamp, stack }) => {
-        return `${timestamp} [${level.toUpperCase()}]: ${message} ${stack || ""}`;
+        return `${timestamp} [${level}]: ${message} ${stack || ""}`;
     })
 );
 
