@@ -539,7 +539,7 @@ describe("RestUser", () => {
                 mockedUserService.getUserById.mockResolvedValue(null);
 
                 const nonExistentUserId = new Types.ObjectId().toString();
-                const response = await request(testEnv.app).get(`/user/${nonExistentUserId}`).expect(400);
+                const response = await request(testEnv.app).get(`/user/${nonExistentUserId}`).expect(404);
 
                 expect(response.body.data.message).toBe(
                     `Unable to find matching document with id: ${nonExistentUserId}`

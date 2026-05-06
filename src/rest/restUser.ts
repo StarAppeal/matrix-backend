@@ -2,7 +2,7 @@ import express from "express";
 import { PasswordUtils } from "../utils/passwordUtils";
 import { asyncHandler } from "./middleware/asyncHandler";
 import { v, validateBody, validateParams } from "./middleware/validate";
-import { badRequest, ok } from "./utils/responses";
+import { badRequest, notFound, ok } from "./utils/responses";
 import { isAdmin } from "./middleware/isAdmin";
 import { UserService } from "../services/db/UserService";
 import { ExtendedWebSocketServer } from "../websocket";
@@ -43,6 +43,9 @@ export class RestUser {
             "/me",
             asyncHandler(async (req, res) => {
                 const user = await this.userService.getUserByUUID(req.payload.uuid);
+                if (!user) {
+                    return notFound(res, "User not found");
+                }
                 return ok(res, user);
             })
         );
@@ -111,7 +114,7 @@ export class RestUser {
                 const { lastState } = req.body as { lastState: MatrixState };
                 const user = await this.userService.getUserByUUID(req.payload.uuid);
                 if (!user) {
-                    return badRequest(res, "User not found");
+                    return notFound(res, "User not found");
                 }
 
                const updated =  await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
@@ -169,7 +172,7 @@ export class RestUser {
                 const user = await this.userService.getUserById(id);
 
                 if (!user) {
-                    return badRequest(res, `Unable to find matching document with id: ${id}`);
+                    return notFound(res, `Unable to find matching document with id: ${id}`);
                 }
                 return ok(res, user);
             })
