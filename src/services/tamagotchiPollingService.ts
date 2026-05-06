@@ -3,7 +3,9 @@ import logger from "../utils/logger";
 import { TamagotchiPayload, TamagotchiService } from "./db/tamagotchiService";
 import { TICK_INTERVAL_MS } from "../db/models/tamagotchi";
 
-export class TamagotchiPollingService {
+import { IUserPollingService } from "./IUserPollingService";
+
+export class TamagotchiPollingService implements IUserPollingService {
     private readonly activePolls = new Map<string, NodeJS.Timeout>();
 
     constructor(private readonly tamagotchiService: TamagotchiService) {}

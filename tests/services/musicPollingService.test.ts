@@ -54,7 +54,7 @@ describe("MusicPollingService", () => {
             const state: MusicState = { isPlaying: true, title: "song-a", artist: "artist-a" };
             mockedApiService.getCurrentlyPlaying.mockResolvedValue(state);
 
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
 
             await vi.advanceTimersByTimeAsync(0);
 
@@ -71,19 +71,19 @@ describe("MusicPollingService", () => {
         it("should stop polling if user has no lastFmUsername", async () => {
             const userWithoutLastFm = { ...mockUser};
             delete userWithoutLastFm.lastFmUsername;
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
 
             expect(mockedApiService.getCurrentlyPlaying).toHaveBeenCalledTimes(0);
         })
 
         it("should not start a new polling interval if one is already running for the user", async () => {
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
             await vi.advanceTimersByTimeAsync(0);
 
             expect(vi.getTimerCount()).toBe(1);
             expect(mockedApiService.getCurrentlyPlaying).toHaveBeenCalledTimes(1);
 
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
             expect(vi.getTimerCount()).toBe(1); // Still only one timer
             expect(mockedApiService.getCurrentlyPlaying).toHaveBeenCalledTimes(1); // No new immediate poll
         });
@@ -91,7 +91,7 @@ describe("MusicPollingService", () => {
 
     describe("stopPollingForUser", () => {
         it("should clear the active interval for the user", () => {
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
             expect(vi.getTimerCount()).toBe(1);
 
             pollingService.stopPollingForUser(mockUser.uuid);
@@ -107,7 +107,7 @@ describe("MusicPollingService", () => {
 
             mockedApiService.getCurrentlyPlaying.mockResolvedValueOnce(initialState).mockResolvedValueOnce(nextState);
 
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
 
             await vi.advanceTimersByTimeAsync(0);
             expect(mockedAppEventBus.emit).toHaveBeenCalledWith(MUSIC_STATE_UPDATED_EVENT, {
@@ -129,7 +129,7 @@ describe("MusicPollingService", () => {
             const state: MusicState = { isPlaying: true, title: "song-a", artist: "artist-a" };
             mockedApiService.getCurrentlyPlaying.mockResolvedValue(state);
 
-            pollingService.startPollingForUser(mockUser);
+            pollingService.startPollingForUser(mockUser.uuid);
 
             await vi.advanceTimersByTimeAsync(0);
             await vi.advanceTimersByTimeAsync(4000);

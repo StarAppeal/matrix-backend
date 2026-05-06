@@ -1,21 +1,17 @@
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
 import { MusicPollingService } from "../../../services/musicPollingService";
 import { WeatherPollingService } from "../../../services/weatherPollingService";
+import { TamagotchiPollingService } from "../../../services/tamagotchiPollingService";
 
 import { GetSettingsEvent } from "./getSettingsEvent";
-import { GetMusicUpdatesEvent } from "./getMusicUpdatesEvent";
 import { GetStateEvent } from "./getStateEvent";
-import { StopMusicUpdatesEvent } from "./stopMusicUpdatesEvent";
-import { GetWeatherUpdatesEvent } from "./getWeatherUpdatesEvent";
-import { StopWeatherUpdatesEvent } from "./stopWeatherUpdatesEvent";
 import { UpdateUserSingleEvent } from "./updateUserEvent";
 import { SingleMusicUpdateEvent } from "./singleMusicUpdateEvent";
 import { SingleWeatherUpdateEvent } from "./singleWeatherUpdateEvent";
 import { ErrorEvent } from "./errorEvent";
 import { SingleTamagotchiUpdate } from "./singleTamagotchiUpdate";
-import { StopTamagotchiUpdatesEvent } from "./stopTamagotchiUpdatesEvent";
-import { GetTamagotchiUpdatesEvent } from "./getTamagotchiUpdatesEvent";
-import { TamagotchiPollingService } from "../../../services/tamagotchiPollingService";
+import { SubscribeEvent } from "./subscribeEvent";
+import { UnsubscribeEvent } from "./unsubscribeEvent";
 
 interface ServiceDependencies {
     musicPollingService: MusicPollingService;
@@ -33,34 +29,20 @@ export const eventRegistry = [
         factory: (ws: ExtendedWebSocket) => new GetSettingsEvent(ws),
     },
     {
-        Klass: GetMusicUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { musicPollingService }: ServiceDependencies) =>
-            new GetMusicUpdatesEvent(ws, musicPollingService),
+        Klass: SubscribeEvent,
+        factory: (ws: ExtendedWebSocket, { musicPollingService, weatherPollingService, tamagotchiPollingService }: ServiceDependencies) =>
+            new SubscribeEvent(ws, weatherPollingService, [
+                ["music", musicPollingService],
+                ["tamagotchi", tamagotchiPollingService],
+            ]),
     },
     {
-        Klass: StopMusicUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { musicPollingService }: ServiceDependencies) =>
-            new StopMusicUpdatesEvent(ws, musicPollingService),
-    },
-    {
-        Klass: GetWeatherUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { weatherPollingService }: ServiceDependencies) =>
-            new GetWeatherUpdatesEvent(ws, weatherPollingService),
-    },
-    {
-        Klass: StopWeatherUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { weatherPollingService }: ServiceDependencies) =>
-            new StopWeatherUpdatesEvent(ws, weatherPollingService),
-    },
-    {
-        Klass: GetTamagotchiUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { tamagotchiPollingService }: ServiceDependencies) =>
-            new GetTamagotchiUpdatesEvent(ws, tamagotchiPollingService),
-    },
-    {
-        Klass: StopTamagotchiUpdatesEvent,
-        factory: (ws: ExtendedWebSocket, { tamagotchiPollingService }: ServiceDependencies) =>
-            new StopTamagotchiUpdatesEvent(ws, tamagotchiPollingService),
+        Klass: UnsubscribeEvent,
+        factory: (ws: ExtendedWebSocket, { musicPollingService, weatherPollingService, tamagotchiPollingService }: ServiceDependencies) =>
+            new UnsubscribeEvent(ws, weatherPollingService, [
+                ["music", musicPollingService],
+                ["tamagotchi", tamagotchiPollingService],
+            ]),
     },
     {
         Klass: UpdateUserSingleEvent,

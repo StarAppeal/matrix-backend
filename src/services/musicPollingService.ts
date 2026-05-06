@@ -5,17 +5,18 @@ import { LastFmApiService } from "./lastFmApiService";
 import { MusicState } from "../interfaces/MusicState";
 import logger from "../utils/logger";
 
-export class MusicPollingService {
+import { IUserPollingService } from "./IUserPollingService";
+
+export class MusicPollingService implements IUserPollingService {
     private readonly userStateCache = new Map<string, MusicState>();
     private readonly activePolls = new Map<string, NodeJS.Timeout | null>();
 
     constructor(
         private readonly userService: UserService,
         private readonly musicApiService: LastFmApiService
-    ) {}
+    ) { }
 
-    public startPollingForUser(user: IUser): void {
-        const uuid = user.uuid;
+    public startPollingForUser(uuid: string): void {
         if (this.activePolls.has(uuid)) return;
 
         logger.info(`Starting Music polling service for user ${uuid}`);
@@ -66,7 +67,7 @@ export class MusicPollingService {
     private _hasStateChanged(last: MusicState | undefined, current: MusicState): boolean {
         if (!last) return true;
         if (last.isPlaying !== current.isPlaying) return true;
-        if (!current.isPlaying) return false; 
+        if (!current.isPlaying) return false;
 
         return last.title !== current.title || last.artist !== current.artist;
     }
