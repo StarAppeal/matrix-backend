@@ -7,11 +7,11 @@ import { UnsubscribeEvent } from "../../../../src/utils/websocket/websocketCusto
 import { MusicPollingService } from "../../../../src/services/musicPollingService";
 import { TamagotchiPollingService } from "../../../../src/services/tamagotchiPollingService";
 // @ts-ignore
-import { createMockMusicPollingService } from "../../../helpers/testSetup";
+import { createMockMusicPollingService, createMockOwmApiService } from "../../../helpers/testSetup";
 import { ErrorEvent } from "../../../../src/utils/websocket/websocketCustomEvents/errorEvent";
-import { UpdateUserSingleEvent } from "../../../../src/utils/websocket/websocketCustomEvents/updateUserEvent";
 import { WeatherPollingService } from "../../../../src/services/weatherPollingService";
 import logger from "../../../../src/utils/logger";
+import { OwmApiService } from "../../../../src/services/owmApiService";
 
 const createMockWebSocket = (userPayload: any = {}): ExtendedWebSocket => {
     return {
@@ -47,12 +47,14 @@ describe("WebSocket Custom Event Handlers", () => {
     let mockmusicPollingService: Mocked<MusicPollingService>;
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
     let mockTamagotchiPollingService: Mocked<TamagotchiPollingService>;
+    let mockOwmApiService: Mocked<OwmApiService>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
         mockmusicPollingService = createMockMusicPollingService() as any;
-        mockWeatherPollingService = new WeatherPollingService() as Mocked<WeatherPollingService>;
+        mockOwmApiService = createMockOwmApiService() as any;
+        mockWeatherPollingService = new WeatherPollingService(mockOwmApiService) as Mocked<WeatherPollingService>;
         mockTamagotchiPollingService = { startPollingForUser: vi.fn(), stopPollingForUser: vi.fn() } as any;
     });
 
@@ -107,7 +109,10 @@ describe("WebSocket Custom Event Handlers", () => {
     describe("SubscribeEvent", () => {
         it("should call music polling service when topic is music", async () => {
             const mockWs = createMockWebSocket();
-            const event = new SubscribeEvent(mockWs, mockWeatherPollingService, [["music", mockmusicPollingService], ["tamagotchi", mockTamagotchiPollingService]]);
+            const event = new SubscribeEvent(mockWs, mockWeatherPollingService, [
+                ["music", mockmusicPollingService],
+                ["tamagotchi", mockTamagotchiPollingService],
+            ]);
             await event.handler("music");
 
             expect(mockmusicPollingService.startPollingForUser).toHaveBeenCalledOnce();
@@ -115,17 +120,23 @@ describe("WebSocket Custom Event Handlers", () => {
         });
 
         it("should call weather polling service when topic is clock", async () => {
-            const location = {lat: 51.5074, lon: -0.1278};
+            const location = { lat: 51.5074, lon: -0.1278 };
             const mockWs = createMockWebSocket({ uuid: "user-uuid", location });
-            const event = new SubscribeEvent(mockWs, mockWeatherPollingService, [["music", mockmusicPollingService], ["tamagotchi", mockTamagotchiPollingService]]);
+            const event = new SubscribeEvent(mockWs, mockWeatherPollingService, [
+                ["music", mockmusicPollingService],
+                ["tamagotchi", mockTamagotchiPollingService],
+            ]);
             await event.handler("clock");
 
             expect(mockWeatherPollingService.subscribeUser).toHaveBeenCalledOnce();
         });
-        
+
         it("should call tamagotchi polling service when topic is tamagotchi", async () => {
             const mockWs = createMockWebSocket({ uuid: "user-uuid" });
-            const event = new SubscribeEvent(mockWs, mockWeatherPollingService, [["music", mockmusicPollingService], ["tamagotchi", mockTamagotchiPollingService]]);
+            const event = new SubscribeEvent(mockWs, mockWeatherPollingService, [
+                ["music", mockmusicPollingService],
+                ["tamagotchi", mockTamagotchiPollingService],
+            ]);
             await event.handler("tamagotchi");
 
             expect(mockTamagotchiPollingService.startPollingForUser).toHaveBeenCalledOnce();
@@ -135,7 +146,10 @@ describe("WebSocket Custom Event Handlers", () => {
     describe("UnsubscribeEvent", () => {
         it("should call music polling service when topic is music", async () => {
             const mockWs = createMockWebSocket({ uuid: "user-uuid-1" });
-            const event = new UnsubscribeEvent(mockWs, mockWeatherPollingService, [["music", mockmusicPollingService], ["tamagotchi", mockTamagotchiPollingService]]);
+            const event = new UnsubscribeEvent(mockWs, mockWeatherPollingService, [
+                ["music", mockmusicPollingService],
+                ["tamagotchi", mockTamagotchiPollingService],
+            ]);
             await event.handler("music");
 
             expect(mockmusicPollingService.stopPollingForUser).toHaveBeenCalledOnce();
@@ -143,32 +157,26 @@ describe("WebSocket Custom Event Handlers", () => {
         });
 
         it("should call weather polling service when topic is clock", async () => {
-            const location = {lat: 51.5074, lon: -0.1278};
+            const location = { lat: 51.5074, lon: -0.1278 };
             const mockWs = createMockWebSocket({ uuid: "user-uuid", location });
-            const event = new UnsubscribeEvent(mockWs, mockWeatherPollingService, [["music", mockmusicPollingService], ["tamagotchi", mockTamagotchiPollingService]]);
+            const event = new UnsubscribeEvent(mockWs, mockWeatherPollingService, [
+                ["music", mockmusicPollingService],
+                ["tamagotchi", mockTamagotchiPollingService],
+            ]);
             await event.handler("clock");
 
             expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledOnce();
         });
-        
+
         it("should call tamagotchi polling service when topic is tamagotchi", async () => {
             const mockWs = createMockWebSocket({ uuid: "user-uuid" });
-            const event = new UnsubscribeEvent(mockWs, mockWeatherPollingService, [["music", mockmusicPollingService], ["tamagotchi", mockTamagotchiPollingService]]);
+            const event = new UnsubscribeEvent(mockWs, mockWeatherPollingService, [
+                ["music", mockmusicPollingService],
+                ["tamagotchi", mockTamagotchiPollingService],
+            ]);
             await event.handler("tamagotchi");
 
             expect(mockTamagotchiPollingService.stopPollingForUser).toHaveBeenCalledOnce();
-        });
-    });
-
-    describe("UpdateUserSingleEvent", () => {
-        it("should update the user property on the websocket object", async () => {
-            const mockWs = createMockWebSocket();
-            const updatedUserData = { ...mockWs.user, name: "Neuer Name" };
-
-            const event = new UpdateUserSingleEvent(mockWs);
-            await event.handler(updatedUserData as any);
-
-            expect(mockWs.user).toEqual(updatedUserData);
         });
     });
 

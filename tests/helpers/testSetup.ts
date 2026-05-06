@@ -74,6 +74,11 @@ export const createMockLastFmApiService = () => ({
     validateUsername: vi.fn(),
 });
 
+export const createMockOwmApiService = () => ({
+    getCurrentlyPlaying: vi.fn(),
+    validateUsername: vi.fn(),
+})
+
 export const createMockMusicPollingService = () => ({
     startPollingForUser: vi.fn(),
     stopPollingForUser: vi.fn(),

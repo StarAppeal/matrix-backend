@@ -227,11 +227,8 @@ describe("ExtendedWebSocketServer", () => {
 
             userUpdateListener!(updatedUserPayload);
 
-            expect(mockClient.emit).toHaveBeenCalledOnce();
-            expect(mockClient.emit).toHaveBeenCalledWith(
-                WebsocketEventType.UPDATE_USER_SINGLE,
-                updatedUserPayload
-            );
+            expect(mockClient.emit).not.toHaveBeenCalled();
+            expect(mockClient.user).toEqual(updatedUserPayload);
         });
 
         it("should listen for music_STATE_UPDATED_EVENT and send to the correct client", () => {
@@ -245,9 +242,10 @@ describe("ExtendedWebSocketServer", () => {
 
             musicStateListener!(eventPayload);
 
-            expect(mockClient.emit).toHaveBeenCalledOnce();
-            expect(mockClient.emit).toHaveBeenCalledWith(
-                WebsocketEventType.SINGLE_MUSIC_UPDATE, musicUpdatePayload.state
+            expect(mockClient.send).toHaveBeenCalledOnce();
+            expect(mockClient.send).toHaveBeenCalledWith(
+                JSON.stringify({ type: "MUSIC_UPDATE", payload: musicUpdatePayload.state }),
+                { binary: false }
             );
         });
 
@@ -262,9 +260,10 @@ describe("ExtendedWebSocketServer", () => {
 
             weatherStateListener!(eventPayload);
 
-            expect(mockClient.emit).toHaveBeenCalledOnce()
-            expect(mockClient.emit).toHaveBeenCalledWith(
-                WebsocketEventType.SINGLE_WEATHER_UPDATE, weatherUpdatePayload.weatherData
+            expect(mockClient.send).toHaveBeenCalledOnce();
+            expect(mockClient.send).toHaveBeenCalledWith(
+                JSON.stringify({ type: "WEATHER_UPDATE", payload: weatherUpdatePayload.weatherData }),
+                { binary: false }
             );
         });
 

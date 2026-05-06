@@ -5,11 +5,7 @@ import { TamagotchiPollingService } from "../../../services/tamagotchiPollingSer
 
 import { GetSettingsEvent } from "./getSettingsEvent";
 import { GetStateEvent } from "./getStateEvent";
-import { UpdateUserSingleEvent } from "./updateUserEvent";
-import { SingleMusicUpdateEvent } from "./singleMusicUpdateEvent";
-import { SingleWeatherUpdateEvent } from "./singleWeatherUpdateEvent";
 import { ErrorEvent } from "./errorEvent";
-import { SingleTamagotchiUpdate } from "./singleTamagotchiUpdate";
 import { SubscribeEvent } from "./subscribeEvent";
 import { UnsubscribeEvent } from "./unsubscribeEvent";
 
@@ -43,22 +39,6 @@ export const eventRegistry = [
                 ["music", musicPollingService],
                 ["tamagotchi", tamagotchiPollingService],
             ]),
-    },
-    {
-        Klass: UpdateUserSingleEvent,
-        factory: (ws: ExtendedWebSocket) => new UpdateUserSingleEvent(ws),
-    },
-    {
-        Klass: SingleMusicUpdateEvent,
-        factory: (ws: ExtendedWebSocket) => new SingleMusicUpdateEvent(ws),
-    },
-    {
-        Klass: SingleWeatherUpdateEvent,
-        factory: (ws: ExtendedWebSocket) => new SingleWeatherUpdateEvent(ws),
-    },
-    {
-        Klass: SingleTamagotchiUpdate,
-        factory: (ws: ExtendedWebSocket) => new SingleTamagotchiUpdate(ws),
     },
     {
         Klass: ErrorEvent,

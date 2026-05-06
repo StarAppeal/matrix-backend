@@ -12,6 +12,7 @@ import {
     USER_UPDATED_EVENT,
     WEATHER_STATE_UPDATED_EVENT,
 } from "./utils/eventBus";
+import { WebsocketOutboundType } from "./utils/websocket/websocketCustomEvents/websocketOutboundType";
 import { IUser } from "./db/models/user";
 import { MusicPollingService } from "./services/musicPollingService";
 import { UserService } from "./services/db/UserService";
@@ -128,32 +129,32 @@ export class ExtendedWebSocketServer {
             logger.debug(`Received update for user ${user.uuid}`);
             const client = this._findClientByUUID(user.uuid);
             if (client) {
-                logger.debug(`Pushing update to user ${user.uuid}`);
-                client.emit(WebsocketEventType.UPDATE_USER_SINGLE, user);
+                client.user = user;
+                logger.debug(`User ${user.uuid} updated successfully`);
             }
         });
 
         appEventBus.on(MUSIC_STATE_UPDATED_EVENT, ({ uuid, state }) => {
             const client = this._findClientByUUID(uuid);
             logger.debug(`Received update for user ${uuid}`);
-            if (client) {
-                client.emit(WebsocketEventType.SINGLE_MUSIC_UPDATE, state);
+            if (client && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: WebsocketOutboundType.MUSIC_UPDATE, payload: state }), { binary: false });
             }
         });
 
         appEventBus.on(WEATHER_STATE_UPDATED_EVENT, ({ weatherData, subscribers }) => {
             for (const uuid of subscribers) {
                 const client = this._findClientByUUID(uuid);
-                if (client) {
-                    client.emit(WebsocketEventType.SINGLE_WEATHER_UPDATE, weatherData);
+                if (client && client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({ type: WebsocketOutboundType.WEATHER_UPDATE, payload: weatherData }), { binary: false });
                 }
             }
         });
 
         appEventBus.on(TAMAGOTCHI_STATE_UPDATED_EVENT, ({ uuid, payload }) => {
             const client = this._findClientByUUID(uuid);
-            if (client) {
-                client.emit(WebsocketEventType.SINGLE_TAMAGOTCHI_UPDATE, payload);
+            if (client && client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: WebsocketOutboundType.TAMAGOTCHI_UPDATE, payload: payload }), { binary: false });
             }
         });
     }
