@@ -1,5 +1,4 @@
 import { appEventBus, MUSIC_STATE_UPDATED_EVENT } from "../utils/eventBus";
-import { IUser } from "../db/models/user";
 import { UserService } from "./db/UserService";
 import { LastFmApiService } from "./lastFmApiService";
 import { MusicState } from "../interfaces/MusicState";
@@ -39,7 +38,10 @@ export class MusicPollingService implements IUserPollingService {
     public stopPollingForUser(uuid: string): void {
         if (this.activePolls.has(uuid)) {
             logger.info(`Stopping Music polling service for user ${uuid}`);
-            clearTimeout(this.activePolls.get(uuid)!);
+            const timeoutId = this.activePolls.get(uuid);
+            if (timeoutId !== null && timeoutId !== undefined) {
+                clearTimeout(timeoutId);
+            }
             this.activePolls.delete(uuid);
             this.userStateCache.delete(uuid);
         }
