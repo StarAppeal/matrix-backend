@@ -1,4 +1,4 @@
-import { WeatherPollingService } from "../../../services/weatherPollingService";
+import { WEATHER_TOPIC, WeatherPollingService } from "../../../services/weatherPollingService";
 import { IUserPollingService } from "../../../services/IUserPollingService";
 import { WebsocketEventType } from "./websocketEventType";
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
@@ -26,7 +26,7 @@ export class UnsubscribeEvent extends CustomWebsocketEvent<string> {
         const uuid = this.ws.user.uuid;
 
         // Weather has a different unsubscription signature (location-based), handle separately.
-        if (topic === "clock") {
+        if (topic === WEATHER_TOPIC) {
             this.weatherPollingService.unsubscribeUser(
                 uuid,
                 this.ws.user.location.lat,

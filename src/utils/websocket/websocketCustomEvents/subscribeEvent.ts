@@ -1,4 +1,4 @@
-import { WeatherPollingService } from "../../../services/weatherPollingService";
+import { WEATHER_TOPIC, WeatherPollingService } from "../../../services/weatherPollingService";
 import { IUserPollingService } from "../../../services/IUserPollingService";
 import { WebsocketEventType } from "./websocketEventType";
 import { ExtendedWebSocket } from "../../../interfaces/extendedWebsocket";
@@ -27,7 +27,7 @@ export class SubscribeEvent extends CustomWebsocketEvent<string> {
         const uuid = this.ws.user.uuid;
 
         // Weather has a different subscription signature (location-based), handle separately.
-        if (topic === "clock") {
+        if (topic === WEATHER_TOPIC) {
             this.weatherPollingService.subscribeUser(
                 uuid,
                 this.ws.user.location.lat,

@@ -4,6 +4,8 @@ import { IUser } from "../db/models/user";
 import logger from "../utils/logger";
 import { CurrentWeather } from "openweather-api-node";
 
+export const WEATHER_TOPIC = "clock";
+
 export class WeatherPollingService {
     private readonly activeLocationPolls: Map<string, NodeJS.Timeout>;
     private readonly locationSubscriptions: Map<string, Set<string>>;
