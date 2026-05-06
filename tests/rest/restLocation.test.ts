@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import { RestLocation } from "../../src/rest/restLocation";
+import { OwmApiService } from "../../src/services/owmApiService";
 import { setupTestEnvironment, type TestEnvironment } from "../helpers/testSetup";
 
 vi.mock("../../src/services/db/UserService", () => ({
@@ -18,20 +19,18 @@ vi.mock("../../src/utils/passwordUtils", () => ({
     }
 }));
 
-vi.mock("../../src/services/owmApiService", () => ({
-    validateLocation: vi.fn()
-}));
-
-import { validateLocation } from "../../src/services/owmApiService";
-
 describe("RestLocation", () => {
     let testEnv: TestEnvironment;
-    const mockedValidateLocation = vi.mocked(validateLocation);
+    let mockOwmApiService: { validateLocation: ReturnType<typeof vi.fn> };
 
     beforeEach(() => {
         vi.clearAllMocks();
 
-        const restLocation = new RestLocation();
+        mockOwmApiService = {
+            validateLocation: vi.fn(),
+        };
+
+        const restLocation = new RestLocation(mockOwmApiService as unknown as OwmApiService);
         testEnv = setupTestEnvironment(restLocation.createRouter(), "/location");
     });
 
@@ -48,7 +47,7 @@ describe("RestLocation", () => {
                 { name: "Berlin", country: "DE", lat: 52.5, lon: 13.4 }
             ];
 
-            mockedValidateLocation.mockResolvedValue(mockResult as any);
+            mockOwmApiService.validateLocation.mockResolvedValue(mockResult as any);
 
             const response = await request(testEnv.app)
                 .get(endpoint)
@@ -56,7 +55,7 @@ describe("RestLocation", () => {
                 .expect(200);
 
             expect(response.body.data.locations).toEqual(mockResult);
-            expect(mockedValidateLocation).toHaveBeenCalledWith(query);
+            expect(mockOwmApiService.validateLocation).toHaveBeenCalledWith(query);
         });
 
         it("should return 400 if query 'q' is missing", async () => {
@@ -77,7 +76,7 @@ describe("RestLocation", () => {
         });
 
         it("should return empty list if service returns empty list (e.g. nothing found)", async () => {
-            mockedValidateLocation.mockResolvedValue([]);
+            mockOwmApiService.validateLocation.mockResolvedValue([]);
 
             const response = await request(testEnv.app)
                 .get(endpoint)

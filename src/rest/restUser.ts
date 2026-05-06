@@ -9,21 +9,25 @@ import { ExtendedWebSocketServer } from "../websocket";
 import { MatrixState } from "../db/models/user";
 import logger from "../utils/logger";
 import { LastFmApiService } from "../services/lastFmApiService";
-import { getTimezoneName } from "../services/owmApiService";
+import { OwmApiService } from "../services/owmApiService";
+import { WebsocketOutboundType } from "../utils/websocket/websocketCustomEvents/websocketOutboundType";
 
 
 export class RestUser {
     private readonly userService: UserService;
     private readonly lastFmApiService: LastFmApiService;
+    private readonly owmApiService: OwmApiService;
     private readonly webSocketServerProvider?: () => ExtendedWebSocketServer | null;
 
     constructor(
         userService: UserService,
         lastFmApiService: LastFmApiService,
+        owmApiService: OwmApiService,
         webSocketServerProvider?: () => ExtendedWebSocketServer | null
     ) {
         this.userService = userService;
         this.lastFmApiService = lastFmApiService;
+        this.owmApiService = owmApiService;
         this.webSocketServerProvider = webSocketServerProvider;
     }
 
@@ -61,7 +65,7 @@ export class RestUser {
                 const { name, lat, lon } = req.body as { name: string; lat: number; lon: number };
 
                 //TODO: probably not saving timezone in database anymore, refactor it to determine it when needed (I guess?)
-                const timezone = getTimezoneName(lat, lon);
+                const timezone = this.owmApiService.getTimezoneName(lat, lon);
                 logger.info(`Determined timezone for coordinates (${lat}, ${lon}): ${timezone}`);
 
                 const user = await this.userService.updateUserByUUID(req.payload.uuid, {
@@ -124,7 +128,7 @@ export class RestUser {
 
                     if (webSocketServer) {
                         logger.info("Sending payload to websocket");
-                        const message = JSON.stringify({ type: "STATE", payload: updated?.lastState });
+                        const message = JSON.stringify({ type: WebsocketOutboundType.STATE, payload: updated?.lastState });
                         webSocketServer.sendMessageToUser(req.payload.uuid, message);
                     }
                 }

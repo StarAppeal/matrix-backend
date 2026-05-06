@@ -12,6 +12,7 @@ import logger from "./utils/logger";
 import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { TamagotchiService } from "./services/db/tamagotchiService";
 import { HttpClient } from "./utils/httpClient";
+import { OwmApiService } from "./services/owmApiService";
 
 async function bootstrap() {
     const {
@@ -25,6 +26,7 @@ async function bootstrap() {
         DB_CONN_STRING,
         MINIO_SERVER_URL,
         LAST_FM_API_KEY,
+        OWM_API_KEY,
     } = process.env;
 
     if (!SECRET_KEY || SECRET_KEY.length < 32) {
@@ -55,6 +57,10 @@ async function bootstrap() {
         throw new Error("CRITICAL ERROR: LAST_FM_API_KEY environment variable is not set.");
     }
 
+    if (!OWM_API_KEY) {
+        throw new Error("CRITICAL ERROR: OWM_API_KEY environment variable is not set.");
+    }
+
     const s3ClientConfig: S3ClientConfig = {
         publicUrl: MINIO_SERVER_URL,
         endpoint: MINIO_ENDPOINT,
@@ -82,8 +88,9 @@ async function bootstrap() {
             timeout: 5000,
         })
     );
+    const owmApiService = new OwmApiService(OWM_API_KEY);
     const musicPollingService = new MusicPollingService(userService, lastFmApiService);
-    const weatherPollingService = new WeatherPollingService();
+    const weatherPollingService = new WeatherPollingService(owmApiService);
     const tamagotchiPollingService = new TamagotchiPollingService(new TamagotchiService());
 
     const jwtAuthenticator = new JwtAuthenticator(SECRET_KEY);
@@ -102,6 +109,7 @@ async function bootstrap() {
             tamagotchiPollingService,
             jwtAuthenticator,
             lastFmApiService,
+            owmApiService,
         }
     );
 

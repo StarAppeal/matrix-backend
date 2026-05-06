@@ -24,9 +24,17 @@ const mockWeatherPollingService = {
     subscribeUser: vi.fn(),
     unsubscribeUser: vi.fn(),
 } as any;
+const mockTamagotchiPollingService = {
+    startPollingForUser: vi.fn(),
+    stopPollingForUser: vi.fn(),
+} as any;
 const mockJwtAuthenticator = createMockJwtAuthenticator() as any;
-
 const mockLastFmApiService = createMockLastFmApiService() as any;
+const mockOwmApiService = {
+    getCurrentWeather: vi.fn(),
+    validateLocation: vi.fn(),
+    getTimezoneName: vi.fn().mockReturnValue("Europe/Berlin"),
+} as any;
 
 vi.mock("../src/services/db/database.service", () => ({
     connectToDatabase: vi.fn().mockResolvedValue(undefined),
@@ -35,7 +43,9 @@ vi.mock("../src/services/db/database.service", () => ({
 
 vi.mock("../src/websocket", () => ({
     ExtendedWebSocketServer: vi.fn().mockImplementation(() => {
-        return {};
+        return {
+            closeServer: vi.fn(),
+        };
     }),
 }));
 
@@ -88,8 +98,10 @@ describe("Server Class Integration Tests", () => {
             userService: mockUserService,
             musicPollingService: mockMusicPollingService,
             weatherPollingService: mockWeatherPollingService,
+            tamagotchiPollingService: mockTamagotchiPollingService,
             jwtAuthenticator: mockJwtAuthenticator,
             lastFmApiService: mockLastFmApiService,
+            owmApiService: mockOwmApiService,
         });
         await server.start();
         app = server.app;

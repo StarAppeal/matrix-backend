@@ -2,33 +2,27 @@ import OpenWeatherAPI from "openweather-api-node";
 import { find } from "geo-tz";
 import logger from "../utils/logger";
 
-function getWeatherInstance(): OpenWeatherAPI {
-    return new OpenWeatherAPI({
-        key: process.env.OWM_API_KEY,
-        units: "metric"
-    });
-}
+export class OwmApiService {
+    constructor(private readonly apiKey: string) { }
 
-export async function getCurrentWeather(lat: number, lon: number) {
-    const weather = getWeatherInstance();
-
-    weather.setLocationByCoordinates(lat, lon);
-
-    return await weather.getCurrent();
-}
-
-export async function validateLocation(query: string) {
-    const weather = getWeatherInstance();
-
-    try {
-        return await weather.getAllLocations(query);
-    } catch (error) {
-        logger.error("Geocoding Error", error);
-        return [];
+    public async getCurrentWeather(lat: number, lon: number) {
+        const api = new OpenWeatherAPI({ key: this.apiKey, units: "metric" });
+        api.setLocationByCoordinates(lat, lon);
+        return await api.getCurrent();
     }
-}
 
-export function getTimezoneName(lat: number, lon: number): string {
-    const tz = find(lat, lon);
-    return tz[0] || "Etc/UTC";
+    public async validateLocation(query: string) {
+        const api = new OpenWeatherAPI({ key: this.apiKey, units: "metric" });
+        try {
+            return await api.getAllLocations(query);
+        } catch (error) {
+            logger.error("Geocoding Error", error);
+            return [];
+        }
+    }
+
+    public getTimezoneName(lat: number, lon: number): string {
+        const tz = find(lat, lon);
+        return tz[0] || "Etc/UTC";
+    }
 }

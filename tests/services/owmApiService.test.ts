@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import OpenWeatherAPI from "openweather-api-node";
-import { getCurrentWeather, validateLocation } from "../../src/services/owmApiService";
+import { OwmApiService } from "../../src/services/owmApiService";
 
 vi.mock("openweather-api-node", () => {
     return {
@@ -16,13 +16,9 @@ vi.mock("openweather-api-node", () => {
 
 const MockedOpenWeatherAPI = vi.mocked(OpenWeatherAPI, true);
 
-vi.stubGlobal("process", {
-    env: {
-        OWM_API_KEY: "test-api-key",
-    },
-});
-
-describe("owmApiService", () => {
+describe("OwmApiService", () => {
+    const TEST_API_KEY = "test-api-key";
+    let service: OwmApiService;
     let mockWeatherInstance: any;
 
     beforeEach(() => {
@@ -35,6 +31,8 @@ describe("owmApiService", () => {
         };
 
         MockedOpenWeatherAPI.mockImplementation(() => mockWeatherInstance as any);
+
+        service = new OwmApiService(TEST_API_KEY);
     });
 
     afterEach(() => {
@@ -45,18 +43,17 @@ describe("owmApiService", () => {
         const lat = 52.52;
         const lon = 13.40;
 
-        it("should initialize API and set coordinates correctly", async () => {
+        it("should initialize API with injected key and set coordinates correctly", async () => {
             mockWeatherInstance.getCurrent.mockResolvedValue({ temp: 20 });
 
-            await getCurrentWeather(lat, lon);
+            await service.getCurrentWeather(lat, lon);
 
             expect(MockedOpenWeatherAPI).toHaveBeenCalledWith({
-                key: "test-api-key",
+                key: TEST_API_KEY,
                 units: "metric"
             });
 
             expect(mockWeatherInstance.setLocationByCoordinates).toHaveBeenCalledWith(lat, lon);
-
             expect(mockWeatherInstance.getCurrent).toHaveBeenCalled();
         });
 
@@ -64,7 +61,7 @@ describe("owmApiService", () => {
             const mockData = { main: { temp: 25 } };
             mockWeatherInstance.getCurrent.mockResolvedValue(mockData);
 
-            const result = await getCurrentWeather(lat, lon);
+            const result = await service.getCurrentWeather(lat, lon);
 
             expect(result).toEqual(mockData);
         });
@@ -73,7 +70,7 @@ describe("owmApiService", () => {
             const error = new Error("API Error");
             mockWeatherInstance.getCurrent.mockRejectedValue(error);
 
-            await expect(getCurrentWeather(lat, lon)).rejects.toThrow("API Error");
+            await expect(service.getCurrentWeather(lat, lon)).rejects.toThrow("API Error");
         });
     });
 
@@ -88,18 +85,32 @@ describe("owmApiService", () => {
 
             mockWeatherInstance.getAllLocations.mockResolvedValue(mockLocations);
 
-            const result = await validateLocation(query);
+            const result = await service.validateLocation(query);
 
             expect(mockWeatherInstance.getAllLocations).toHaveBeenCalledWith(query);
             expect(result).toEqual(mockLocations);
         });
 
-        it("should return empty array on error (handled in catch block)", async () => {
+        it("should return empty array on error", async () => {
             mockWeatherInstance.getAllLocations.mockRejectedValue(new Error("Network Error"));
 
-            const result = await validateLocation(query);
+            const result = await service.validateLocation(query);
 
             expect(result).toEqual([]);
+        });
+    });
+
+    describe("getTimezoneName", () => {
+        it("should return a valid IANA timezone string for Berlin", () => {
+            const result = service.getTimezoneName(52.52, 13.4);
+            expect(result).toBe("Europe/Berlin");
+        });
+
+        it("should return Etc/UTC as fallback for unknown coordinates", () => {
+            // Coordinates far in the ocean, unlikely to have a TZ
+            const result = service.getTimezoneName(0, 0);
+            expect(typeof result).toBe("string");
+            expect(result.length).toBeGreaterThan(0);
         });
     });
 });

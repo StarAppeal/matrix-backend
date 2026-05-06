@@ -24,6 +24,7 @@ import { RestLocation } from "./rest/restLocation";
 import { MusicPollingService } from "./services/musicPollingService";
 import { LastFmApiService } from "./services/lastFmApiService";
 import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
+import { OwmApiService } from "./services/owmApiService";
 
 interface ServerDependencies {
     userService: UserService;
@@ -33,6 +34,7 @@ interface ServerDependencies {
     tamagotchiPollingService: TamagotchiPollingService;
     jwtAuthenticator: JwtAuthenticator;
     lastFmApiService: LastFmApiService;
+    owmApiService: OwmApiService;
 }
 
 interface ServerConfig {
@@ -64,7 +66,8 @@ export class Server {
             weatherPollingService,
             tamagotchiPollingService,
             jwtAuthenticator,
-            lastFmApiService
+            lastFmApiService,
+            owmApiService,
         } = this.dependencies;
 
         await s3Service.ensureBucketExists();
@@ -72,7 +75,7 @@ export class Server {
         watchUserChanges();
 
         this._setupMiddleware();
-        this._setupRoutes(userService, jwtAuthenticator, s3Service, lastFmApiService);
+        this._setupRoutes(userService, jwtAuthenticator, s3Service, lastFmApiService, owmApiService);
         this._setupErrorHandling();
 
         this.httpServer = this.app.listen(this.config.port, () => {
@@ -119,14 +122,15 @@ export class Server {
         jwtAuthenticator: JwtAuthenticator,
         s3Service: S3Service,
         lastFmApiService: LastFmApiService,
+        owmApiService: OwmApiService,
     ): void {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
         const restAuth = new RestAuth(userService, jwtAuthenticator);
-        const restUser = new RestUser(userService, lastFmApiService, () => this.webSocketServer);
+        const restUser = new RestUser(userService, lastFmApiService, owmApiService, () => this.webSocketServer);
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
-        const restLocation = new RestLocation();
+        const restLocation = new RestLocation(owmApiService);
 
         this.app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
 

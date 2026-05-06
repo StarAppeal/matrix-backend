@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, Mocked } from "vitest"
 import { appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../../src/utils/eventBus";
 import { WeatherPollingService } from "../../src/services/weatherPollingService";
 import { IUser } from "../../src/db/models/user";
-import { getCurrentWeather } from "../../src/services/owmApiService";
+import { OwmApiService } from "../../src/services/owmApiService";
 
 vi.mock("../../src/services/owmApiService");
 
@@ -15,13 +15,10 @@ vi.mock("../../src/utils/eventBus", () => ({
     USER_UPDATED_EVENT: "user:updated",
 }));
 
-vi.mock("../../src/services/owmApiService", () => ({
-    getCurrentWeather: vi.fn(),
-}));
 
 describe("WeatherPollingService", () => {
     let mockedAppEventBus: Mocked<typeof appEventBus>;
-    const mockedGetCurrentWeather = vi.mocked(getCurrentWeather);
+    let mockOwmApiService: Mocked<OwmApiService>;
 
     let pollingService: WeatherPollingService;
 
@@ -41,7 +38,14 @@ describe("WeatherPollingService", () => {
         vi.useFakeTimers();
 
         mockedAppEventBus = appEventBus as Mocked<typeof appEventBus>;
-        pollingService = new WeatherPollingService();
+
+        mockOwmApiService = {
+            getCurrentWeather: vi.fn(),
+            validateLocation: vi.fn(),
+            getTimezoneName: vi.fn(),
+        } as unknown as Mocked<OwmApiService>;
+
+        pollingService = new WeatherPollingService(mockOwmApiService);
     });
 
     afterEach(() => {
@@ -50,14 +54,14 @@ describe("WeatherPollingService", () => {
 
     describe("Subscription Management", () => {
         it("should start a new poll when the first user subscribes to a location", async () => {
-            mockedGetCurrentWeather.mockResolvedValue({ temp: 10 } as any);
+            mockOwmApiService.getCurrentWeather.mockResolvedValue({ temp: 10 } as any);
 
             pollingService.subscribeUser(mockUser.uuid, BERLIN_COORDS.lat, BERLIN_COORDS.lon);
 
             await vi.advanceTimersByTimeAsync(0);
 
             expect(vi.getTimerCount()).toBe(1);
-            expect(mockedGetCurrentWeather).toHaveBeenCalledWith(BERLIN_COORDS.lat, BERLIN_COORDS.lon);
+            expect(mockOwmApiService.getCurrentWeather).toHaveBeenCalledWith(BERLIN_COORDS.lat, BERLIN_COORDS.lon);
         });
 
         it("should NOT start a new poll if another user subscribes to the same location", async () => {
@@ -67,7 +71,7 @@ describe("WeatherPollingService", () => {
             await vi.advanceTimersByTimeAsync(0);
 
             expect(vi.getTimerCount()).toBe(1);
-            expect(mockedGetCurrentWeather).toHaveBeenCalledTimes(1);
+            expect(mockOwmApiService.getCurrentWeather).toHaveBeenCalledTimes(1);
         });
 
         it("should stop the poll when the last user unsubscribes from a location", async () => {
@@ -97,7 +101,7 @@ describe("WeatherPollingService", () => {
     describe("Polling and Event Emission", () => {
         it("should periodically poll the API and emit an event for all subscribers of that location", async () => {
             const weatherData = { temp: 12, city: "London" };
-            mockedGetCurrentWeather.mockResolvedValue(weatherData as any);
+            mockOwmApiService.getCurrentWeather.mockResolvedValue(weatherData as any);
 
             pollingService.subscribeUser("user-london-1", LONDON_COORDS.lat, LONDON_COORDS.lon);
             pollingService.subscribeUser("user-london-2", LONDON_COORDS.lat, LONDON_COORDS.lon);
@@ -133,9 +137,7 @@ describe("WeatherPollingService", () => {
             expect(typeof userUpdateListener).toBe("function");
         });
 
-        // test fails currently because of stuff :)
         it("should automatically move a user's subscription when their location changes", () => {
-            const unsubscribeSpy = vi.spyOn(pollingService, "unsubscribeUser");
             const subscribeSpy = vi.spyOn(pollingService, "subscribeUser");
 
             pollingService.subscribeUser("user-moving", BERLIN_COORDS.lat, BERLIN_COORDS.lon);

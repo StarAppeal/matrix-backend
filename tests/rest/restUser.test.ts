@@ -26,6 +26,14 @@ vi.mock("../../src/utils/passwordUtils", () => ({
     },
 }));
 
+vi.mock("../../src/services/owmApiService", () => ({
+    OwmApiService: vi.fn().mockImplementation(() => ({
+        getTimezoneName: vi.fn().mockReturnValue("Europe/Berlin"),
+        getCurrentWeather: vi.fn(),
+        validateLocation: vi.fn(),
+    })),
+}));
+
 describe("RestUser", () => {
     let testEnv: TestEnvironment;
 
@@ -38,9 +46,19 @@ describe("RestUser", () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
+        const mockOwmApiService = {
+            getTimezoneName: vi.fn().mockImplementation((lat: number, lon: number) => {
+                if (lat < 0 && lon < 0) return "America/Argentina/Buenos_Aires";
+                return "Europe/Berlin";
+            }),
+            getCurrentWeather: vi.fn(),
+            validateLocation: vi.fn(),
+        };
+
         const restUser = new RestUser(
             mockedUserService,
             mockedLastFmApiService as any,
+            mockOwmApiService as any,
             () => createMockWebSocketServer() as any
         );
         testEnv = setupTestEnvironment(restUser.createRouter(), "/user");

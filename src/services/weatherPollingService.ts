@@ -1,5 +1,5 @@
 import { appEventBus, USER_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../utils/eventBus";
-import { getCurrentWeather } from "./owmApiService";
+import { OwmApiService } from "./owmApiService";
 import { IUser } from "../db/models/user";
 import logger from "../utils/logger";
 import { CurrentWeather } from "openweather-api-node";
@@ -12,14 +12,14 @@ export class WeatherPollingService {
     private readonly weatherCache: Map<string, CurrentWeather>;
     private readonly userLocationKeyCache: Map<string, string>;
 
-    constructor() {
+    constructor(private readonly owmApiService: OwmApiService) {
         this.activeLocationPolls = new Map();
         this.locationSubscriptions = new Map();
         this.weatherCache = new Map();
         this.userLocationKeyCache = new Map();
 
         appEventBus.on(USER_UPDATED_EVENT, (user: IUser) => {
-            if (this.userLocationKeyCache.has(user.id)) {
+            if (this.userLocationKeyCache.has(user.uuid)) {
                 this._handleUserUpdate(user);
             }
         });
@@ -92,7 +92,7 @@ export class WeatherPollingService {
         try {
             logger.debug(`Fetching weather data for "${locationKey}"`);
 
-            const weatherData = await getCurrentWeather(lat, lon);
+            const weatherData = await this.owmApiService.getCurrentWeather(lat, lon);
 
             if (!weatherData) return;
 
@@ -112,27 +112,22 @@ export class WeatherPollingService {
 
     private _handleUserUpdate(updatedUser: IUser): void {
         const uuid = updatedUser.uuid;
-
-        const newLat = updatedUser.location.lat;
-        const newLon = updatedUser.location.lon;
-
         const oldKey = this.userLocationKeyCache.get(uuid);
 
-        if (newLat === undefined || newLon === undefined) {
-            if (oldKey) {
-                this._unsubscribeByKey(uuid, oldKey);
-            }
+        if (!oldKey) return;
+
+        if (!updatedUser.location?.lat || !updatedUser.location?.lon) {
+            logger.info(`User ${uuid} has no location after update. Unsubscribing from weather.`);
+            this._unsubscribeByKey(uuid, oldKey);
             return;
         }
 
-        const newKey = this._generateKey(newLat, newLon);
+        const newKey = this._generateKey(updatedUser.location.lat, updatedUser.location.lon);
 
-        if (oldKey && oldKey !== newKey) {
-            logger.info(`Detected location change for user ${uuid} via User-Update.`);
+        if (oldKey !== newKey) {
+            logger.info(`Detected location change for user ${uuid} via User-Update. Re-subscribing.`);
             this._unsubscribeByKey(uuid, oldKey);
-            this.subscribeUser(uuid, newLat, newLon);
-        } else if (!oldKey) {
-            this.subscribeUser(uuid, newLat, newLon);
+            this.subscribeUser(uuid, updatedUser.location.lat, updatedUser.location.lon);
         }
     }
 }

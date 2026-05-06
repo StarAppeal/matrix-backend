@@ -1,10 +1,11 @@
 import express from "express";
 import { asyncHandler } from "./middleware/asyncHandler";
-import { validateLocation } from "../services/owmApiService";
+import { OwmApiService } from "../services/owmApiService";
 import { v, validateQuery } from "./middleware/validate";
 import { ok } from "./utils/responses";
 
 export class RestLocation {
+    constructor(private readonly owmApiService: OwmApiService) {}
 
     public createRouter() {
         const router = express.Router();
@@ -16,7 +17,7 @@ export class RestLocation {
             }),
             asyncHandler(async (_req, res) => {
                 const query = _req.query.q as string;
-                const locations = await validateLocation(query);
+                const locations = await this.owmApiService.validateLocation(query);
                 return ok(res, { locations });
             })
         );
