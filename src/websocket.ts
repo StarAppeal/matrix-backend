@@ -70,6 +70,10 @@ export class ExtendedWebSocketServer {
         return this._wss.clients as Set<ExtendedWebSocket>;
     }
 
+    public closeServer() {
+        this._wss.close();
+    }
+
     private _setupConnectionHandling(): void {
         const serverEventHandler = new WebsocketServerEventHandler(this._wss, this.userService);
 

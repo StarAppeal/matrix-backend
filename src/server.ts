@@ -96,11 +96,9 @@ export class Server {
     public async stop(): Promise<void> {
         logger.info("Shutting down server gracefully...");
         await disconnectFromDatabase();
-        if (this.httpServer) {
-            this.httpServer.close(() => {
-                logger.info("HTTP server closed successfully");
-            });
-        }
+        await new Promise<void>((resolve) => this.httpServer!.close(() => resolve()));
+        this.webSocketServer?.closeServer();
+        logger.info("Server shutdown complete.");
     }
 
     private _setupMiddleware(): void {
