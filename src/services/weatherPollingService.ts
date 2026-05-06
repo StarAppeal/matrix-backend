@@ -19,8 +19,9 @@ export class WeatherPollingService {
         this.userLocationKeyCache = new Map();
 
         appEventBus.on(USER_UPDATED_EVENT, (user: IUser) => {
-            //TODO: fix for now
-            // this._handleUserUpdate(user);
+            if (this.userLocationKeyCache.has(user.id)) {
+                this._handleUserUpdate(user);
+            }
         });
     }
 
@@ -101,7 +102,7 @@ export class WeatherPollingService {
             if (subscribers && subscribers.size > 0) {
                 appEventBus.emit(WEATHER_STATE_UPDATED_EVENT, {
                     weatherData,
-                    subscribers: Array.from(subscribers)
+                    subscribers: Array.from(subscribers),
                 });
             }
         } catch (error) {
@@ -110,10 +111,6 @@ export class WeatherPollingService {
     }
 
     private _handleUserUpdate(updatedUser: IUser): void {
-        // TODO: when user is updated, this will get called
-        // no matter if it wants to pull or not. it just starts polling
-        // event is being emitted via the event bus
-        // fix it. IMPORTANT
         const uuid = updatedUser.uuid;
 
         const newLat = updatedUser.location.lat;
