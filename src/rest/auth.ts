@@ -92,12 +92,12 @@ export class RestAuth {
                 const user = await this.userService.getUserAuthByName(username);
 
                 if (!user) {
-                    return notFound(res, "User not found", { field: "username", code: "INVALID_USER" });
+                    return unauthorized(res, "Invalid credentials");
                 }
 
                 const isValid = await PasswordUtils.comparePassword(password, user.password!);
                 if (!isValid) {
-                    return unauthorized(res, "Invalid password", { field: "password", code: "INVALID_PASSWORD" });
+                    return unauthorized(res, "Invalid credentials");
                 }
 
                 const tokenAgeMs = stayLoggedIn ? MONTH_IN_MS : DAY_IN_MS;

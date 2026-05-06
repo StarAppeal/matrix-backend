@@ -1,10 +1,10 @@
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import express from "express";
-import {RestAuth} from "../../src/rest/auth";
-import {JwtAuthenticator} from "../../src/utils/jwtAuthenticator";
-import {PasswordUtils} from "../../src/utils/passwordUtils";
-import {createMockJwtAuthenticator, createMockUserService, createPublicTestApp} from "../helpers/testSetup";
+import { RestAuth } from "../../src/rest/auth";
+import { JwtAuthenticator } from "../../src/utils/jwtAuthenticator";
+import { PasswordUtils } from "../../src/utils/passwordUtils";
+import { createMockJwtAuthenticator, createMockUserService, createPublicTestApp } from "../helpers/testSetup";
 import crypto from "crypto";
 
 vi.mock("../../src/db/services/db/UserService", () => ({
@@ -34,7 +34,6 @@ describe("RestAuth", () => {
     let mockPasswordUtils: any;
     let mockJwtAuthenticator: any;
     let mockCrypto: any;
-
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -82,11 +81,11 @@ describe("RestAuth", () => {
                     lat: 52.52,
                     lon: 13.405,
                 },
-                config: {isVisible: false, isAdmin: false, canBeModified: false},
+                config: { isVisible: false, isAdmin: false, canBeModified: false },
             };
 
             mockUserService.existsUserByName.mockResolvedValue(false);
-            mockPasswordUtils.validatePassword.mockReturnValue({valid: true});
+            mockPasswordUtils.validatePassword.mockReturnValue({ valid: true });
             mockPasswordUtils.hashPassword.mockResolvedValue(hashedPassword);
             mockCrypto.randomUUID.mockReturnValue(mockUUID);
             mockUserService.createUser.mockResolvedValue(createdUser);
@@ -130,34 +129,31 @@ describe("RestAuth", () => {
             expect(mockPasswordUtils.hashPassword).not.toHaveBeenCalled();
             expect(response.body.data.details.field).toBe("password");
             expect(response.body.data.details.code).toBe("INVALID_PASSWORD_FORMAT");
-
         });
 
-        it.each([
-            {field: "username"},
-            {field: "password"},
-            {field: "timezone"},
-            {field: "location"},
-        ])("should return bad request when $field is missing", async ({field}) => {
-            const invalidData = {...validRegistrationData};
-            delete (invalidData as any)[field];
+        it.each([{ field: "username" }, { field: "password" }, { field: "timezone" }, { field: "location" }])(
+            "should return bad request when $field is missing",
+            async ({ field }) => {
+                const invalidData = { ...validRegistrationData };
+                delete (invalidData as any)[field];
 
-            const response = await request(app).post("/auth/register").send(invalidData).expect(400);
-            expect(response.body.ok).toBe(false);
-            expect(response.body.data.details[0]).toContain(field);
-        });
+                const response = await request(app).post("/auth/register").send(invalidData).expect(400);
+                expect(response.body.ok).toBe(false);
+                expect(response.body.data.details[0]).toContain(field);
+            }
+        );
 
         it.each([
-            {field: "username", value: "", message: "username"},
-            {field: "username", value: "ab", message: "username"},
-            {field: "password", value: "", message: "password"},
-            {field: "password", value: "short", message: "password"},
-            {field: "timezone", value: "", message: "timezone"},
-            {field: "location", value: "", message: "location"},
-        ])("should return bad request for invalid value in $field", async ({field, value, message}) => {
+            { field: "username", value: "", message: "username" },
+            { field: "username", value: "ab", message: "username" },
+            { field: "password", value: "", message: "password" },
+            { field: "password", value: "short", message: "password" },
+            { field: "timezone", value: "", message: "timezone" },
+            { field: "location", value: "", message: "location" },
+        ])("should return bad request for invalid value in $field", async ({ field, value, message }) => {
             const response = await request(app)
                 .post("/auth/register")
-                .send({...validRegistrationData, [field]: value})
+                .send({ ...validRegistrationData, [field]: value })
                 .expect(400);
             expect(response.body.ok).toBe(false);
             expect(response.body.data.details[0]).toContain(message);
@@ -165,10 +161,10 @@ describe("RestAuth", () => {
     });
 
     describe("POST /login", () => {
-        const validLoginData = {username: "testuser", password: "TestPassword123!"};
+        const validLoginData = { username: "testuser", password: "TestPassword123!" };
 
         it("should login successfully with valid credentials", async () => {
-            const mockUser = {name: "testuser", password: "hashed", uuid: "uuid-123", id: "user-id-123"};
+            const mockUser = { name: "testuser", password: "hashed", uuid: "uuid-123", id: "user-id-123" };
             const mockToken = "jwt-token-123";
 
             mockUserService.getUserAuthByName.mockResolvedValue(mockUser);
@@ -179,13 +175,16 @@ describe("RestAuth", () => {
 
             expect(response.body.ok).toBe(true);
             expect(response.body.data.token).toBe(mockToken);
-            expect(mockJwtAuthenticator.generateToken).toHaveBeenCalledWith({
-                username: "testuser",
-                id: "user-id-123",
-                uuid: "uuid-123",
-            }, 24 * 60 * 60 * 1000);
+            expect(mockJwtAuthenticator.generateToken).toHaveBeenCalledWith(
+                {
+                    username: "testuser",
+                    id: "user-id-123",
+                    uuid: "uuid-123",
+                },
+                24 * 60 * 60 * 1000
+            );
 
-            const cookieHeader = response.headers['set-cookie'];
+            const cookieHeader = response.headers["set-cookie"];
             expect(cookieHeader).toBeDefined();
 
             const cookies = Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader!];
@@ -199,7 +198,7 @@ describe("RestAuth", () => {
         });
 
         it("should login with longer token validity when stayLoggedIn is true", async () => {
-            const mockUser = {name: "testuser", password: "hashed", uuid: "uuid-123", id: "user-id-123"};
+            const mockUser = { name: "testuser", password: "hashed", uuid: "uuid-123", id: "user-id-123" };
             const mockToken = "jwt-token-123";
             const loginDataWithStayLoggedIn = { ...validLoginData, stayLoggedIn: true };
 
@@ -211,13 +210,16 @@ describe("RestAuth", () => {
 
             expect(response.body.ok).toBe(true);
             expect(response.body.data.token).toBe(mockToken);
-            expect(mockJwtAuthenticator.generateToken).toHaveBeenCalledWith({
-                username: "testuser",
-                id: "user-id-123",
-                uuid: "uuid-123",
-            }, 30 * 24 * 60 * 60 * 1000);
+            expect(mockJwtAuthenticator.generateToken).toHaveBeenCalledWith(
+                {
+                    username: "testuser",
+                    id: "user-id-123",
+                    uuid: "uuid-123",
+                },
+                30 * 24 * 60 * 60 * 1000
+            );
 
-            const cookieHeader = response.headers['set-cookie'];
+            const cookieHeader = response.headers["set-cookie"];
             expect(cookieHeader).toBeDefined();
 
             const cookies = Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader!];
@@ -233,7 +235,7 @@ describe("RestAuth", () => {
                 expect(response.body.ok).toBe(true);
                 expect(response.body.data.message).toBe("Successfully logged out");
 
-                const cookieHeader = response.headers['set-cookie'];
+                const cookieHeader = response.headers["set-cookie"];
                 expect(cookieHeader).toBeDefined();
                 const cookies = Array.isArray(cookieHeader) ? cookieHeader : [cookieHeader!];
 
@@ -245,32 +247,27 @@ describe("RestAuth", () => {
 
             it("should return not found when user does not exist", async () => {
                 mockUserService.getUserAuthByName.mockResolvedValue(null);
-                const response = await request(app).post("/auth/login").send(validLoginData).expect(404);
+                const response = await request(app).post("/auth/login").send(validLoginData).expect(401);
                 expect(response.body.ok).toBe(false);
-                expect(response.body.data.message).toBe("User not found");
-                expect(response.body.data.details.field).toBe("username")
-                expect(response.body.data.details.code).toBe("INVALID_USER")
-
+                expect(response.body.data.message).toBe("Invalid credentials");
             });
 
             it("should return unauthorized for invalid password", async () => {
-                const mockUser = {name: "testuser", password: "hashed"};
+                const mockUser = { name: "testuser", password: "hashed" };
                 mockUserService.getUserAuthByName.mockResolvedValue(mockUser);
                 mockPasswordUtils.comparePassword.mockResolvedValue(false);
                 const response = await request(app).post("/auth/login").send(validLoginData).expect(401);
                 expect(response.body.ok).toBe(false);
-                expect(response.body.data.message).toBe("Invalid password");
-                expect(response.body.data.details.field).toBe("password")
-                expect(response.body.data.details.code).toBe("INVALID_PASSWORD")
+                expect(response.body.data.message).toBe("Invalid credentials");
             });
 
             it.each([
-                {field: "username", value: ""},
-                {field: "password", value: ""},
-                {field: "username", value: undefined},
-                {field: "password", value: undefined},
-            ])("should return bad request if $field is '$value'", async ({field, value}) => {
-                const invalidData = {...validLoginData};
+                { field: "username", value: "" },
+                { field: "password", value: "" },
+                { field: "username", value: undefined },
+                { field: "password", value: undefined },
+            ])("should return bad request if $field is '$value'", async ({ field, value }) => {
+                const invalidData = { ...validLoginData };
                 if (value === undefined) {
                     delete (invalidData as any)[field];
                 } else {
