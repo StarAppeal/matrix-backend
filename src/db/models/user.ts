@@ -57,19 +57,24 @@ export interface MatrixState {
     music: {
         fullscreen: boolean;
     };
+    game_of_life: {
+        color: [number, number, number];
+        speed: number;
+        cell_size: number;
+    };
 }
 
 const matrixStateSchema = new Schema(
     {
         global: {
-            mode: { type: String, enum: ["image", "text", "idle", "music", "clock"], default: "idle" },
+            mode: { type: String, enum: ["image", "text", "idle", "music", "clock", "game_of_life"], default: "idle" },
             brightness: { type: Number, min: 0, max: 100, default: 50 },
         },
         text: {
             text: { type: String, default: "" },
             align: { type: String, enum: ["left", "center", "right"], default: "center" },
             speed: { type: Number, min: 0, max: 10, default: 3 },
-            size: { type: Number, min: 1, max: 64, default: 12 },
+            size: { type: Number, min: 1, max: 6, default: 3 },
             color: {
                 type: [Number],
                 validate: {
@@ -81,7 +86,7 @@ const matrixStateSchema = new Schema(
             },
         },
         image: {
-            image: { type: String, default: "" },
+            image_url: { type: String, default: "" },
         },
         clock: {
             color: {
@@ -96,6 +101,19 @@ const matrixStateSchema = new Schema(
         },
         music: {
             fullscreen: { type: Boolean, default: false },
+        },
+        game_of_life: {
+            color: {
+                type: [Number],
+                validate: {
+                    validator: (v: number[]) =>
+                        Array.isArray(v) && v.length === 3 && v.every((n) => Number.isInteger(n) && n >= 0 && n <= 255),
+                    message: "color must be an array of three integers between 0 and 255",
+                },
+                default: [255, 255, 255],
+            },
+            speed: { type: Number, min: 0, max: 30, default: 20 },
+            cell_size: { type: Number, min: 1, max: 4, default: 2 },
         },
     },
     { _id: false }
