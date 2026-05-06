@@ -42,7 +42,9 @@ export class SubscribeEvent extends CustomWebsocketEvent<string> {
 
         const service = this.userPollingServices.get(topic);
         if (service) {
-            service.startPollingForUser(uuid);
+            Promise.resolve(service.startPollingForUser(uuid)).catch((err) =>
+                logger.error(`Failed to start polling for user ${uuid} on topic "${topic}":`, err)
+            );
         } else {
             logger.debug(`Unknown subscription topic: ${topic}`);
         }
