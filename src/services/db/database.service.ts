@@ -61,6 +61,6 @@ export async function disconnectFromDatabase(): Promise<void> {
         await mongoose.disconnect();
         isConnected = false;
         connectionPromise = null;
-        console.log("Disconnected from MongoDB.");
+        logger.info("Disconnected from MongoDB.");
     }
 }

@@ -1,5 +1,6 @@
 import OpenWeatherAPI from "openweather-api-node";
 import { find } from "geo-tz";
+import logger from "../utils/logger";
 
 function getWeatherInstance(): OpenWeatherAPI {
     return new OpenWeatherAPI({
@@ -20,10 +21,9 @@ export async function validateLocation(query: string) {
     const weather = getWeatherInstance();
 
     try {
-        console.log(query);
         return await weather.getAllLocations(query);
     } catch (error) {
-        console.error("Geocoding Error", error);
+        logger.error("Geocoding Error", error);
         return [];
     }
 }

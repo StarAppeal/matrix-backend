@@ -1,4 +1,5 @@
 import { CreateUserPayload, IUser, UserModel } from "../../db/models/user";
+import logger from "../../utils/logger";
 
 interface MongooseError extends Error {
     code?: number;
@@ -67,7 +68,7 @@ export class UserService {
                 throw new Error(`ValidationError: ${mongoError.message}`);
             }
 
-            console.error("Error creating user:", error);
+            logger.error("Error creating user:", error);
             throw new Error("User could not be created.");
         }
     }

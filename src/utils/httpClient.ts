@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
+import logger from "./logger";
 
 const userAgent = process.env.APP_USER_AGENT || "LEDMatrixApp/1.0";
 
@@ -62,16 +63,16 @@ export class HttpClient {
             const method = axiosError.config?.method?.toUpperCase() || "Unknown method";
 
             if (axiosError.response) {
-                console.error(`[API Error] ${method} ${url}`);
-                console.error(`Status: ${axiosError.response.status}`);
-                console.error(`Data:`, axiosError.response.data);
+                logger.error(`[API Error] ${method} ${url}`);
+                logger.error(`Status: ${axiosError.response.status}`);
+                logger.error(`Data:`, axiosError.response.data);
             } else if (axiosError.request) {
-                console.error(`[Network Error] ${method} ${url} - No response from server.`);
+                logger.error(`[Network Error] ${method} ${url} - No response from server.`);
             } else {
-                console.error(`[Request Setup Error] ${axiosError.message}`);
+                logger.error(`[Request Setup Error] ${axiosError.message}`);
             }
         } else {
-            console.error(`[Unknown Error]`, error);
+            logger.error(`[Unknown Error]`, error);
         }
     }
 }
