@@ -11,7 +11,7 @@ export class WebsocketEventHandler {
         private readonly musicPollingService: MusicPollingService,
         private readonly weatherPollingService: WeatherPollingService,
         private readonly tamagotchiPollingService: TamagotchiPollingService,
-    ) {}
+    ) { }
 
     public enableErrorEvent() {
         this.webSocket.on("error", (error) => {
@@ -45,11 +45,11 @@ export class WebsocketEventHandler {
             if (!messageJson) {
                 return;
             }
-            const { type } = messageJson;
+            const { type, payload } = messageJson;
             logger.debug(`Received WebSocket message of type "${type}"`, { messageData: messageJson });
 
-            // emit event to the custom event handler
-            this.webSocket.emit(type, messageJson);
+            // emit only the payload — type is already captured in the event name
+            this.webSocket.emit(type, payload);
         });
     }
 
