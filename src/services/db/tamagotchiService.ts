@@ -39,6 +39,7 @@ export class TamagotchiService {
             pet.hunger = Math.max(0, pet.hunger - missedTicks * DECAY_RATES.hunger);
             pet.happiness = Math.max(0, pet.happiness - missedTicks * DECAY_RATES.happiness);
             pet.hygiene = Math.max(0, pet.hygiene - missedTicks * DECAY_RATES.hygiene);
+            pet.energy = Math.max(0, pet.energy - missedTicks * DECAY_RATES.energy);
 
             this.evaluateStatus(pet);
 
@@ -56,6 +57,7 @@ export class TamagotchiService {
         pet.hunger = Math.max(0, pet.hunger - DECAY_RATES.hunger);
         pet.happiness = Math.max(0, pet.happiness - DECAY_RATES.happiness);
         pet.hygiene = Math.max(0, pet.hygiene - DECAY_RATES.hygiene);
+        pet.energy = Math.max(0, pet.energy - DECAY_RATES.energy);
         pet.lastCalculatedAt = new Date();
 
         this.evaluateStatus(pet);
