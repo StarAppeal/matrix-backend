@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import { vi, type Mocked } from "vitest";
 import { PasswordUtils } from "../../src/utils/passwordUtils";
+import { DecodedToken } from "../../src/interfaces/decodedToken";
 
 export const defaultMockPayload = {
     uuid: "test-user-uuid",
@@ -18,8 +19,8 @@ export const createTestApp = (router: Router, basePath: string, payload: object 
     const app = express();
     app.use(express.json());
 
-    app.use((req: any, res, next) => {
-        req.payload = payload;
+    app.use((req, res, next) => {
+        req.payload = <DecodedToken>payload;
         next();
     });
 
