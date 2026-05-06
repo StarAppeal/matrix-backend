@@ -41,7 +41,10 @@ export class WebsocketEventHandler {
     public enableMessageEvent() {
         this.webSocket.on("message", (data) => {
             const message = data.toString();
-            const messageJson = JSON.parse(message);
+            const messageJson = this.validateMessage(message);
+            if (!messageJson) {
+                return;
+            }
             const { type } = messageJson;
             logger.debug(`Received WebSocket message of type "${type}"`, { messageData: messageJson });
 
@@ -62,5 +65,20 @@ export class WebsocketEventHandler {
 
     private registerCustomEvent(customWebsocketEvent: WebsocketEvent) {
         this.webSocket.on(customWebsocketEvent.event, customWebsocketEvent.handler.bind(customWebsocketEvent));
+    }
+
+    private validateMessage(message: string) {
+        let result = undefined;
+        try {
+            result = JSON.parse(message);
+        } catch {
+            logger.warn("Received invalid JSON from client");
+            return;
+        }
+        if (!result || typeof result !== "object" || !("type" in result)) {
+            logger.warn("Malformed WebSocket message structure");
+            return;
+        }
+        return result;
     }
 }
