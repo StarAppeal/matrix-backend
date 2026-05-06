@@ -1,0 +1,7 @@
+export enum WebsocketOutboundType {
+    SETTINGS = "SETTINGS",
+    STATE = "STATE",
+    MUSIC_UPDATE = "MUSIC_UPDATE",
+    WEATHER_UPDATE = "WEATHER_UPDATE",
+    TAMAGOTCHI_UPDATE = "TAMAGOTCHI_UPDATE",
+}

@@ -1,5 +1,6 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
+import { WebsocketOutboundType } from "./websocketOutboundType";
 import logger from "../../../utils/logger";
 
 const DEFAULT_STATE = {
@@ -20,7 +21,7 @@ export class GetStateEvent extends CustomWebsocketEvent {
         // Send state back to client
         this.ws.send(
             JSON.stringify({
-                type: "STATE",
+                type: WebsocketOutboundType.STATE,
                 payload: lastState,
             }),
             { binary: false }

@@ -1,5 +1,6 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
+import { WebsocketOutboundType } from "./websocketOutboundType";
 import logger from "../../../utils/logger";
 import { MusicState } from "../../../interfaces/MusicState";
 
@@ -11,7 +12,7 @@ export class SingleMusicUpdateEvent extends CustomWebsocketEvent<MusicState> {
 
         this.ws.send(
             JSON.stringify({
-                type: "MUSIC_UPDATE",
+                type: WebsocketOutboundType.MUSIC_UPDATE,
                 payload: state,
             }),
             { binary: false }

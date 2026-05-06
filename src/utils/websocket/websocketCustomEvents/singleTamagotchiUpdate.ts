@@ -1,5 +1,6 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
+import { WebsocketOutboundType } from "./websocketOutboundType";
 import logger from "../../../utils/logger";
 import { TamagotchiPayload } from "../../../services/db/tamagotchiService";
 
@@ -11,7 +12,7 @@ export class SingleTamagotchiUpdate extends CustomWebsocketEvent<TamagotchiPaylo
 
         this.ws.send(
             JSON.stringify({
-                type: "TAMAGOTCHI_UPDATE",
+                type: WebsocketOutboundType.TAMAGOTCHI_UPDATE,
                 payload,
             }),
             { binary: false }

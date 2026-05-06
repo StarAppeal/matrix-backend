@@ -1,5 +1,6 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
+import { WebsocketOutboundType } from "./websocketOutboundType";
 import logger from "../../../utils/logger";
 
 export class GetSettingsEvent extends CustomWebsocketEvent {
@@ -11,7 +12,7 @@ export class GetSettingsEvent extends CustomWebsocketEvent {
         // Send settings back to client
         this.ws.send(
             JSON.stringify({
-                type: "SETTINGS",
+                type: WebsocketOutboundType.SETTINGS,
                 payload: {
                     timezone: this.ws.user.timezone,
                 },

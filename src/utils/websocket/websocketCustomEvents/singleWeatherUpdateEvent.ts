@@ -1,5 +1,6 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
+import { WebsocketOutboundType } from "./websocketOutboundType";
 import logger from "../../../utils/logger";
 import { CurrentWeather } from "openweather-api-node";
 
@@ -11,7 +12,7 @@ export class SingleWeatherUpdateEvent extends CustomWebsocketEvent<CurrentWeathe
 
         this.ws.send(
             JSON.stringify({
-                type: "WEATHER_UPDATE",
+                type: WebsocketOutboundType.WEATHER_UPDATE,
                 payload: weatherData,
             }),
             { binary: false }
