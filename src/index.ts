@@ -91,7 +91,8 @@ async function bootstrap() {
     const owmApiService = new OwmApiService(OWM_API_KEY);
     const musicPollingService = new MusicPollingService(userService, lastFmApiService);
     const weatherPollingService = new WeatherPollingService(owmApiService);
-    const tamagotchiPollingService = new TamagotchiPollingService(new TamagotchiService());
+    const tamagotchiService = new TamagotchiService();
+    const tamagotchiPollingService = new TamagotchiPollingService(tamagotchiService);
 
     const jwtAuthenticator = new JwtAuthenticator(SECRET_KEY);
 
@@ -106,6 +107,7 @@ async function bootstrap() {
             userService,
             musicPollingService,
             weatherPollingService,
+            tamagotchiService,
             tamagotchiPollingService,
             jwtAuthenticator,
             lastFmApiService,

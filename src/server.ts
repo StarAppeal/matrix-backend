@@ -25,12 +25,15 @@ import { MusicPollingService } from "./services/musicPollingService";
 import { LastFmApiService } from "./services/lastFmApiService";
 import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { OwmApiService } from "./services/owmApiService";
+import { TamagotchiService } from "./services/db/tamagotchiService";
+import { RestTamagotchi } from "./rest/restTamagotchi";
 
 interface ServerDependencies {
     userService: UserService;
     s3Service: S3Service;
     musicPollingService: MusicPollingService;
     weatherPollingService: WeatherPollingService;
+    tamagotchiService: TamagotchiService;
     tamagotchiPollingService: TamagotchiPollingService;
     jwtAuthenticator: JwtAuthenticator;
     lastFmApiService: LastFmApiService;
@@ -64,6 +67,7 @@ export class Server {
             s3Service,
             musicPollingService,
             weatherPollingService,
+            tamagotchiService,
             tamagotchiPollingService,
             jwtAuthenticator,
             lastFmApiService,
@@ -75,7 +79,7 @@ export class Server {
         watchUserChanges();
 
         this._setupMiddleware();
-        this._setupRoutes(userService, jwtAuthenticator, s3Service, lastFmApiService, owmApiService);
+        this._setupRoutes(userService, jwtAuthenticator, s3Service, lastFmApiService, owmApiService, tamagotchiService);
         this._setupErrorHandling();
 
         this.httpServer = this.app.listen(this.config.port, () => {
@@ -123,6 +127,7 @@ export class Server {
         s3Service: S3Service,
         lastFmApiService: LastFmApiService,
         owmApiService: OwmApiService,
+        tamagotchiService: TamagotchiService,
     ): void {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
@@ -131,6 +136,7 @@ export class Server {
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
         const restLocation = new RestLocation(owmApiService);
+        const restTamagotchi = new RestTamagotchi(tamagotchiService);
 
         this.app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
 
@@ -141,6 +147,7 @@ export class Server {
         this.app.use("/api/jwt", _authenticateJwt, jwtTokenExtractor.createRouter());
         this.app.use("/api/storage", _authenticateJwt, storage.createRouter());
         this.app.use("/api/location", _authenticateJwt, weatherLimiter, restLocation.createRouter());
+        this.app.use("/api/tamagotchi", _authenticateJwt, restTamagotchi.createRouter());
 
         this.app.use("/api/websocket", _authenticateJwt, (req, res, next) => {
             if (this.webSocketServer) {
