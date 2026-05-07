@@ -18,14 +18,15 @@ describe("TamagotchiPollingService", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
-        
+
         mockTamagotchiService = {
             getOrEvaluatePet: vi.fn(),
             processTick: vi.fn(),
             feed: vi.fn(),
             evaluateStatus: vi.fn(),
+            isBusy: vi.fn(),
         } as unknown as Mocked<TamagotchiService>;
-        
+
         TamagotchiService.toPayload = vi.fn().mockReturnValue({
             hunger: 80,
             happiness: 80,
@@ -59,12 +60,14 @@ describe("TamagotchiPollingService", () => {
         mockTamagotchiService.getOrEvaluatePet.mockResolvedValue(mockPet);
         mockTamagotchiService.processTick.mockResolvedValue(mockPet);
 
+        mockTamagotchiService.isBusy.mockReturnValue(false);
+
         await tamagotchiPollingService.startPollingForUser("test-uuid");
-        
+
         await vi.advanceTimersByTimeAsync(TICK_INTERVAL_MS);
 
         expect(mockTamagotchiService.processTick).toHaveBeenCalledWith("test-uuid");
-        
+
         // Initial emit + 1 tick emit
         expect(appEventBus.emit).toHaveBeenCalledTimes(2);
     });
@@ -74,7 +77,7 @@ describe("TamagotchiPollingService", () => {
         mockTamagotchiService.getOrEvaluatePet.mockResolvedValue(mockPet);
 
         await tamagotchiPollingService.startPollingForUser("test-uuid");
-        
+
         tamagotchiPollingService.stopPollingForUser("test-uuid");
         vi.advanceTimersByTime(TICK_INTERVAL_MS);
 
