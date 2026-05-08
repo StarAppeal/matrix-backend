@@ -109,15 +109,15 @@ export class TamagotchiService {
     }
 
     public async feed(uuid: string): Promise<TamagotchiPayload> {
-        return this._executeAction(uuid, TamagotchiState.EATING, { hunger: 30 });
+        return this._executeAction(uuid, TamagotchiState.EATING, { hunger: 25 });
     }
 
     public async play(uuid: string): Promise<TamagotchiPayload> {
-        return this._executeAction(uuid, TamagotchiState.PLAYING, { happiness: 30, energy: -10 });
+        return this._executeAction(uuid, TamagotchiState.PLAYING, { happiness: 35, energy: -15 });
     }
 
     public async clean(uuid: string): Promise<TamagotchiPayload> {
-        return this._executeAction(uuid, TamagotchiState.CLEANING, { hygiene: 30, happiness: 10 });
+        return this._executeAction(uuid, TamagotchiState.CLEANING, { hygiene: 100, happiness: 5 });
     }
 
     public async sleep(uuid: string): Promise<TamagotchiPayload> {
