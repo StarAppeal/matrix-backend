@@ -140,7 +140,7 @@ describe("TamagotchiService", () => {
 
             const pet = await tamagotchiService.feed("test-uuid");
 
-            expect(pet?.hunger).toBe(80);
+            expect(pet?.hunger).toBe(75);
             expect(pet?.status).toBe(TamagotchiState.EATING);
             expect(mockPet.save).toHaveBeenCalled();
         });
@@ -157,13 +157,13 @@ describe("TamagotchiService", () => {
 
     describe("clean", () => {
         it("should increase hygiene and happiness and set state to CLEANING", async () => {
-            const mockPet = createMockPet({ hygiene: 50, happiness: 50 });
+            const mockPet = createMockPet({ hygiene: 0, happiness: 50 });
             vi.mocked(TamagotchiModel.findOne).mockResolvedValue(mockPet as any);
 
             const pet = await tamagotchiService.clean("test-uuid");
 
-            expect(pet?.hygiene).toBe(80);
-            expect(pet?.happiness).toBe(60);
+            expect(pet?.hygiene).toBe(100);
+            expect(pet?.happiness).toBe(55);
             expect(pet?.status).toBe(TamagotchiState.CLEANING);
             expect(mockPet.save).toHaveBeenCalled();
         });
@@ -183,7 +183,7 @@ describe("TamagotchiService", () => {
 
     describe("awake", () => {
         it("should set state to AWAKING immediately and resolve to real state after 4 seconds", async () => {
-            const mockPet = createMockPet({ status: TamagotchiState.SLEEPING });
+            const mockPet = createMockPet({ status: TamagotchiState.SLEEPING, energy: 80 });
             vi.mocked(TamagotchiModel.findOne).mockResolvedValue(mockPet as any);
 
             const emitSpy = vi.spyOn(appEventBus, "emit");
@@ -210,22 +210,47 @@ describe("TamagotchiService", () => {
             expect(pet.status).toBe(TamagotchiState.DEAD);
         });
 
-        it("should be sick if hunger < 30", () => {
+        it("should be sad if hunger < 30", () => {
             const pet = createMockPet({ hunger: 20 });
             tamagotchiService.evaluateStatus(pet as any);
             expect(pet.status).toBe(TamagotchiState.IDLE_SAD);
         });
 
-        it("should be sick if hygiene < 30", () => {
+        it("should be sad if hygiene < 30", () => {
             const pet = createMockPet({ hygiene: 20 });
             tamagotchiService.evaluateStatus(pet as any);
             expect(pet.status).toBe(TamagotchiState.IDLE_SAD);
         });
 
-        it("should preserve SLEEPING state unless dead", () => {
-            const pet = createMockPet({ status: TamagotchiState.SLEEPING, hunger: 20 });
+        it("should preserve SLEEPING state unless DEAD", () => {
+            const pet = createMockPet({ status: TamagotchiState.SLEEPING, hunger: 20, energy: 15 });
             tamagotchiService.evaluateStatus(pet as any);
             expect(pet.status).toBe(TamagotchiState.SLEEPING);
         });
+
+        it("should preserve SLEEPING state unless dead", () => {
+            const pet = createMockPet({ status: TamagotchiState.SLEEPING, hunger: 20, energy: 15 });
+            tamagotchiService.evaluateStatus(pet as any);
+            expect(pet.status).toBe(TamagotchiState.SLEEPING);
+        });
+
+        it("should automatically wake up when energy reaches 100", () => {
+            const pet = createMockPet({ status: TamagotchiState.SLEEPING, energy: 100 });
+            tamagotchiService.evaluateStatus(pet as any);
+            expect(pet.status).toBe(TamagotchiState.AWAKING);
+        });
+
+        it("should be tired when energy below threshhold", () => {
+            const pet = createMockPet({ status: TamagotchiState.IDLE_HAPPY,  energy: 15 });
+            tamagotchiService.evaluateStatus(pet as any);
+            expect(pet.status).toBe(TamagotchiState.IDLE_TIRED);
+        });
+
+        it("should be asleep when energy is zero", () => {
+            const pet = createMockPet({ status: TamagotchiState.IDLE_HAPPY, energy: 0 });
+            tamagotchiService.evaluateStatus(pet as any);
+            expect(pet.status).toBe(TamagotchiState.SLEEPING);
+        });
+
     });
 });
