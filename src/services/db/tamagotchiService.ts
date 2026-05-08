@@ -160,8 +160,13 @@ export class TamagotchiService {
         if (pet.hunger === 0 && pet.happiness === 0) {
             pet.status = TamagotchiState.DEAD;
         } else if (pet.status === TamagotchiState.SLEEPING) {
-            // keep sleeping
-            return;
+            // automatically awake when energy reaches 100
+            if (pet.energy >= 100) {
+                pet.status = TamagotchiState.AWAKING;
+                this._emitTransientAction(pet.uuid, pet, TamagotchiState.AWAKING);
+            }
+        } else if (pet.energy <= 0) {
+            pet.status = TamagotchiState.SLEEPING;
         } else if (pet.hunger < STAT_THRESHOLDS.SAD || pet.hygiene < STAT_THRESHOLDS.SAD) {
             pet.status = TamagotchiState.IDLE_SAD;
         } else if (pet.energy < STAT_THRESHOLDS.TIRED) {
