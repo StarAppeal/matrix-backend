@@ -1,8 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export const TICK_INTERVAL_MS = 60 * 1000;
-export const AWAKE_DECAY_RATES = { hunger: 1, happiness: 1, hygiene: 0.5, energy: 1 };
-export const SLEEPING_DECAY_RATES = { hunger: 2, happiness: 0.6, hygiene: 1, energy: -5 };
+export const AWAKE_DECAY_RATES = { hunger: 0.25, happiness: 0.35, hygiene: 0.15, energy: 0.10 };
+export const SLEEPING_DECAY_RATES = { hunger: 0.05, happiness: 0.05, hygiene: 0.1, energy: -0.21 };
 
 export const STAT_THRESHOLDS = {
     SAD: 30,
