@@ -38,7 +38,7 @@ class FakeWSS {
 
 describe("WebsocketServerEventHandler", () => {
     let wss: FakeWSS;
-    let mockUserService: Mocked<UserService>; // Variable für unseren Mock-Service
+    let mockUserService: Mocked<UserService>;
 
     beforeEach(() => {
         wss = new FakeWSS();

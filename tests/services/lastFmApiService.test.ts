@@ -39,7 +39,7 @@ describe("LastFmApiService", () => {
                                 { "#text": "small.jpg" },
                                 { "#text": "medium.jpg" },
                                 { "#text": "large.jpg" },
-                                { "#text": "extralarge.jpg" }, // Index 3
+                                { "#text": "extralarge.jpg" },
                             ],
                             "@attr": { nowplaying: "true" },
                         },

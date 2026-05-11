@@ -171,7 +171,7 @@ describe("WeatherPollingService", () => {
 
             userUpdateListener(updatedUser);
 
-            expect(subscribeSpy).toHaveBeenCalledTimes(1); // Nur das initiale
+            expect(subscribeSpy).toHaveBeenCalledTimes(1);
         });
     });
 });
