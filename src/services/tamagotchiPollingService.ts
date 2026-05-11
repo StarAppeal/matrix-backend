@@ -1,4 +1,3 @@
-// services/tamagotchiPollingService.ts
 import { appEventBus, TAMAGOTCHI_STATE_UPDATED_EVENT } from "../utils/eventBus";
 import logger from "../utils/logger";
 import { TamagotchiPayload, TamagotchiService } from "./db/tamagotchiService";
