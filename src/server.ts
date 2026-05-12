@@ -27,10 +27,12 @@ import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { OwmApiService } from "./services/owmApiService";
 import { TamagotchiService } from "./services/db/tamagotchiService";
 import { RestTamagotchi } from "./rest/restTamagotchi";
+import { FileService } from "./services/db/fileService";
 
 interface ServerDependencies {
     userService: UserService;
     s3Service: S3Service;
+    fileService: FileService;
     musicPollingService: MusicPollingService;
     weatherPollingService: WeatherPollingService;
     tamagotchiService: TamagotchiService;
@@ -65,6 +67,7 @@ export class Server {
         const {
             userService,
             s3Service,
+            fileService,
             musicPollingService,
             weatherPollingService,
             tamagotchiService,
@@ -75,6 +78,8 @@ export class Server {
         } = this.dependencies;
 
         await s3Service.ensureBucketExists();
+
+        this._runS3MatrixMigration(s3Service, fileService);
 
         watchUserChanges();
 
@@ -127,7 +132,7 @@ export class Server {
         s3Service: S3Service,
         lastFmApiService: LastFmApiService,
         owmApiService: OwmApiService,
-        tamagotchiService: TamagotchiService,
+        tamagotchiService: TamagotchiService
     ): void {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
@@ -201,5 +206,44 @@ export class Server {
             await this.stop();
             process.exit(0);
         });
+    }
+
+//TODO: remove
+    private async _runS3MatrixMigration(s3Service: S3Service, fileService: FileService): Promise<void> {
+        try {
+            const allFiles = await fileService.getAllFiles();
+            if (allFiles.length === 0) return;
+
+            logger.info(`[Migration] Starting S3 migration for ${allFiles.length} files...`);
+
+            let successCount = 0;
+            let skippedCount = 0;
+            let errorCount = 0;
+
+            for (const file of allFiles) {
+                try {
+                    const wasMigrated = await s3Service.migrateFileToIncludeMatrix(file.objectKey, file.mimeType);
+
+                    if (wasMigrated) {
+                        successCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                } catch (error) {
+                    logger.error(`[Migration] Error at ${file.objectKey}:`, error);
+                    errorCount++;
+                }
+            }
+
+            if (successCount > 0 || errorCount > 0) {
+                logger.info(
+                    `[Migration] Done! Successful: ${successCount}, Skipped: ${skippedCount}, Error: ${errorCount}`
+                );
+            } else {
+                logger.info(`[Migration] ${skippedCount} were already updated .`);
+            }
+        } catch (error) {
+            logger.error("[Migration] Critical error running migration:", error);
+        }
     }
 }

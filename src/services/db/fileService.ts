@@ -62,4 +62,8 @@ export class FileService {
     async updateObjectKey(fileId: string, objectKey: string): Promise<File | null> {
         return FileModel.findByIdAndUpdate(fileId, { objectKey }, { new: true }).exec();
     }
+
+    async getAllFiles(): Promise<File[]> {
+        return FileModel.find({}).exec();
+    }
 }

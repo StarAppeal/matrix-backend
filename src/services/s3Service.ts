@@ -4,6 +4,8 @@ import {
     PutObjectCommand,
     GetObjectCommand,
     DeleteObjectCommand,
+    HeadObjectCommand,
+    CopyObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FileService } from "./db/fileService";
@@ -188,5 +190,62 @@ export class S3Service {
             .toBuffer();
 
         return { buffer: resizedBuffer, contentType: outputContentType };
+    }
+
+//TODO: remove
+    public async migrateFileToIncludeMatrix(objectKey: string, mimeType: string): Promise<boolean> {
+        const matrixObjectKey = this.getVariantObjectKey(objectKey, "matrix64");
+
+        try {
+            try {
+                await this.client.send(new HeadObjectCommand({ Bucket: this.bucketName, Key: matrixObjectKey }));
+                return false;
+            } catch (err: any) {
+                if (err.name !== "NotFound") throw err;
+            }
+
+            const getCommand = new GetObjectCommand({ Bucket: this.bucketName, Key: objectKey });
+            const { Body } = await this.client.send(getCommand);
+            if (!Body) throw new Error("Empty body from S3");
+
+            const buffer = Buffer.from(await Body.transformToByteArray());
+
+            await this.client.send(
+                new CopyObjectCommand({
+                    Bucket: this.bucketName,
+                    CopySource: `${this.bucketName}/${objectKey}`,
+                    Key: objectKey,
+                    ContentType: mimeType,
+                    MetadataDirective: "REPLACE",
+                    Metadata: {
+                        matrix64key: matrixObjectKey,
+                        variant: "original",
+                    },
+                })
+            );
+
+            const { buffer: matrixBuffer, contentType: matrixContentType } = await this.createMatrixVariantFromBuffer(
+                buffer,
+                mimeType
+            );
+
+            await this.client.send(
+                new PutObjectCommand({
+                    Bucket: this.bucketName,
+                    Key: matrixObjectKey,
+                    Body: matrixBuffer,
+                    ContentType: matrixContentType,
+                    Metadata: {
+                        sourcekey: objectKey,
+                        variant: "matrix64",
+                    },
+                })
+            );
+
+            return true;
+        } catch (error) {
+            logger.error(`Error migrating ${objectKey}:`, error);
+            throw error;
+        }
     }
 }

@@ -105,6 +105,7 @@ async function bootstrap() {
         {
             s3Service,
             userService,
+            fileService,
             musicPollingService,
             weatherPollingService,
             tamagotchiService,
