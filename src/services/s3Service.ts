@@ -9,6 +9,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FileService } from "./db/fileService";
 import { randomUUID } from "crypto";
 import logger from "../utils/logger";
+import sharp from "sharp";
 
 export interface S3ClientConfig {
     endpoint: string;
@@ -19,6 +20,8 @@ export interface S3ClientConfig {
     region?: string;
     publicUrl: string;
 }
+
+export type S3ObjectVariant = "matrix64" | "original";
 
 export class S3Service {
     private static instance: S3Service;
@@ -74,15 +77,36 @@ export class S3Service {
     async uploadFile(file: Express.Multer.File, userId: string): Promise<string> {
         const uuid = randomUUID();
         const objectKey = `user-${userId}/${uuid}_${file.originalname}`;
+        const matrixObjectKey = this.getVariantObjectKey(objectKey, "matrix64");
+
+        const { buffer: matrixBuffer, contentType: matrixContentType } = await this.createMatrixVariantFromBuffer(
+            file.buffer,
+            file.mimetype
+        );
 
         const command = new PutObjectCommand({
             Bucket: this.bucketName,
             Key: objectKey,
             Body: file.buffer,
             ContentType: file.mimetype,
+            Metadata: {
+                matrix64key: matrixObjectKey,
+                variant: "original",
+            },
         });
 
-        await this.client.send(command);
+        const matrixCommand = new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: matrixObjectKey,
+            Body: matrixBuffer,
+            ContentType: matrixContentType,
+            Metadata: {
+                sourcekey: objectKey,
+                variant: "matrix64",
+            },
+        });
+
+        await Promise.all([this.client.send(command), this.client.send(matrixCommand)]);
 
         await this.fileService.createFileRecord(userId, objectKey, file.originalname, file.mimetype, file.size);
 
@@ -113,14 +137,19 @@ export class S3Service {
             Key: objectKey,
         });
 
-        await this.client.send(command);
+        const matrixCommand = new DeleteObjectCommand({
+            Bucket: this.bucketName,
+            Key: this.getVariantObjectKey(objectKey, "matrix64"),
+        });
+
+        await Promise.all([this.client.send(command), this.client.send(matrixCommand)]);
 
         await this.fileService.deleteFileRecord(objectKey);
 
         logger.info(`File deleted: ${objectKey}`);
     }
 
-    async getSignedDownloadUrl(objectKey: string, expiresIn: number = 60): Promise<string> {
+    async getSignedDownloadUrl(objectKey: string, expiresIn: number = 60, variant?: S3ObjectVariant): Promise<string> {
         // temporary client for public url
         const signingClient = new S3Client({
             endpoint: this.publicUrl,
@@ -131,9 +160,33 @@ export class S3Service {
 
         const command = new GetObjectCommand({
             Bucket: this.bucketName,
-            Key: objectKey,
+            Key: this.getVariantObjectKey(objectKey, variant),
         });
 
         return await getSignedUrl(signingClient, command, { expiresIn });
+    }
+
+    private getVariantObjectKey(objectKey: string, variant?: S3ObjectVariant): string {
+        if (!variant || variant === "original") {
+            return objectKey;
+        }
+        return `${objectKey}_${variant}`;
+    }
+
+    private async createMatrixVariantFromBuffer(
+        buffer: Buffer,
+        mimeType: string
+    ): Promise<{ buffer: Buffer; contentType: string }> {
+        const isGif = mimeType === "image/gif";
+        const image = isGif ? sharp(buffer, { animated: true }) : sharp(buffer);
+        const outputFormat = isGif ? "gif" : "png";
+        const outputContentType = isGif ? "image/gif" : "image/png";
+
+        const resizedBuffer = await image
+            .resize({ width: 64, height: 64, fit: "inside" })
+            .toFormat(outputFormat)
+            .toBuffer();
+
+        return { buffer: resizedBuffer, contentType: outputContentType };
     }
 }
