@@ -1,18 +1,24 @@
-import {describe, it, expect, vi, beforeEach, type Mocked} from "vitest";
-import {Server} from "http";
-import {WebSocket, Server as WebSocketServer} from "ws";
-import {ExtendedWebSocketServer} from "../src/websocket";
-import {WebsocketServerEventHandler} from "../src/utils/websocket/websocketServerEventHandler";
-import {WebsocketEventHandler} from "../src/utils/websocket/websocketEventHandler";
-import {getEventListeners} from "../src/utils/websocket/websocketCustomEvents/websocketEventUtils";
-// @ts-ignore
-import {createMockJwtAuthenticator, createMockUserService} from "./helpers/testSetup";
-import {UserService} from "../src/services/db/UserService";
+import { describe, it, expect, vi, beforeEach, type Mocked } from "vitest";
+import { Server } from "http";
+import { WebSocket, Server as WebSocketServer } from "ws";
+import { ExtendedWebSocketServer } from "../src/websocket";
+import { WebsocketServerEventHandler } from "../src/utils/websocket/websocketServerEventHandler";
+import { WebsocketEventHandler } from "../src/utils/websocket/websocketEventHandler";
+import { getEventListeners } from "../src/utils/websocket/websocketCustomEvents/websocketEventUtils";
+import { createMockJwtAuthenticator, createMockUserService } from "./helpers/testSetup";
+import { UserService } from "../src/services/db/UserService";
 import { MusicPollingService } from "../src/services/musicPollingService";
-import { USER_UPDATED_EVENT, MUSIC_STATE_UPDATED_EVENT, WEATHER_STATE_UPDATED_EVENT } from "../src/utils/eventBus";
-import {WebsocketEventType} from "../src/utils/websocket/websocketCustomEvents/websocketEventType";
-import {WeatherPollingService} from "../src/services/weatherPollingService";
+import {
+    appEventBus,
+    USER_UPDATED_EVENT,
+    MUSIC_STATE_UPDATED_EVENT,
+    WEATHER_STATE_UPDATED_EVENT,
+    COMMAND_SEND_STATE,
+    COMMAND_SEND_SETTINGS,
+} from "../src/utils/eventBus";
+import { WeatherPollingService } from "../src/services/weatherPollingService";
 import { TamagotchiPollingService } from "../src/services/tamagotchiPollingService";
+import { S3Service } from "../src/services/s3Service";
 
 let mockWssInstance: Mocked<WebSocketServer>;
 let mockServerEventHandler: Mocked<WebsocketServerEventHandler>;
@@ -30,11 +36,13 @@ vi.mock("../src/utils/eventBus", () => ({
     MUSIC_STATE_UPDATED_EVENT: "music:state-updated",
     WEATHER_STATE_UPDATED_EVENT: "weather-state:updated",
     TAMAGOTCHI_STATE_UPDATED_EVENT: "tamagotchi-state:updated",
+    COMMAND_SEND_STATE: "command:send-state",
+    COMMAND_SEND_SETTINGS: "command:send-settings",
 }));
 
 vi.mock("ws", () => ({
     Server: vi.fn().mockImplementation(() => mockWssInstance),
-    WebSocket: {OPEN: 1, CLOSED: 3},
+    WebSocket: { OPEN: 1, CLOSED: 3 },
 }));
 
 vi.mock("../src/utils/verifyClient");
@@ -48,9 +56,10 @@ describe("ExtendedWebSocketServer", () => {
     let mockHttpServer: Mocked<Server>;
     let extendedWss: ExtendedWebSocketServer;
     let mockUserService: Mocked<UserService>;
-    let mockMusicPollingService: Mocked<MusicPollingService>
+    let mockMusicPollingService: Mocked<MusicPollingService>;
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
     let mockTamagotchiPollingService: Mocked<TamagotchiPollingService>;
+    let mockS3Service: Mocked<S3Service>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -84,6 +93,10 @@ describe("ExtendedWebSocketServer", () => {
             stopPollingForUser: vi.fn(),
         } as unknown as Mocked<TamagotchiPollingService>;
 
+        mockS3Service = {
+            getSignedDownloadUrl: vi.fn(),
+        } as unknown as Mocked<S3Service>;
+
         mockUserService = createMockUserService();
 
         extendedWss = new ExtendedWebSocketServer(
@@ -92,6 +105,7 @@ describe("ExtendedWebSocketServer", () => {
             mockMusicPollingService,
             mockWeatherPollingService,
             mockTamagotchiPollingService,
+            mockS3Service,
             createMockJwtAuthenticator() as any
         );
     });
@@ -119,24 +133,24 @@ describe("ExtendedWebSocketServer", () => {
 
     describe("broadcast", () => {
         it("should send a message to all connected clients that are OPEN", () => {
-            const client1 = {readyState: WebSocket.OPEN, send: vi.fn()};
-            const client2 = {readyState: WebSocket.CLOSED, send: vi.fn()};
+            const client1 = { readyState: WebSocket.OPEN, send: vi.fn() };
+            const client2 = { readyState: WebSocket.CLOSED, send: vi.fn() };
             mockWssInstance.clients.add(client1 as any).add(client2 as any);
             extendedWss.broadcast("hello");
-            expect(client1.send).toHaveBeenCalledWith("hello", {binary: false});
+            expect(client1.send).toHaveBeenCalledWith("hello", { binary: false });
             expect(client2.send).not.toHaveBeenCalled();
         });
     });
 
     describe("sendMessageToUser", () => {
         it("should send a message to a specific user by their UUID", () => {
-            const client1 = {readyState: WebSocket.OPEN, payload: {uuid: "uuid-1"}, send: vi.fn(), emit: vi.fn()};
-            const client2 = {readyState: WebSocket.OPEN, payload: {uuid: "uuid-2"}, send: vi.fn(), emit: vi.fn()};
+            const client1 = { readyState: WebSocket.OPEN, payload: { uuid: "uuid-1" }, user: { uuid: "uuid-1" }, send: vi.fn(), emit: vi.fn() };
+            const client2 = { readyState: WebSocket.OPEN, payload: { uuid: "uuid-2" },user: { uuid: "uuid-2" }, send: vi.fn(), emit: vi.fn() };
             const connectionHandler = vi.mocked(mockServerEventHandler.enableConnectionEvent).mock.calls[0][0];
             connectionHandler(client1 as any, {} as any);
             connectionHandler(client2 as any, {} as any);
             extendedWss.sendMessageToUser("uuid-1", "private");
-            expect(client1.send).toHaveBeenCalledWith("private", {binary: false});
+            expect(client1.send).toHaveBeenCalledWith("private", { binary: false });
             expect(client2.send).not.toHaveBeenCalled();
         });
     });
@@ -149,7 +163,13 @@ describe("ExtendedWebSocketServer", () => {
         beforeEach(() => {
             connectionHandler = vi.mocked(mockServerEventHandler.enableConnectionEvent).mock.calls[0][0];
             mockWsClient = {
-                emit: vi.fn(), on: vi.fn(), user: {lastState: {global: {mode: "idle"}}},
+                emit: vi.fn(),
+                on: vi.fn(),
+                payload: { uuid: "user-123" },
+                user: {
+                    uuid: "user-123",
+                    lastState: { global: { mode: "idle" } },
+                },
             };
             mockClientEventHandler = {
                 enableErrorEvent: vi.fn(),
@@ -160,7 +180,7 @@ describe("ExtendedWebSocketServer", () => {
             } as unknown as Mocked<WebsocketEventHandler>;
 
             vi.mocked(WebsocketEventHandler).mockImplementation(() => mockClientEventHandler);
-            vi.mocked(getEventListeners).mockReturnValue([{event: "custom", handler: vi.fn()} as any]);
+            vi.mocked(getEventListeners).mockReturnValue([{ event: "custom", handler: vi.fn() } as any]);
         });
 
         it("should create and configure a WebsocketEventHandler for new clients", () => {
@@ -178,10 +198,12 @@ describe("ExtendedWebSocketServer", () => {
             expect(mockClientEventHandler.registerCustomEvents).toHaveBeenCalled();
         });
 
-        it("should emit initial events to the new client", () => {
+        it("should trigger initial commands via appEventBus for the new client", () => {
+            vi.mocked(appEventBus.emit).mockClear();
             connectionHandler(mockWsClient, {});
-            expect(mockWsClient.emit).toHaveBeenCalledWith("GET_STATE", {});
-            expect(mockWsClient.emit).toHaveBeenCalledWith("GET_SETTINGS", {});
+
+            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_STATE, { uuid: "user-123" });
+            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_SETTINGS, { uuid: "user-123" });
         });
 
         it("should handle disconnect correctly and unsubscribe from polling services", () => {
@@ -208,12 +230,12 @@ describe("ExtendedWebSocketServer", () => {
         beforeEach(() => {
             mockClient = {
                 readyState: WebSocket.OPEN,
-                payload: {uuid: "user-123"},
+                payload: { uuid: "user-123" },
+                user: { uuid: "user-123" },
                 send: vi.fn(),
                 emit: vi.fn(),
             };
-            const connectionHandler =
-                vi.mocked(mockServerEventHandler.enableConnectionEvent).mock.calls[0][0];
+            const connectionHandler = vi.mocked(mockServerEventHandler.enableConnectionEvent).mock.calls[0][0];
             connectionHandler(mockClient, {} as any);
         });
 
@@ -223,7 +245,7 @@ describe("ExtendedWebSocketServer", () => {
 
             vi.mocked(mockClient.emit).mockClear();
 
-            const updatedUserPayload = {uuid: "user-123", name: "Neuer Name"};
+            const updatedUserPayload = { uuid: "user-123", name: "Neuer Name" };
 
             userUpdateListener!(updatedUserPayload);
 
@@ -231,14 +253,14 @@ describe("ExtendedWebSocketServer", () => {
             expect(mockClient.user).toEqual(updatedUserPayload);
         });
 
-        it("should listen for music_STATE_UPDATED_EVENT and send to the correct client", () => {
+        it("should listen for MUSIC_STATE_UPDATED_EVENT and send to the correct client", () => {
             const musicStateListener = eventBusListeners.get(MUSIC_STATE_UPDATED_EVENT);
             expect(musicStateListener).toBeDefined();
 
             vi.mocked(mockClient.emit).mockClear();
 
-            const musicUpdatePayload = {state: {item: {name: "Neuer Song"}}};
-            const eventPayload = {uuid: "user-123", ...musicUpdatePayload};
+            const musicUpdatePayload = { state: { item: { name: "Neuer Song" } } };
+            const eventPayload = { uuid: "user-123", ...musicUpdatePayload };
 
             musicStateListener!(eventPayload);
 
@@ -255,8 +277,8 @@ describe("ExtendedWebSocketServer", () => {
 
             vi.mocked(mockClient.emit).mockClear();
 
-            const weatherUpdatePayload = {weatherData: {timezone: "Europe/Berlin", weather: {temp: 20}}};
-            const eventPayload = {subscribers: ["user-123"], ...weatherUpdatePayload};
+            const weatherUpdatePayload = { weatherData: { timezone: "Europe/Berlin", weather: { temp: 20 } } };
+            const eventPayload = { subscribers: ["user-123"], ...weatherUpdatePayload };
 
             weatherStateListener!(eventPayload);
 
@@ -274,10 +296,9 @@ describe("ExtendedWebSocketServer", () => {
             vi.mocked(mockClient.send).mockClear();
             vi.mocked(mockClient.emit).mockClear();
 
-            const eventPayload = {uuid: "user-unknown", name: "some data"};
+            const eventPayload = { uuid: "user-unknown", name: "some data" };
 
             userUpdateListener!(eventPayload);
-
             musicStateListener!(eventPayload);
 
             expect(mockClient.send).not.toHaveBeenCalled();

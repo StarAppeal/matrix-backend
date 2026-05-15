@@ -4,9 +4,10 @@ import { verifyClient } from "./utils/verifyClient";
 import { ExtendedWebSocket } from "./interfaces/extendedWebsocket";
 import { WebsocketServerEventHandler } from "./utils/websocket/websocketServerEventHandler";
 import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
-import { WebsocketEventType } from "./utils/websocket/websocketCustomEvents/websocketEventType";
 import {
     appEventBus,
+    COMMAND_SEND_STATE,
+    COMMAND_SEND_SETTINGS,
     MUSIC_STATE_UPDATED_EVENT,
     TAMAGOTCHI_STATE_UPDATED_EVENT,
     USER_UPDATED_EVENT,
@@ -20,6 +21,8 @@ import { WeatherPollingService } from "./services/weatherPollingService";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import logger from "./utils/logger";
 import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
+import { WebsocketClientService } from "./services/websocketClientService";
+import { S3Service } from "./services/s3Service";
 
 export class ExtendedWebSocketServer {
     private readonly uuidClientMap = new Map<string, ExtendedWebSocket>();
@@ -29,6 +32,7 @@ export class ExtendedWebSocketServer {
     private readonly musicPollingService: MusicPollingService;
     private readonly weatherPollingService: WeatherPollingService;
     private readonly tamagotchiPollingService: TamagotchiPollingService;
+    private readonly s3Service: S3Service;
 
     constructor(
         server: Server,
@@ -36,12 +40,14 @@ export class ExtendedWebSocketServer {
         musicPollingService: MusicPollingService,
         weatherPollingService: WeatherPollingService,
         tamagotchiPollingService: TamagotchiPollingService,
+        s3Service: S3Service,
         jwtAuthenticator: JwtAuthenticator
     ) {
         this.userService = userService;
         this.musicPollingService = musicPollingService;
         this.weatherPollingService = weatherPollingService;
         this.tamagotchiPollingService = tamagotchiPollingService;
+        this.s3Service = s3Service;
 
         this._wss = new WebSocketServer({
             server,
@@ -120,52 +126,63 @@ export class ExtendedWebSocketServer {
         });
 
         // send initial state and settings
-        ws.emit(WebsocketEventType.GET_SETTINGS, {});
-        ws.emit(WebsocketEventType.GET_STATE, {});
+        appEventBus.emit(COMMAND_SEND_STATE, { uuid: ws.user.uuid });
+        appEventBus.emit(COMMAND_SEND_SETTINGS, { uuid: ws.user.uuid });
     }
 
     private _listenForAppEvents(): void {
         appEventBus.on(USER_UPDATED_EVENT, (user: IUser) => {
             logger.debug(`Received update for user ${user.uuid}`);
-            const client = this._findClientByUUID(user.uuid);
-            if (client) {
-                client.user = user;
-                logger.debug(`User ${user.uuid} updated successfully`);
-            }
+            this._withClientService(user.uuid, (clientService) => clientService.updateUser(user));
         });
 
         appEventBus.on(MUSIC_STATE_UPDATED_EVENT, ({ uuid, state }) => {
-            const client = this._findClientByUUID(uuid);
             logger.debug(`Received update for user ${uuid}`);
-            if (client && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: WebsocketOutboundType.MUSIC_UPDATE, payload: state }), {
-                    binary: false,
-                });
-            }
+            this._withClientService(uuid, (service) => service.sendPayload(WebsocketOutboundType.MUSIC_UPDATE, state));
         });
 
         appEventBus.on(WEATHER_STATE_UPDATED_EVENT, ({ weatherData, subscribers }) => {
             for (const uuid of subscribers) {
-                const client = this._findClientByUUID(uuid);
-                if (client && client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ type: WebsocketOutboundType.WEATHER_UPDATE, payload: weatherData }), {
-                        binary: false,
-                    });
-                }
+                logger.debug(`Received update for user ${uuid}`);
+                this._withClientService(uuid, (service) =>
+                    service.sendPayload(WebsocketOutboundType.WEATHER_UPDATE, weatherData)
+                );
             }
         });
 
         appEventBus.on(TAMAGOTCHI_STATE_UPDATED_EVENT, ({ uuid, payload }) => {
-            const client = this._findClientByUUID(uuid);
-            if (client && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: WebsocketOutboundType.TAMAGOTCHI_UPDATE, payload: payload }), {
-                    binary: false,
-                });
-            }
+            logger.debug(`Received update for user ${uuid}`);
+            this._withClientService(uuid, (service) =>
+                service.sendPayload(WebsocketOutboundType.TAMAGOTCHI_UPDATE, payload)
+            );
+        });
+
+        appEventBus.on(COMMAND_SEND_STATE, ({ uuid }) => {
+            logger.debug(`Received update for user ${uuid}`);
+            this._withClientService(uuid, async (service) => {
+                const hydratedState = await service.getHydratedState(this.s3Service);
+                service.sendPayload(WebsocketOutboundType.STATE, hydratedState);
+            });
+        });
+
+        appEventBus.on(COMMAND_SEND_SETTINGS, ({ uuid }) => {
+            logger.debug(`Received update for user ${uuid}`);
+            this._withClientService(uuid, (service) => {
+                const payload = service.getSettings();
+
+                service.sendPayload(WebsocketOutboundType.SETTINGS, payload);
+            });
         });
     }
 
     private _findClientByUUID(uuid: string): ExtendedWebSocket | undefined {
         return this.uuidClientMap.get(uuid);
+    }
+
+    private _withClientService(uuid: string, action: (service: WebsocketClientService) => void | Promise<void>): void {
+        const client = this._findClientByUUID(uuid);
+        if (client && client.readyState === WebSocket.OPEN) {
+            action(new WebsocketClientService(client));
+        }
     }
 }

@@ -7,6 +7,7 @@ import { UnsubscribeEvent } from "../../../../src/utils/websocket/websocketCusto
 import { MusicPollingService } from "../../../../src/services/musicPollingService";
 import { TamagotchiPollingService } from "../../../../src/services/tamagotchiPollingService";
 // @ts-ignore
+import { appEventBus, COMMAND_SEND_STATE, COMMAND_SEND_SETTINGS } from "../../../../src/utils/eventBus";
 import { createMockMusicPollingService, createMockOwmApiService } from "../../../helpers/testSetup";
 import { ErrorEvent } from "../../../../src/utils/websocket/websocketCustomEvents/errorEvent";
 import { WeatherPollingService } from "../../../../src/services/weatherPollingService";
@@ -43,6 +44,14 @@ vi.mock("../../../../src/utils/logger", () => ({
     },
 }));
 
+vi.mock("../../../../src/utils/eventBus", () => ({
+    appEventBus: {
+        emit: vi.fn(),
+    },
+    COMMAND_SEND_STATE: "command:send-state",
+    COMMAND_SEND_SETTINGS: "command:send-settings",
+}));
+
 describe("WebSocket Custom Event Handlers", () => {
     let mockmusicPollingService: Mocked<MusicPollingService>;
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
@@ -63,46 +72,31 @@ describe("WebSocket Custom Event Handlers", () => {
     });
 
     describe("GetStateEvent", () => {
-        it("should send the user's lastState when its handler is called", async () => {
-            const mockLastState = { global: { mode: "music", brightness: 100 } };
-            const mockWs = createMockWebSocket({ lastState: mockLastState });
+        it("should emit COMMAND_SEND_STATE to the EventBus", async () => {
+            const mockWs = createMockWebSocket({ uuid: "user-123" });
+            vi.mocked(appEventBus.emit).mockClear();
 
             const event = new GetStateEvent(mockWs);
             await event.handler();
 
-            expect(mockWs.send).toHaveBeenCalledOnce();
-            expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify({ type: "STATE", payload: mockLastState }), {
-                binary: false,
-            });
+            expect(appEventBus.emit).toHaveBeenCalledOnce();
+            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_STATE, { uuid: "user-123" });
+            expect(mockWs.send).not.toHaveBeenCalled();
         });
 
-        it("should send default state if user has no lastState", async () => {
-            const mockWs = createMockWebSocket({ lastState: undefined });
-
-            const event = new GetStateEvent(mockWs);
-            await event.handler();
-
-            expect(mockWs.send).toHaveBeenCalledOnce();
-            expect(mockWs.send).toHaveBeenCalledWith(
-                JSON.stringify({ type: "STATE", payload: { global: { mode: "idle", brightness: 100 } } }),
-                { binary: false }
-            );
-        });
     });
 
     describe("GetSettingsEvent", () => {
-        it("should send the user's settings when its handler is called", async () => {
-            const mockTimezone = "America/New_York";
-            const mockWs = createMockWebSocket({ timezone: mockTimezone });
+        it("should emit COMMAND_SEND_SETTINGS to the EventBus", async () => {
+            const mockWs = createMockWebSocket({ uuid: "user-123" });
+            vi.mocked(appEventBus.emit).mockClear();
 
             const event = new GetSettingsEvent(mockWs);
             await event.handler();
 
-            expect(mockWs.send).toHaveBeenCalledOnce();
-            expect(mockWs.send).toHaveBeenCalledWith(
-                JSON.stringify({ type: "SETTINGS", payload: { timezone: mockTimezone } }),
-                { binary: false }
-            );
+            expect(appEventBus.emit).toHaveBeenCalledOnce();
+            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_SETTINGS, { uuid: "user-123" });
+            expect(mockWs.send).not.toHaveBeenCalled();
         });
     });
 

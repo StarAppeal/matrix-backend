@@ -1,7 +1,7 @@
 import { CustomWebsocketEvent } from "./customWebsocketEvent";
 import { WebsocketEventType } from "./websocketEventType";
-import { WebsocketOutboundType } from "./websocketOutboundType";
 import logger from "../../../utils/logger";
+import { appEventBus, COMMAND_SEND_SETTINGS } from "../../eventBus";
 
 export class GetSettingsEvent extends CustomWebsocketEvent {
     event = WebsocketEventType.GET_SETTINGS;
@@ -9,15 +9,6 @@ export class GetSettingsEvent extends CustomWebsocketEvent {
     handler = async () => {
         logger.debug(`User ${this.ws.payload?.username} requested settings`);
 
-        // Send settings back to client
-        this.ws.send(
-            JSON.stringify({
-                type: WebsocketOutboundType.SETTINGS,
-                payload: {
-                    timezone: this.ws.user.timezone,
-                },
-            }),
-            { binary: false }
-        );
+        appEventBus.emit(COMMAND_SEND_SETTINGS, { uuid: this.ws.user.uuid });
     };
 }

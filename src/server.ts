@@ -98,6 +98,7 @@ export class Server {
             musicPollingService,
             weatherPollingService,
             tamagotchiPollingService,
+            s3Service,
             jwtAuthenticator
         );
 
