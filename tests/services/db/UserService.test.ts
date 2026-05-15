@@ -29,7 +29,6 @@ describe("UserService", () => {
         userService = new UserService();
     });
 
-
     describe("updateUserById", () => {
         it("should update user by id and return updated user without password", async () => {
             const userId = "507f1f77bcf86cd799439011";
@@ -60,7 +59,7 @@ describe("UserService", () => {
 
             const result = await userService.getAllUsers();
 
-            expect(mockedUserModel.find).toHaveBeenCalledWith({}, { lastState: 0 });
+            expect(mockedUserModel.find).toHaveBeenCalledWith({ isDeleted: { $ne: true } });
             expect(result).toEqual(users);
         });
     });
@@ -92,7 +91,7 @@ describe("UserService", () => {
 
             const result = await userService.getUserByUUID("uuid-123");
 
-            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ uuid: "uuid-123" });
+            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ isDeleted: { $ne: true }, uuid: "uuid-123" });
             expect(result).toEqual(user);
         });
     });
@@ -105,7 +104,7 @@ describe("UserService", () => {
 
             const result = await userService.getUserByName("TestUser");
 
-            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ name: "TestUser" });
+            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ isDeleted: { $ne: true }, name: "TestUser" });
             expect(mockQuery.collation).toHaveBeenCalledWith({ locale: "en", strength: 2 });
             expect(result).toEqual(user);
         });
@@ -119,7 +118,7 @@ describe("UserService", () => {
 
             const result = await userService.getUserAuthByName("TestUser");
 
-            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ name: "TestUser" });
+            expect(mockedUserModel.findOne).toHaveBeenCalledWith({ isDeleted: { $ne: true }, name: "TestUser" });
             expect(mockQuery.collation).toHaveBeenCalledWith({ locale: "en", strength: 2 });
             expect(mockQuery.select).toHaveBeenCalledWith("+password");
             expect(result).toEqual(user);
@@ -153,7 +152,10 @@ describe("UserService", () => {
 
             const result = await userService.existsUserByName("ExistingUser");
 
-            expect(mockedUserModel.countDocuments).toHaveBeenCalledWith({ name: "ExistingUser" });
+            expect(mockedUserModel.countDocuments).toHaveBeenCalledWith({
+                isDeleted: { $ne: true },
+                name: "ExistingUser",
+            });
             expect(result).toBe(true);
         });
 
