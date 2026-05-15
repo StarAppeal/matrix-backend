@@ -158,9 +158,10 @@ export class ExtendedWebSocketServer {
             );
         });
 
-        appEventBus.on(COMMAND_SEND_STATE, ({ uuid, state }) => {
-            const hydratedState = new StateUtils(state).hydrate(this.s3Service);
+        appEventBus.on(COMMAND_SEND_STATE, async ({ uuid, state }) => {
+            const hydratedState = await (new StateUtils(state).hydrate(this.s3Service));
             logger.debug(`Received update for user ${uuid}`);
+
             this._withClientService(uuid, async (service) => {
                 service.sendPayload(WebsocketOutboundType.STATE, hydratedState);
             });
