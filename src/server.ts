@@ -139,7 +139,7 @@ export class Server {
         const _authenticateJwt = authenticateJwt(jwtAuthenticator);
 
         const restAuth = new RestAuth(userService, jwtAuthenticator);
-        const restUser = new RestUser(userService, lastFmApiService, owmApiService, () => this.webSocketServer);
+        const restUser = new RestUser(userService, lastFmApiService, owmApiService);
         const jwtTokenExtractor = new JwtTokenPropertiesExtractor();
         const storage = new RestStorage(s3Service);
         const restLocation = new RestLocation(owmApiService);

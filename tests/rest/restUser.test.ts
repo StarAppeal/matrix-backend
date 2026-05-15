@@ -56,10 +56,10 @@ describe("RestUser", () => {
         };
 
         const restUser = new RestUser(
+            // @ts-ignore
             mockedUserService,
             mockedLastFmApiService as any,
             mockOwmApiService as any,
-            () => createMockWebSocketServer() as any
         );
         testEnv = setupTestEnvironment(restUser.createRouter(), "/user");
     });

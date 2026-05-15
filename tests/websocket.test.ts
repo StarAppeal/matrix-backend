@@ -97,6 +97,7 @@ describe("ExtendedWebSocketServer", () => {
             getSignedDownloadUrl: vi.fn(),
         } as unknown as Mocked<S3Service>;
 
+        // @ts-ignore
         mockUserService = createMockUserService();
 
         extendedWss = new ExtendedWebSocketServer(
