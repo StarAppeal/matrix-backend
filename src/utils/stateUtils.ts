@@ -23,7 +23,7 @@ export class StateUtils {
 
         if (state.global?.mode === "image" && state.image?.s3_key) {
             try {
-                state.image.image_url = await s3Service.getSignedDownloadUrl(state.image.s3_key, 60);
+                state.image.image_url = await s3Service.getSignedDownloadUrl(state.image.s3_key, 60, "matrix64");
             } catch (e) {
                 logger.error(`Failed to generate S3 URL for key ${state.image.s3_key}`, e);
             }

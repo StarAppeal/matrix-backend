@@ -43,7 +43,7 @@ describe("WebsocketClientService", () => {
 
             const state = (await stateUtils.hydrate(mockS3Service)) as any;
 
-            expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledWith("users/user-123/img.gif", 60);
+            expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledWith("users/user-123/img.gif", 60, "matrix64");
             expect(state.image.image_url).toBe("https://s3.example.com/presigned-url");
         });
 
