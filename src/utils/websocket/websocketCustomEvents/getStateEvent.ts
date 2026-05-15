@@ -9,6 +9,6 @@ export class GetStateEvent extends CustomWebsocketEvent {
     handler = async () => {
         logger.debug(`User ${this.ws.payload?.username} requested state information`);
 
-        appEventBus.emit(COMMAND_SEND_STATE, { uuid: this.ws.user.uuid });
+        appEventBus.emit(COMMAND_SEND_STATE, { uuid: this.ws.user.uuid, state: this.ws.user.lastState });
     };
 }

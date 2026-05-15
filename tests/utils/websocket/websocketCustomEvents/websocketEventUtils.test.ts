@@ -80,10 +80,12 @@ describe("WebSocket Custom Event Handlers", () => {
             await event.handler();
 
             expect(appEventBus.emit).toHaveBeenCalledOnce();
-            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_STATE, { uuid: "user-123" });
+            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_STATE, {
+                uuid: "user-123",
+                state: mockWs.user.lastState,
+            });
             expect(mockWs.send).not.toHaveBeenCalled();
         });
-
     });
 
     describe("GetSettingsEvent", () => {

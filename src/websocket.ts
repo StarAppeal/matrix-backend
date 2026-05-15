@@ -23,6 +23,7 @@ import logger from "./utils/logger";
 import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { WebsocketClientService } from "./services/websocketClientService";
 import { S3Service } from "./services/s3Service";
+import { StateUtils } from "./utils/stateUtils";
 
 export class ExtendedWebSocketServer {
     private readonly uuidClientMap = new Map<string, ExtendedWebSocket>();
@@ -157,10 +158,10 @@ export class ExtendedWebSocketServer {
             );
         });
 
-        appEventBus.on(COMMAND_SEND_STATE, ({ uuid }) => {
+        appEventBus.on(COMMAND_SEND_STATE, ({ uuid, state }) => {
+            const hydratedState = new StateUtils(state).hydrate(this.s3Service);
             logger.debug(`Received update for user ${uuid}`);
             this._withClientService(uuid, async (service) => {
-                const hydratedState = await service.getHydratedState(this.s3Service);
                 service.sendPayload(WebsocketOutboundType.STATE, hydratedState);
             });
         });

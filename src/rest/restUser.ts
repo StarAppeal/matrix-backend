@@ -11,17 +11,12 @@ import { LastFmApiService } from "../services/lastFmApiService";
 import { OwmApiService } from "../services/owmApiService";
 import { appEventBus, COMMAND_SEND_STATE } from "../utils/eventBus";
 
-
 export class RestUser {
     private readonly userService: UserService;
     private readonly lastFmApiService: LastFmApiService;
     private readonly owmApiService: OwmApiService;
 
-    constructor(
-        userService: UserService,
-        lastFmApiService: LastFmApiService,
-        owmApiService: OwmApiService,
-    ) {
+    constructor(userService: UserService, lastFmApiService: LastFmApiService, owmApiService: OwmApiService) {
         this.userService = userService;
         this.lastFmApiService = lastFmApiService;
         this.owmApiService = owmApiService;
@@ -117,9 +112,9 @@ export class RestUser {
                     return notFound(res, "User not found");
                 }
 
-               await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
+                const updated = await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
 
-                appEventBus.emit(COMMAND_SEND_STATE, {uuid: req.payload.uuid });
+                appEventBus.emit(COMMAND_SEND_STATE, { uuid: req.payload.uuid, state: updated?.lastState });
 
                 return ok(res, { message: "State updated successfully." });
             })
