@@ -15,6 +15,8 @@ export interface IUser extends Document {
         lat: number;
         lon: number;
     };
+    isDeleted: boolean;
+    deletedAt?: Date;
 }
 
 export interface CreateUserPayload {
@@ -147,6 +149,8 @@ const userSchema = new Schema(
         lastFmUsername: { type: String },
         timezone: { type: String, required: true },
         location: { type: locationSchema, required: true },
+        isDeleted: { type: Boolean, required: true, default: false, index: true },
+        deletedAt: { type: Date },
     },
     {
         optimisticConcurrency: true,

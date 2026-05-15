@@ -253,4 +253,46 @@ describe("TamagotchiService", () => {
         });
 
     });
+
+    describe("Admin operations", () => {
+        it("should get all tamagotchis", async () => {
+            const mockPets = [createMockPet(), createMockPet()];
+            TamagotchiModel.find = vi.fn().mockReturnValue({ exec: vi.fn().mockResolvedValue(mockPets) });
+
+            const pets = await tamagotchiService.getAllTamagotchis();
+            expect(pets).toEqual(mockPets);
+        });
+
+        it("should revive a dead tamagotchi", async () => {
+            const mockPet = createMockPet({ status: TamagotchiState.DEAD, hunger: 0, happiness: 0 });
+            vi.mocked(TamagotchiModel.findOne).mockResolvedValue(mockPet as any);
+            const emitSpy = vi.spyOn(appEventBus, "emit");
+
+            const result = await tamagotchiService.revive("test-uuid");
+
+            expect(mockPet.hunger).toBe(100);
+            expect(mockPet.happiness).toBe(100);
+            expect(mockPet.hygiene).toBe(100);
+            expect(mockPet.energy).toBe(100);
+            expect(mockPet.status).toBe(TamagotchiState.IDLE_HAPPY);
+            expect(mockPet.save).toHaveBeenCalled();
+            expect(emitSpy).toHaveBeenCalled();
+            expect(result.status).toBe(TamagotchiState.IDLE_HAPPY);
+        });
+
+        it("should update stats manually and clamp constraints", async () => {
+            const mockPet = createMockPet({ hunger: 50, energy: 50 });
+            vi.mocked(TamagotchiModel.findOne).mockResolvedValue(mockPet as any);
+            const emitSpy = vi.spyOn(appEventBus, "emit");
+
+            const result = await tamagotchiService.updateStats("test-uuid", { hunger: 150, energy: -10 });
+
+            expect(mockPet.hunger).toBe(100);
+            expect(mockPet.energy).toBe(0);
+            expect(mockPet.status).toBe(TamagotchiState.SLEEPING);
+            expect(mockPet.save).toHaveBeenCalled();
+            expect(emitSpy).toHaveBeenCalled();
+            expect(result.energy).toBe(0);
+        });
+    });
 });

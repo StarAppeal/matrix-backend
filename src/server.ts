@@ -27,6 +27,7 @@ import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { OwmApiService } from "./services/owmApiService";
 import { TamagotchiService } from "./services/db/tamagotchiService";
 import { RestTamagotchi } from "./rest/restTamagotchi";
+import { RestAdmin } from "./rest/restAdmin";
 import { FileService } from "./services/db/fileService";
 
 interface ServerDependencies {
@@ -142,6 +143,7 @@ export class Server {
         const storage = new RestStorage(s3Service);
         const restLocation = new RestLocation(owmApiService);
         const restTamagotchi = new RestTamagotchi(tamagotchiService);
+        const restAdmin = new RestAdmin(userService, jwtAuthenticator, tamagotchiService, () => this.webSocketServer);
 
         this.app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
 
@@ -153,6 +155,7 @@ export class Server {
         this.app.use("/api/storage", _authenticateJwt, storage.createRouter());
         this.app.use("/api/location", _authenticateJwt, weatherLimiter, restLocation.createRouter());
         this.app.use("/api/tamagotchi", _authenticateJwt, restTamagotchi.createRouter());
+        this.app.use("/api/admin", _authenticateJwt, restAdmin.createRouter());
 
         this.app.use("/api/websocket", _authenticateJwt, (req, res, next) => {
             if (this.webSocketServer) {

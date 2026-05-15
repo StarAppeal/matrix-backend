@@ -63,6 +63,48 @@ export class TamagotchiService {
         };
     }
 
+    public async getAllTamagotchis(): Promise<ITamagotchi[]> {
+        return await TamagotchiModel.find({}).exec();
+    }
+
+    public async revive(uuid: string): Promise<TamagotchiPayload> {
+        const pet = await this.getOrEvaluatePet(uuid);
+        pet.hunger = 100;
+        pet.happiness = 100;
+        pet.hygiene = 100;
+        pet.energy = 100;
+        pet.status = TamagotchiState.IDLE_HAPPY;
+        pet.lastCalculatedAt = new Date();
+        await pet.save();
+        
+        appEventBus.emit(TAMAGOTCHI_STATE_UPDATED_EVENT, {
+            uuid,
+            payload: TamagotchiService.toPayload(pet),
+        });
+
+        return TamagotchiService.toPayload(pet);
+    }
+
+    public async updateStats(uuid: string, stats: Partial<TamagotchiPayload>): Promise<TamagotchiPayload> {
+        const pet = await this.getOrEvaluatePet(uuid);
+        
+        if (stats.hunger !== undefined) pet.hunger = Math.min(100, Math.max(0, stats.hunger));
+        if (stats.happiness !== undefined) pet.happiness = Math.min(100, Math.max(0, stats.happiness));
+        if (stats.hygiene !== undefined) pet.hygiene = Math.min(100, Math.max(0, stats.hygiene));
+        if (stats.energy !== undefined) pet.energy = Math.min(100, Math.max(0, stats.energy));
+        
+        // Let evaluateStatus compute the correct status based on the new stats
+        this.evaluateStatus(pet);
+        await pet.save();
+
+        appEventBus.emit(TAMAGOTCHI_STATE_UPDATED_EVENT, {
+            uuid,
+            payload: TamagotchiService.toPayload(pet),
+        });
+
+        return TamagotchiService.toPayload(pet);
+    }
+
     public async getOrEvaluatePet(uuid: string): Promise<ITamagotchi> {
         const pet = await TamagotchiModel.findOne({ uuid });
         if (!pet) {

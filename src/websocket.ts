@@ -138,7 +138,9 @@ export class ExtendedWebSocketServer {
             const client = this._findClientByUUID(uuid);
             logger.debug(`Received update for user ${uuid}`);
             if (client && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: WebsocketOutboundType.MUSIC_UPDATE, payload: state }), { binary: false });
+                client.send(JSON.stringify({ type: WebsocketOutboundType.MUSIC_UPDATE, payload: state }), {
+                    binary: false,
+                });
             }
         });
 
@@ -146,7 +148,9 @@ export class ExtendedWebSocketServer {
             for (const uuid of subscribers) {
                 const client = this._findClientByUUID(uuid);
                 if (client && client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ type: WebsocketOutboundType.WEATHER_UPDATE, payload: weatherData }), { binary: false });
+                    client.send(JSON.stringify({ type: WebsocketOutboundType.WEATHER_UPDATE, payload: weatherData }), {
+                        binary: false,
+                    });
                 }
             }
         });
@@ -154,7 +158,9 @@ export class ExtendedWebSocketServer {
         appEventBus.on(TAMAGOTCHI_STATE_UPDATED_EVENT, ({ uuid, payload }) => {
             const client = this._findClientByUUID(uuid);
             if (client && client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: WebsocketOutboundType.TAMAGOTCHI_UPDATE, payload: payload }), { binary: false });
+                client.send(JSON.stringify({ type: WebsocketOutboundType.TAMAGOTCHI_UPDATE, payload: payload }), {
+                    binary: false,
+                });
             }
         });
     }
