@@ -203,7 +203,7 @@ describe("ExtendedWebSocketServer", () => {
             vi.mocked(appEventBus.emit).mockClear();
             connectionHandler(mockWsClient, {});
 
-            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_STATE, { uuid: "user-123" });
+            expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_STATE, { uuid: "user-123", state: { global: { mode: "idle" } } } as any);
             expect(appEventBus.emit).toHaveBeenCalledWith(COMMAND_SEND_SETTINGS, { uuid: "user-123" });
         });
 

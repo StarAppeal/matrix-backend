@@ -152,7 +152,7 @@ export class ExtendedWebSocketServer {
         });
 
         // send initial state and settings
-        appEventBus.emit(COMMAND_SEND_STATE, { uuid: ws.user.uuid });
+        appEventBus.emit(COMMAND_SEND_STATE, { uuid: ws.user.uuid, state: ws.user.lastState });
         appEventBus.emit(COMMAND_SEND_SETTINGS, { uuid: ws.user.uuid });
     }
 
