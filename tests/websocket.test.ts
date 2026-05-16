@@ -223,6 +223,66 @@ describe("ExtendedWebSocketServer", () => {
             expect(mockWeatherPollingService.unsubscribeUser).toHaveBeenCalledWith("user-123", 52.5, 13.4);
             expect(mockMusicPollingService.stopPollingForUser).toHaveBeenCalledWith("user-123");
         });
+
+        it("should close existing zombie connection when the same user connects again", () => {
+            const oldClient = {
+                readyState: WebSocket.OPEN,
+                close: vi.fn(),
+                payload: { uuid: "zombie-user" },
+                user: { uuid: "zombie-user" },
+                emit: vi.fn(),
+                send: vi.fn(),
+            };
+            const newClient = {
+                readyState: WebSocket.OPEN,
+                close: vi.fn(),
+                payload: { uuid: "zombie-user" },
+                user: { uuid: "zombie-user" },
+                emit: vi.fn(),
+                send: vi.fn(),
+            };
+
+            connectionHandler(oldClient, {});
+            expect(oldClient.close).not.toHaveBeenCalled();
+
+            connectionHandler(newClient, {});
+
+            expect(oldClient.close).toHaveBeenCalledWith(1000, "New connection established");
+            expect(newClient.close).not.toHaveBeenCalled();
+
+            extendedWss.sendMessageToUser("zombie-user", "test");
+            expect(newClient.send).toHaveBeenCalled();
+        });
+
+        it("should ignore disconnect events from zombie clients and NOT stop polling", () => {
+            const oldClient = {
+                readyState: WebSocket.OPEN,
+                close: vi.fn(),
+                payload: { uuid: "zombie-user" },
+                user: { uuid: "zombie-user" },
+                emit: vi.fn(),
+            };
+            const newClient = {
+                readyState: WebSocket.OPEN,
+                close: vi.fn(),
+                payload: { uuid: "zombie-user" },
+                user: { uuid: "zombie-user" },
+                emit: vi.fn(),
+            };
+
+            connectionHandler(oldClient, {});
+            const oldDisconnectCallback = vi.mocked(mockClientEventHandler.enableDisconnectEvent).mock.calls[0][0];
+
+            connectionHandler(newClient, {});
+
+            vi.mocked(mockMusicPollingService.stopPollingForUser).mockClear();
+            vi.mocked(mockTamagotchiPollingService.stopPollingForUser).mockClear();
+
+            oldDisconnectCallback();
+
+            expect(mockMusicPollingService.stopPollingForUser).not.toHaveBeenCalled();
+            expect(mockTamagotchiPollingService.stopPollingForUser).not.toHaveBeenCalled();
+        });
     });
 
     describe("_listenForAppEvents", () => {

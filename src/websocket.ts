@@ -96,6 +96,18 @@ export class ExtendedWebSocketServer {
     }
 
     private _onNewClientReady(ws: ExtendedWebSocket): void {
+        const uuid = ws.payload?.uuid;
+
+        if (uuid) {
+            const existingClient = this.uuidClientMap.get(uuid);
+
+            if (existingClient && existingClient.readyState === WebSocket.OPEN) {
+                logger.warn(`User ${uuid} connected again. Closing old zombie connection.`);
+                existingClient.close(1000, "New connection established");
+            }
+
+            this.uuidClientMap.set(uuid, ws);
+        }
         if (ws.payload?.uuid) {
             this.uuidClientMap.set(ws.payload.uuid, ws);
         }
@@ -114,16 +126,29 @@ export class ExtendedWebSocketServer {
         socketEventHandler.enableMessageEvent();
         socketEventHandler.registerCustomEvents();
         socketEventHandler.enableDisconnectEvent(() => {
-            this.uuidClientMap.delete(ws.payload?.uuid);
+            const uuid = ws.payload?.uuid;
+            if (!uuid) return;
 
-            if (ws.user?.location && ws.user.location?.lat && ws.user.location?.lon) {
-                this.weatherPollingService.unsubscribeUser(ws.user.uuid, ws.user.location.lat, ws.user.location.lon);
+            const mappedClient = this.uuidClientMap.get(uuid);
+
+            if (mappedClient === ws) {
+                this.uuidClientMap.delete(uuid);
+
+                if (ws.user?.location && ws.user.location?.lat && ws.user.location?.lon) {
+                    this.weatherPollingService.unsubscribeUser(
+                        ws.user.uuid,
+                        ws.user.location.lat,
+                        ws.user.location.lon
+                    );
+                }
+
+                this.musicPollingService.stopPollingForUser(ws.user.uuid);
+                this.tamagotchiPollingService.stopPollingForUser(ws.user.uuid);
+
+                logger.info("User disconnected");
+            } else {
+                logger.debug(`Ignored disconnect for zombie client of user ${uuid}`);
             }
-
-            this.musicPollingService.stopPollingForUser(ws.user.uuid);
-            this.tamagotchiPollingService.stopPollingForUser(ws.user.uuid);
-
-            logger.info("User disconnected");
         });
 
         // send initial state and settings
