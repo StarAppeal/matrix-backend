@@ -108,9 +108,6 @@ export class ExtendedWebSocketServer {
 
             this.uuidClientMap.set(uuid, ws);
         }
-        if (ws.payload?.uuid) {
-            this.uuidClientMap.set(ws.payload.uuid, ws);
-        }
 
         logger.info("WebSocket client connected and authenticated");
 
