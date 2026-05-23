@@ -21,3 +21,11 @@ export const weatherLimiter = rateLimit({
     legacyHeaders: false,
     handler: onLimitReached,
 });
+
+export const previewLimiter = rateLimit({
+    windowMs: 60_000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: onLimitReached,
+});

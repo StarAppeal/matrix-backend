@@ -6,15 +6,15 @@ import { WebsocketServerEventHandler } from "./utils/websocket/websocketServerEv
 import { WebsocketEventHandler } from "./utils/websocket/websocketEventHandler";
 import {
     appEventBus,
-    COMMAND_SEND_STATE,
     COMMAND_SEND_SETTINGS,
+    COMMAND_SEND_STATE,
     MUSIC_STATE_UPDATED_EVENT,
     TAMAGOTCHI_STATE_UPDATED_EVENT,
     USER_UPDATED_EVENT,
     WEATHER_STATE_UPDATED_EVENT,
 } from "./utils/eventBus";
 import { WebsocketOutboundType } from "./utils/websocket/websocketCustomEvents/websocketOutboundType";
-import { IUser } from "./db/models/user";
+import { IUser, MatrixState } from "./db/models/user";
 import { MusicPollingService } from "./services/musicPollingService";
 import { UserService } from "./services/db/UserService";
 import { WeatherPollingService } from "./services/weatherPollingService";
@@ -22,8 +22,9 @@ import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import logger from "./utils/logger";
 import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { WebsocketClientService } from "./services/websocketClientService";
+import { MusicState } from "./interfaces/MusicState";
+import { ImageServiceFactory, TargetMode } from "./services/imageService";
 import { S3Service } from "./services/s3Service";
-import { StateUtils } from "./utils/stateUtils";
 
 export class ExtendedWebSocketServer {
     private readonly uuidClientMap = new Map<string, ExtendedWebSocket>();
@@ -34,6 +35,7 @@ export class ExtendedWebSocketServer {
     private readonly weatherPollingService: WeatherPollingService;
     private readonly tamagotchiPollingService: TamagotchiPollingService;
     private readonly s3Service: S3Service;
+    private readonly imageServiceFactory: ImageServiceFactory;
 
     constructor(
         server: Server,
@@ -41,14 +43,16 @@ export class ExtendedWebSocketServer {
         musicPollingService: MusicPollingService,
         weatherPollingService: WeatherPollingService,
         tamagotchiPollingService: TamagotchiPollingService,
+        jwtAuthenticator: JwtAuthenticator,
         s3Service: S3Service,
-        jwtAuthenticator: JwtAuthenticator
+        imageServiceFactory: ImageServiceFactory
     ) {
         this.userService = userService;
         this.musicPollingService = musicPollingService;
         this.weatherPollingService = weatherPollingService;
         this.tamagotchiPollingService = tamagotchiPollingService;
         this.s3Service = s3Service;
+        this.imageServiceFactory = imageServiceFactory;
 
         this._wss = new WebSocketServer({
             server,
@@ -159,9 +163,19 @@ export class ExtendedWebSocketServer {
             this._withClientService(user.uuid, (clientService) => clientService.updateUser(user));
         });
 
-        appEventBus.on(MUSIC_STATE_UPDATED_EVENT, ({ uuid, state }) => {
+        appEventBus.on(MUSIC_STATE_UPDATED_EVENT, async ({ uuid, state }: { uuid: string; state: MusicState }) => {
             logger.debug(`Received update for user ${uuid}`);
-            this._withClientService(uuid, (service) => service.sendPayload(WebsocketOutboundType.MUSIC_UPDATE, state));
+
+            this._withClientService(uuid, async (service) => {
+                service.sendPayload(WebsocketOutboundType.MUSIC_UPDATE, state);
+
+                if (!state.imageUrl) return;
+
+                const imageService = await this.imageServiceFactory.fromUrl(state.imageUrl);
+                const binaryFrame = await imageService.toMatrixBinaryFrame(TargetMode.MusicMode, 64, 64);
+
+                service.sendBinary(binaryFrame);
+            });
         });
 
         appEventBus.on(WEATHER_STATE_UPDATED_EVENT, ({ weatherData, subscribers }) => {
@@ -180,12 +194,23 @@ export class ExtendedWebSocketServer {
             );
         });
 
-        appEventBus.on(COMMAND_SEND_STATE, async ({ uuid, state }) => {
-            const hydratedState = await (new StateUtils(state).hydrate(this.s3Service));
-            logger.debug(`Received update for user ${uuid}`);
+        appEventBus.on(COMMAND_SEND_STATE, async ({ uuid, state }: { uuid: string; state: MatrixState }) => {
+            logger.debug(`Received state update for user ${uuid}`);
 
             this._withClientService(uuid, async (service) => {
-                service.sendPayload(WebsocketOutboundType.STATE, hydratedState);
+                service.sendPayload(WebsocketOutboundType.STATE, state);
+
+                if (state?.global?.mode === "image" && state.image?.s3_key) {
+                    logger.info(`Fetching image from S3 for user ${uuid} (Key: ${state.image.s3_key})`);
+
+                    const imageBuffer = await this.s3Service.downloadToBuffer(state.image.s3_key);
+
+                    const imageService = this.imageServiceFactory.fromBuffer(imageBuffer);
+
+                    const binaryFrame = await imageService.toMatrixBinaryFrame(TargetMode.ImageMode, 64, 64);
+
+                    service.sendBinary(binaryFrame);
+                }
             });
         });
 

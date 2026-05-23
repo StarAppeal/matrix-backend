@@ -117,21 +117,7 @@ describe("RestStorage", () => {
 
             expect(response.body.data).toEqual({ url: signedUrl });
             expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledOnce();
-            expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledWith(objectKey, 60, "original");
-        });
-
-        it("should return a signed URL for the matrix variant when requested", async () => {
-            const objectKey = `user-${requestingUserUUID}/my-photo.jpg`;
-            const signedUrl = "http://s3.com/signed-url-matrix";
-            mockS3Service.getSignedDownloadUrl.mockResolvedValue(signedUrl);
-
-            const response = await request(app)
-                .get(`/storage/files/${encodeURIComponent(objectKey)}/url?variant=matrix64`)
-                .expect(200);
-
-            expect(response.body.data).toEqual({ url: signedUrl });
-            expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledOnce();
-            expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledWith(objectKey, 60, "matrix64");
+            expect(mockS3Service.getSignedDownloadUrl).toHaveBeenCalledWith(objectKey, 60);
         });
 
         it("should return 403 Forbidden if the user tries to access another user's file", async () => {

@@ -18,7 +18,6 @@ import {
 } from "../src/utils/eventBus";
 import { WeatherPollingService } from "../src/services/weatherPollingService";
 import { TamagotchiPollingService } from "../src/services/tamagotchiPollingService";
-import { S3Service } from "../src/services/s3Service";
 
 let mockWssInstance: Mocked<WebSocketServer>;
 let mockServerEventHandler: Mocked<WebsocketServerEventHandler>;
@@ -59,7 +58,6 @@ describe("ExtendedWebSocketServer", () => {
     let mockMusicPollingService: Mocked<MusicPollingService>;
     let mockWeatherPollingService: Mocked<WeatherPollingService>;
     let mockTamagotchiPollingService: Mocked<TamagotchiPollingService>;
-    let mockS3Service: Mocked<S3Service>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -93,10 +91,6 @@ describe("ExtendedWebSocketServer", () => {
             stopPollingForUser: vi.fn(),
         } as unknown as Mocked<TamagotchiPollingService>;
 
-        mockS3Service = {
-            getSignedDownloadUrl: vi.fn(),
-        } as unknown as Mocked<S3Service>;
-
         // @ts-ignore
         mockUserService = createMockUserService();
 
@@ -106,7 +100,6 @@ describe("ExtendedWebSocketServer", () => {
             mockMusicPollingService,
             mockWeatherPollingService,
             mockTamagotchiPollingService,
-            mockS3Service,
             createMockJwtAuthenticator() as any
         );
     });

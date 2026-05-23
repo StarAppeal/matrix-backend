@@ -102,7 +102,7 @@ describe("Server Class Integration Tests", () => {
             jwtAuthenticator: mockJwtAuthenticator,
             lastFmApiService: mockLastFmApiService,
             owmApiService: mockOwmApiService,
-        });
+        } as any);
         await server.start();
         app = server.app;
     });

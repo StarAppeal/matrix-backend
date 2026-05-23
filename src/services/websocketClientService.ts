@@ -4,7 +4,6 @@ import logger from "../utils/logger";
 import { WebSocket } from "ws";
 import { WebsocketOutboundType } from "../utils/websocket/websocketCustomEvents/websocketOutboundType";
 
-
 export class WebsocketClientService {
     constructor(private readonly client: ExtendedWebSocket) {}
 
@@ -14,14 +13,27 @@ export class WebsocketClientService {
     }
 
     public sendPayload(type: WebsocketOutboundType, payload: unknown) {
-        logger.info(`Received update for user ${this.client.user.uuid}`);
+        logger.debug(`Sending payload (${type}) to user ${this.client.user.uuid}`);
+
         if (this.client.readyState !== WebSocket.OPEN) {
-            logger.warn(`Websocket connection for user ${this.client.user.uuid} is not open. Cannot send message.`);
+            logger.warn(`Websocket connection for user ${this.client.user.uuid} is not open. Cannot send payload.`);
             return;
         }
+
         this.client.send(JSON.stringify({ type, payload }), {
             binary: false,
         });
+    }
+
+    public sendBinary(buffer: Buffer) {
+        logger.info(`Sending binary for user ${this.client.user.uuid}`);
+
+        if (this.client.readyState !== WebSocket.OPEN) {
+            logger.warn(`Websocket connection for user ${this.client.user.uuid} is not open. Cannot send binary.`);
+            return;
+        }
+
+        this.client.send(buffer, { binary: true });
     }
 
     public getSettings() {

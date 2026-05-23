@@ -9,7 +9,7 @@ import { RestWebSocket } from "./rest/restWebSocket";
 import { RestUser } from "./rest/restUser";
 import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
 import { RestAuth } from "./rest/auth";
-import { authLimiter, weatherLimiter } from "./rest/middleware/rateLimit";
+import { authLimiter, weatherLimiter, previewLimiter } from "./rest/middleware/rateLimit";
 import { extractTokenFromCookie } from "./rest/middleware/extractTokenFromCookie";
 import { JwtAuthenticator } from "./utils/jwtAuthenticator";
 import { authenticateJwt } from "./rest/middleware/authenticateJwt";
@@ -28,12 +28,12 @@ import { OwmApiService } from "./services/owmApiService";
 import { TamagotchiService } from "./services/db/tamagotchiService";
 import { RestTamagotchi } from "./rest/restTamagotchi";
 import { RestAdmin } from "./rest/restAdmin";
-import { FileService } from "./services/db/fileService";
+import { ImageServiceFactory } from "./services/imageService";
+import { RestPreview } from "./rest/restPreview";
 
 interface ServerDependencies {
     userService: UserService;
     s3Service: S3Service;
-    fileService: FileService;
     musicPollingService: MusicPollingService;
     weatherPollingService: WeatherPollingService;
     tamagotchiService: TamagotchiService;
@@ -41,6 +41,7 @@ interface ServerDependencies {
     jwtAuthenticator: JwtAuthenticator;
     lastFmApiService: LastFmApiService;
     owmApiService: OwmApiService;
+    imageServiceFactory: ImageServiceFactory;
 }
 
 interface ServerConfig {
@@ -68,7 +69,6 @@ export class Server {
         const {
             userService,
             s3Service,
-            fileService,
             musicPollingService,
             weatherPollingService,
             tamagotchiService,
@@ -76,11 +76,10 @@ export class Server {
             jwtAuthenticator,
             lastFmApiService,
             owmApiService,
+            imageServiceFactory
         } = this.dependencies;
 
         await s3Service.ensureBucketExists();
-
-        this._runS3MatrixMigration(s3Service, fileService);
 
         watchUserChanges();
 
@@ -98,8 +97,9 @@ export class Server {
             musicPollingService,
             weatherPollingService,
             tamagotchiPollingService,
+            jwtAuthenticator,
             s3Service,
-            jwtAuthenticator
+            imageServiceFactory
         );
 
         this._setupGracefulShutdown();
@@ -145,6 +145,7 @@ export class Server {
         const restLocation = new RestLocation(owmApiService);
         const restTamagotchi = new RestTamagotchi(tamagotchiService);
         const restAdmin = new RestAdmin(userService, jwtAuthenticator, tamagotchiService, () => this.webSocketServer);
+        const restPreview = new RestPreview(s3Service, this.dependencies.imageServiceFactory);
 
         this.app.get("/api/healthz", (_req, res) => res.status(200).send({ status: "ok" }));
 
@@ -157,6 +158,7 @@ export class Server {
         this.app.use("/api/location", _authenticateJwt, weatherLimiter, restLocation.createRouter());
         this.app.use("/api/tamagotchi", _authenticateJwt, restTamagotchi.createRouter());
         this.app.use("/api/admin", _authenticateJwt, restAdmin.createRouter());
+        this.app.use("/api/preview", _authenticateJwt, previewLimiter, restPreview.createRouter());
 
         this.app.use("/api/websocket", _authenticateJwt, (req, res, next) => {
             if (this.webSocketServer) {
@@ -210,44 +212,5 @@ export class Server {
             await this.stop();
             process.exit(0);
         });
-    }
-
-//TODO: remove
-    private async _runS3MatrixMigration(s3Service: S3Service, fileService: FileService): Promise<void> {
-        try {
-            const allFiles = await fileService.getAllFiles();
-            if (allFiles.length === 0) return;
-
-            logger.info(`[Migration] Starting S3 migration for ${allFiles.length} files...`);
-
-            let successCount = 0;
-            let skippedCount = 0;
-            let errorCount = 0;
-
-            for (const file of allFiles) {
-                try {
-                    const wasMigrated = await s3Service.migrateFileToIncludeMatrix(file.objectKey, file.mimeType);
-
-                    if (wasMigrated) {
-                        successCount++;
-                    } else {
-                        skippedCount++;
-                    }
-                } catch (error) {
-                    logger.error(`[Migration] Error at ${file.objectKey}:`, error);
-                    errorCount++;
-                }
-            }
-
-            if (successCount > 0 || errorCount > 0) {
-                logger.info(
-                    `[Migration] Done! Successful: ${successCount}, Skipped: ${skippedCount}, Error: ${errorCount}`
-                );
-            } else {
-                logger.info(`[Migration] ${skippedCount} were already updated .`);
-            }
-        } catch (error) {
-            logger.error("[Migration] Critical error running migration:", error);
-        }
     }
 }

@@ -121,18 +121,14 @@ describe("S3Service", () => {
 
             expect(objectKey).toMatch(/^user-user-123\/[a-f0-9-]+_test-image\.jpg$/);
 
-            expect(mockSend).toHaveBeenCalledTimes(2);
+            expect(mockSend).toHaveBeenCalledTimes(1);
             expect(mockSend).toHaveBeenNthCalledWith(1, expect.any(PutObjectCommand));
-            expect(mockSend).toHaveBeenNthCalledWith(2, expect.any(PutObjectCommand));
 
             const sentCommand = (mockSend.mock.calls[0][0] as PutObjectCommand).input;
-            const sentMatrixCommand = (mockSend.mock.calls[1][0] as PutObjectCommand).input;
 
             expect(sentCommand.Bucket).toBe("test-bucket");
             expect(sentCommand.Key).toBe(objectKey);
             expect(sentCommand.Body).toBe(mockFile.buffer);
-            expect(sentMatrixCommand.Key).toBe(`${objectKey}_matrix64`);
-            expect(sentMatrixCommand.Body).toEqual(Buffer.from("resized"));
 
             expect(mockFileService.createFileRecord).toHaveBeenCalledWith(
                 userId,
@@ -205,15 +201,12 @@ describe("S3Service", () => {
 
             await expect(s3Service.deleteFile(objectKey)).resolves.toBeUndefined();
 
-            expect(mockSend).toHaveBeenCalledTimes(2);
+            expect(mockSend).toHaveBeenCalledTimes(1);
             expect(mockSend).toHaveBeenNthCalledWith(1, expect.any(DeleteObjectCommand));
-            expect(mockSend).toHaveBeenNthCalledWith(2, expect.any(DeleteObjectCommand));
 
             const sentCommand = (mockSend.mock.calls[0][0] as DeleteObjectCommand).input;
-            const sentMatrixCommand = (mockSend.mock.calls[1][0] as DeleteObjectCommand).input;
             expect(sentCommand.Bucket).toBe("test-bucket");
             expect(sentCommand.Key).toBe(objectKey);
-            expect(sentMatrixCommand.Key).toBe(`${objectKey}_matrix64`);
 
             expect(mockFileService.deleteFileRecord).toHaveBeenCalledWith(objectKey);
         });
@@ -270,7 +263,7 @@ describe("S3Service", () => {
 
             mockGetSignedUrl.mockResolvedValue(fakeSignedUrl);
 
-            const signedUrl = await s3Service.getSignedDownloadUrl(objectKey, 300, "original");
+            const signedUrl = await s3Service.getSignedDownloadUrl(objectKey, 300);
 
             expect(signedUrl).toBe(fakeSignedUrl);
 

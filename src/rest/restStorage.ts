@@ -1,9 +1,8 @@
-import { S3ObjectVariant, S3Service } from "../services/s3Service";
+import { S3Service } from "../services/s3Service";
 import multer from "multer";
 import express from "express";
 import { asyncHandler } from "./middleware/asyncHandler";
 import { badRequest, created, forbidden, notFound, ok } from "./utils/responses";
-import { v, validateQuery } from "./middleware/validate";
 
 export class RestStorage {
     constructor(private readonly s3Service: S3Service) {}
@@ -49,12 +48,6 @@ export class RestStorage {
 
         router.get(
             /\/files\/(.*)\/url$/,
-            validateQuery({
-                variant: {
-                    required: true,
-                    validator: v.isEnum(["original", "matrix64"]),
-                },
-            }),
             asyncHandler(async (req, res) => {
                 const userId = req.payload.uuid;
                 const objectKey = req.params[0];
@@ -65,13 +58,8 @@ export class RestStorage {
 
                 try {
                     const expiresInSeconds = 60;
-                    const variant = req.query.variant as S3ObjectVariant;
 
-                    const downloadUrl = await this.s3Service.getSignedDownloadUrl(
-                        objectKey,
-                        expiresInSeconds,
-                        variant
-                    );
+                    const downloadUrl = await this.s3Service.getSignedDownloadUrl(objectKey, expiresInSeconds);
 
                     return ok(res, { url: downloadUrl });
                 } catch (error: unknown) {

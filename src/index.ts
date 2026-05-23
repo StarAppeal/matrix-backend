@@ -13,6 +13,7 @@ import { TamagotchiPollingService } from "./services/tamagotchiPollingService";
 import { TamagotchiService } from "./services/db/tamagotchiService";
 import { HttpClient } from "./utils/httpClient";
 import { OwmApiService } from "./services/owmApiService";
+import { ImageServiceFactory } from "./services/imageService";
 
 async function bootstrap() {
     const {
@@ -81,6 +82,12 @@ async function bootstrap() {
     const s3Service = S3Service.getInstance(s3ClientConfig, fileService);
     const userService = new UserService();
 
+    const imageHttpClient = new HttpClient({
+        timeout: 10000,
+    });
+
+    const imageServiceFactory = new ImageServiceFactory(imageHttpClient);
+
     const lastFmApiService = new LastFmApiService(
         LAST_FM_API_KEY,
         new HttpClient({
@@ -105,7 +112,6 @@ async function bootstrap() {
         {
             s3Service,
             userService,
-            fileService,
             musicPollingService,
             weatherPollingService,
             tamagotchiService,
@@ -113,6 +119,7 @@ async function bootstrap() {
             jwtAuthenticator,
             lastFmApiService,
             owmApiService,
+            imageServiceFactory,
         }
     );
 
