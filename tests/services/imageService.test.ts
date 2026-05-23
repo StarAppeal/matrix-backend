@@ -29,7 +29,7 @@ describe("ImageService", () => {
 
         const instance = mockSharp.mock.results[0].value;
         expect(mockSharp).toHaveBeenCalledWith(input);
-        expect(instance.resize).toHaveBeenCalledWith(16, 8, { fit: "inside" });
+        expect(instance.resize).toHaveBeenCalledWith(16, 8, { fit: "contain" });
         expect(instance.png).toHaveBeenCalledWith({ palette: true, quality: 80 });
         expect(result.subarray(0, 4)).toEqual(
             Buffer.from([TargetMode.ImageMode, PayloadType.COMPRESSED_IMAGE, 16, 8])
@@ -45,7 +45,7 @@ describe("ImageService", () => {
 
         const instance = mockSharp.mock.results[0].value;
         expect(mockSharp).toHaveBeenCalledWith(input, { pages: -1 });
-        expect(instance.resize).toHaveBeenCalledWith(32, 16, { fit: "inside" });
+        expect(instance.resize).toHaveBeenCalledWith(32, 16, { fit: "contain" });
         expect(instance.gif).toHaveBeenCalledOnce();
         expect(result.subarray(0, 4)).toEqual(
             Buffer.from([TargetMode.MusicMode, PayloadType.COMPRESSED_GIF, 32, 16])

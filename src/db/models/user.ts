@@ -52,6 +52,7 @@ export interface MatrixState {
     };
     image: {
         s3_key: string;
+        fit: "contain" | "cover" | "fill";
     };
     clock: {
         color: [number, number, number];
@@ -89,6 +90,7 @@ const matrixStateSchema = new Schema(
         },
         image: {
             s3_key: { type: String, default: "" },
+            fit: { type: String, enum: ["contain", "cover", "fill"], default: "contain" },
         },
         clock: {
             color: {

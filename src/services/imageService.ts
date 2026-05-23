@@ -11,6 +11,8 @@ export enum PayloadType {
     COMPRESSED_GIF = 0x02,
 }
 
+export type ImageFitMode = "contain" | "cover" | "fill";
+
 export class ImageService {
     private readonly isGif: boolean;
 
@@ -18,19 +20,28 @@ export class ImageService {
         this.isGif = buffer.length > 3 && buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46;
     }
 
-    async toMatrixBinaryFrame(targetMode: TargetMode, width: number, height: number): Promise<Buffer> {
+    async toMatrixBinaryFrame(
+        targetMode: TargetMode,
+        width: number,
+        height: number,
+        fit?: ImageFitMode
+    ): Promise<Buffer> {
+        const fitMode = fit ?? "contain";
         let payload: Buffer;
         let payloadType: PayloadType;
 
         if (this.isGif) {
             payloadType = PayloadType.COMPRESSED_GIF;
 
-            payload = await sharp(this.buffer, { pages: -1 }).resize(width, height, { fit: "inside" }).gif().toBuffer();
+            payload = await sharp(this.buffer, { pages: -1 })
+                .resize(width, height, { fit: fitMode })
+                .gif()
+                .toBuffer();
         } else {
             payloadType = PayloadType.COMPRESSED_IMAGE;
 
             payload = await sharp(this.buffer)
-                .resize(width, height, { fit: "inside" })
+                .resize(width, height, { fit: fitMode })
                 .png({ palette: true, quality: 80 })
                 .toBuffer();
         }

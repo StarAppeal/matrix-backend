@@ -206,8 +206,9 @@ export class ExtendedWebSocketServer {
                     const imageBuffer = await this.s3Service.downloadToBuffer(state.image.s3_key);
 
                     const imageService = this.imageServiceFactory.fromBuffer(imageBuffer);
+                    const fitMode = state.image.fit ?? "contain";
 
-                    const binaryFrame = await imageService.toMatrixBinaryFrame(TargetMode.ImageMode, 64, 64);
+                    const binaryFrame = await imageService.toMatrixBinaryFrame(TargetMode.ImageMode, 64, 64, fitMode);
 
                     service.sendBinary(binaryFrame);
                 }
