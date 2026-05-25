@@ -70,7 +70,7 @@ describe("RestPreview", () => {
                 .expect(200);
 
             expect(mockS3Service.downloadToBuffer).toHaveBeenCalledWith("user-123/file.png");
-            expect(mockImageServiceFactory.fromBuffer).toHaveBeenCalledWith(buffer);
+            expect(mockImageServiceFactory.fromBuffer).toHaveBeenCalledWith(buffer, "user-123/file.png");
             expect(mockImageService.toMatrixBinaryFrame).toHaveBeenCalledWith(TargetMode.MusicMode, 64, 64);
             expect(response.headers["content-type"]).toContain("application/octet-stream");
             expect(response.body).toEqual(frame);

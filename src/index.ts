@@ -14,6 +14,7 @@ import { TamagotchiService } from "./services/db/tamagotchiService";
 import { HttpClient } from "./utils/httpClient";
 import { OwmApiService } from "./services/owmApiService";
 import { ImageServiceFactory } from "./services/imageService";
+import { CacheService } from "./services/cacheService";
 
 async function bootstrap() {
     const {
@@ -86,7 +87,9 @@ async function bootstrap() {
         timeout: 10000,
     });
 
-    const imageServiceFactory = new ImageServiceFactory(imageHttpClient);
+    const cacheService = new CacheService();
+
+    const imageServiceFactory = new ImageServiceFactory(imageHttpClient, cacheService);
 
     const lastFmApiService = new LastFmApiService(
         LAST_FM_API_KEY,

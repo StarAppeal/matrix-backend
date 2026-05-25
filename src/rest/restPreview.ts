@@ -45,7 +45,7 @@ export class RestPreview {
                 if (!buffer) {
                     return notFound(res, "S3 File not found");
                 }
-                const imageService = this.imageServiceFactory.fromBuffer(buffer);
+                const imageService = this.imageServiceFactory.fromBuffer(buffer, s3_key);
 
                 const frame = await this.buildPreviewFrame(mode, fit as ImageFitMode | undefined, imageService);
 
