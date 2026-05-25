@@ -46,11 +46,12 @@ export class ImageService {
                 .toBuffer();
         }
 
-        const header = Buffer.alloc(4);
-        header.writeUInt8(targetMode, 0);
-        header.writeUInt8(payloadType, 1);
-        header.writeUInt8(width, 2);
-        header.writeUInt8(height, 3);
+        const header = Buffer.alloc(8);
+        header.writeUInt32BE(payload.length, 0);
+        header.writeUInt8(targetMode, 4);
+        header.writeUInt8(payloadType, 5);
+        header.writeUInt8(width, 6);
+        header.writeUInt8(height, 7);
 
         return Buffer.concat([header, payload]);
     }

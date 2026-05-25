@@ -32,9 +32,12 @@ describe("ImageService", () => {
         expect(instance.resize).toHaveBeenCalledWith(16, 8, { fit: "contain" });
         expect(instance.png).toHaveBeenCalledWith({ palette: true, quality: 80 });
         expect(result.subarray(0, 4)).toEqual(
+            Buffer.from([0, 0, 0, mockPngBuffer.length])
+        );
+        expect(result.subarray(4, 8)).toEqual(
             Buffer.from([TargetMode.ImageMode, PayloadType.COMPRESSED_IMAGE, 16, 8])
         );
-        expect(result.subarray(4)).toEqual(mockPngBuffer);
+        expect(result.subarray(8)).toEqual(mockPngBuffer);
     });
 
     it("should build a compressed GIF frame for GIF inputs", async () => {
@@ -48,6 +51,9 @@ describe("ImageService", () => {
         expect(instance.resize).toHaveBeenCalledWith(32, 16, { fit: "contain" });
         expect(instance.gif).toHaveBeenCalledOnce();
         expect(result.subarray(0, 4)).toEqual(
+            Buffer.from([0, 0, 0, mockPngBuffer.length])
+        );
+        expect(result.subarray(4, 8)).toEqual(
             Buffer.from([TargetMode.MusicMode, PayloadType.COMPRESSED_GIF, 32, 16])
         );
     });
