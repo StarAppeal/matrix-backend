@@ -112,9 +112,14 @@ export class RestUser {
                     return notFound(res, "User not found");
                 }
 
+                const oldState = user.lastState;
                 const updated = await this.userService.updateUserByUUID(req.payload.uuid, { lastState });
 
-                appEventBus.emit(COMMAND_SEND_STATE, { uuid: req.payload.uuid, state: updated?.lastState });
+                appEventBus.emit(COMMAND_SEND_STATE, { 
+                    uuid: req.payload.uuid, 
+                    state: updated?.lastState,
+                    oldState 
+                });
 
                 return ok(res, { message: "State updated successfully." });
             })

@@ -5,6 +5,10 @@ import cookieParser from "cookie-parser";
 import { randomUUID } from "crypto";
 
 import { ExtendedWebSocketServer } from "./websocket";
+import { PollingCoordinator } from "./websocket/coordinators/pollingCoordinator";
+import { WebsocketEventForwarder } from "./websocket/listeners/websocketEventForwarder";
+import { MusicEventListener } from "./websocket/listeners/musicEventListener";
+import { MatrixStateEventListener } from "./websocket/listeners/matrixStateEventListener";
 import { RestWebSocket } from "./rest/restWebSocket";
 import { RestUser } from "./rest/restUser";
 import { JwtTokenPropertiesExtractor } from "./rest/jwtTokenPropertiesExtractor";
@@ -94,13 +98,13 @@ export class Server {
         this.webSocketServer = new ExtendedWebSocketServer(
             this.httpServer,
             userService,
-            musicPollingService,
-            weatherPollingService,
-            tamagotchiPollingService,
-            jwtAuthenticator,
-            s3Service,
-            imageServiceFactory
+            jwtAuthenticator
         );
+
+        new PollingCoordinator(musicPollingService, weatherPollingService, tamagotchiPollingService);
+        new WebsocketEventForwarder(this.webSocketServer);
+        new MusicEventListener(this.webSocketServer, imageServiceFactory);
+        new MatrixStateEventListener(this.webSocketServer, s3Service, imageServiceFactory);
 
         this._setupGracefulShutdown();
 

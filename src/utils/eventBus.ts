@@ -7,3 +7,8 @@ export const WEATHER_STATE_UPDATED_EVENT = "weather:updated";
 export const TAMAGOTCHI_STATE_UPDATED_EVENT = "tamagotchi:updated";
 export const COMMAND_SEND_STATE = "command:send_state";
 export const COMMAND_SEND_SETTINGS = "command:send_settings";
+
+export const WEBSOCKET_CLIENT_DISCONNECTED = "websocket:client_disconnected";
+export const WEBSOCKET_SUBSCRIBE_REQUEST = "websocket:subscribe_request";
+export const WEBSOCKET_UNSUBSCRIBE_REQUEST = "websocket:unsubscribe_request";
+
