@@ -32,11 +32,9 @@ import { File } from "../../src/db/models/file";
 
 const testConfig: S3ClientConfig = {
     endpoint: "http://test-minio",
-    port: 9000,
     accessKey: "test-key",
     secretAccessKey: "test-secret",
     bucket: "test-bucket",
-    publicUrl: "http://test-publicUrl",
 };
 
 const MockS3Client = vi.mocked(S3Client);

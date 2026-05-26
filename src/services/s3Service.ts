@@ -4,6 +4,7 @@ import {
     PutObjectCommand,
     GetObjectCommand,
     DeleteObjectCommand,
+    HeadBucketCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FileService } from "./db/fileService";
@@ -12,12 +13,9 @@ import logger from "../utils/logger";
 
 export interface S3ClientConfig {
     endpoint: string;
-    port: number;
     accessKey: string;
     secretAccessKey: string;
     bucket: string;
-    region?: string;
-    publicUrl: string;
 }
 
 export class S3Service {
@@ -25,14 +23,13 @@ export class S3Service {
 
     private readonly client: S3Client;
     private readonly bucketName: string;
-    private readonly publicUrl: string;
     private readonly fileService: FileService;
 
     private constructor(clientConfig: S3ClientConfig, fileService: FileService) {
         this.client = new S3Client({
-            endpoint: `${clientConfig.endpoint}:${clientConfig.port}`,
-            forcePathStyle: true,
-            region: clientConfig.region || "us-east-1",
+            endpoint: clientConfig.endpoint,
+            forcePathStyle: false,
+            region: "auto",
             credentials: {
                 accessKeyId: clientConfig.accessKey,
                 secretAccessKey: clientConfig.secretAccessKey,
@@ -40,7 +37,6 @@ export class S3Service {
         });
 
         this.bucketName = clientConfig.bucket;
-        this.publicUrl = clientConfig.publicUrl;
         this.fileService = fileService;
     }
 
@@ -56,17 +52,23 @@ export class S3Service {
 
     async ensureBucketExists(): Promise<void> {
         try {
-            await this.client.send(new CreateBucketCommand({ Bucket: this.bucketName }));
-            logger.info(`Bucket "${this.bucketName}" created successfully or already existed.`);
+            await this.client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
+            logger.info(`Bucket "${this.bucketName}" verified successfully.`);
         } catch (err: unknown) {
             if (err instanceof Error) {
-                if (err.name === "BucketAlreadyOwnedByYou" || err.name === "BucketAlreadyExists") {
-                    logger.info(`Bucket "${this.bucketName}" already exists.`);
+                if (err.name === "NotFound" || err.name === "404") {
+                    logger.error(`Bucket "${this.bucketName}" does not exist! Please create it in the Cloudflare UI.`);
+                    throw new Error(`Bucket "${this.bucketName}" not found.`);
+                }
+                else if (err.name === "AccessDenied" || err.name === "Forbidden") {
+                    logger.warn(
+                        `Access Denied while verifying bucket "${this.bucketName}". Assuming it exists and continuing...`
+                    );
                 } else {
                     throw err;
                 }
             } else {
-                throw new Error("Unknown error occurred while creating bucket.");
+                throw new Error("Unknown error occurred while verifying bucket.");
             }
         }
     }
@@ -121,20 +123,12 @@ export class S3Service {
     }
 
     async getSignedDownloadUrl(objectKey: string, expiresIn: number = 60): Promise<string> {
-        // temporary client for public url
-        const signingClient = new S3Client({
-            endpoint: this.publicUrl,
-            forcePathStyle: true,
-            region: this.client.config.region,
-            credentials: this.client.config.credentials,
-        });
-
         const command = new GetObjectCommand({
             Bucket: this.bucketName,
             Key: objectKey,
         });
 
-        return await getSignedUrl(signingClient, command, { expiresIn });
+        return await getSignedUrl(this.client, command, { expiresIn });
     }
 
     public async downloadToBuffer(key: string): Promise<Buffer> {

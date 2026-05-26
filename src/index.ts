@@ -19,36 +19,30 @@ import { CacheService } from "./services/cacheService";
 async function bootstrap() {
     const {
         SECRET_KEY,
-        MINIO_ENDPOINT,
-        MINIO_PORT,
-        MINIO_BUCKET_NAME,
-        MINIO_ROOT_USER,
-        MINIO_ROOT_PASSWORD,
         DB_NAME,
         DB_CONN_STRING,
-        MINIO_SERVER_URL,
         LAST_FM_API_KEY,
         OWM_API_KEY,
+        S3_ENDPOINT,
+        S3_ACCESS_KEY_ID,
+        S3_SECRET_ACCESS_KEY,
+        S3_BUCKET_NAME,
     } = process.env;
 
     if (!SECRET_KEY || SECRET_KEY.length < 32) {
         throw new Error("CRITICAL ERROR: SECRET_KEY environment variable is not set or too short.");
     }
 
-    if (!MINIO_ENDPOINT || !MINIO_PORT) {
-        throw new Error("MINIO_ENDPOINT and/or MINIO_PORT environment variable is not set.");
+    if (!S3_ENDPOINT) {
+        throw new Error("S3_ENDPOINT environment variable is not set.");
     }
 
-    if (!MINIO_ROOT_USER || !MINIO_ROOT_PASSWORD) {
-        throw new Error("MINIO_ROOT_USER and/or MINIO_ROOT_PASSWORD environment variable is not set.");
+    if (!S3_ACCESS_KEY_ID || !S3_SECRET_ACCESS_KEY) {
+        throw new Error("S3_ACCESS_KEY_ID and/or S3_SECRET_ACCESS_KEY environment variable is not set.");
     }
 
-    if (!MINIO_BUCKET_NAME) {
-        throw new Error("MINIO_BUCKET_NAME environment variable is not set.");
-    }
-
-    if (!MINIO_SERVER_URL) {
-        throw new Error("MINIO_SERVER_URL environment variable is not set.");
+    if (!S3_BUCKET_NAME) {
+        throw new Error("S3_BUCKET_NAME environment variable is not set.");
     }
 
     if (!DB_NAME || !DB_CONN_STRING) {
@@ -64,12 +58,10 @@ async function bootstrap() {
     }
 
     const s3ClientConfig: S3ClientConfig = {
-        publicUrl: MINIO_SERVER_URL,
-        endpoint: MINIO_ENDPOINT,
-        port: parseInt(MINIO_PORT),
-        accessKey: MINIO_ROOT_USER,
-        secretAccessKey: MINIO_ROOT_PASSWORD,
-        bucket: MINIO_BUCKET_NAME,
+        accessKey: S3_ACCESS_KEY_ID,
+        secretAccessKey: S3_SECRET_ACCESS_KEY,
+        bucket: S3_BUCKET_NAME,
+        endpoint: S3_ENDPOINT,
     };
 
     const dbConfig = {
