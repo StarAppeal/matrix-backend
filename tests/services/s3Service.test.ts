@@ -27,11 +27,9 @@ vi.mock("../../src/services/db/fileService", () => ({
 import { S3Service, S3ClientConfig } from "../../src/services/s3Service";
 import {
     S3Client,
-    CreateBucketCommand,
     PutObjectCommand,
     DeleteObjectCommand,
     HeadBucketCommand,
-    BucketAlreadyOwnedByYou,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FileService } from "../../src/services/db/fileService";
