@@ -25,7 +25,14 @@ vi.mock("../../src/services/db/fileService", () => ({
 }));
 
 import { S3Service, S3ClientConfig } from "../../src/services/s3Service";
-import { S3Client, CreateBucketCommand, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+    S3Client,
+    CreateBucketCommand,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    HeadBucketCommand,
+    BucketAlreadyOwnedByYou,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { FileService } from "../../src/services/db/fileService";
 import { File } from "../../src/db/models/file";
@@ -88,9 +95,11 @@ describe("S3Service", () => {
             const bucketError = new Error();
             bucketError.name = "BucketAlreadyOwnedByYou";
             mockSend.mockRejectedValue(bucketError);
-            await expect(s3Service.ensureBucketExists()).resolves.toBeUndefined();
+            await expect(s3Service.ensureBucketExists()).rejects.toMatchObject({
+                name: "BucketAlreadyOwnedByYou",
+            });
 
-            expect(mockSend).toHaveBeenCalledWith(expect.any(CreateBucketCommand));
+            expect(mockSend).toHaveBeenCalledWith(expect.any(HeadBucketCommand));
         });
 
         it("should create a new bucket if it does not exist", async () => {
@@ -98,7 +107,7 @@ describe("S3Service", () => {
 
             await expect(s3Service.ensureBucketExists()).resolves.toBeUndefined();
 
-            expect(mockSend).toHaveBeenCalledWith(expect.any(CreateBucketCommand));
+                expect(mockSend).toHaveBeenCalledWith(expect.any(HeadBucketCommand));
         });
     });
 
